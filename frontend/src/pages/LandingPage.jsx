@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AuthModal from '../components/AuthModal.jsx';
+import { useSession, authClient } from '../lib/auth-client.js';
 
 const LandingPage = () => {
+  const { data: session } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('features');
   const [activeModal, setActiveModal] = useState(null); // 'signin', 'signup', 'demo', 'analyze'
@@ -145,12 +147,42 @@ const LandingPage = () => {
           </a>
         </div>
         <div className="flex items-center gap-md">
-          <button
-            onClick={() => setActiveModal('signup')}
-            className="h-[48px] px-xl font-label-md text-[14px] font-semibold tracking-[0.01em] rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] hover:bg-white active:scale-[0.98] transition-all shadow-lg shadow-white/5"
-          >
-            Get Started
-          </button>
+          {session ? (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2.5 px-3.5 h-[48px] rounded-[8px] bg-[#171717] border border-[#262626] text-[#EDEDED] text-[14px] font-medium shadow-sm">
+                {session.user?.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || 'User avatar'}
+                    className="w-6 h-6 rounded-full object-cover border border-[#333333]"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 text-accent flex items-center justify-center font-bold text-xs">
+                    {(session.user?.name || session.user?.email || 'U')[0].toUpperCase()}
+                  </div>
+                )}
+                <span className="max-w-[140px] truncate font-medium">
+                  {session.user?.name || session.user?.email}
+                </span>
+              </div>
+              <button
+                onClick={async () => {
+                  await authClient.signOut();
+                }}
+                className="h-[48px] px-4 font-label-md text-[14px] font-medium rounded-[8px] bg-[#1F1F1F] border border-[#262626] hover:bg-[#262626] hover:border-[#333333] text-[#A0A0A0] hover:text-[#EDEDED] transition-all active:scale-[0.98]"
+                title="Sign out of Sentinel"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveModal('signup')}
+              className="h-[48px] px-xl font-label-md text-[14px] font-semibold tracking-[0.01em] rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] hover:bg-white active:scale-[0.98] transition-all shadow-lg shadow-white/5"
+            >
+              Get Started
+            </button>
+          )}
         </div>
       </nav>
 
