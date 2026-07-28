@@ -8,6 +8,70 @@ import {
   CheckCircle2,
   HelpCircle
 } from 'lucide-react';
+import { z } from 'zod';
+
+// --- ZOD LIVE VALIDATION SCHEMAS ---
+
+const firstNameSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'First name is required and cannot be empty.' });
+
+const lastNameSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Last name is required and cannot be empty.' });
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Work email is required.' })
+  .email({ message: 'Please enter a valid work email address (e.g., user@company.com).' });
+
+const usernameSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Username is required.' })
+  .refine((val) => !/\s/.test(val), {
+    message: 'Username cannot contain any spaces.'
+  })
+  .refine((val) => !/[A-Z]/.test(val), {
+    message: 'Username must be in small lowercase letters only.'
+  })
+  .refine((val) => /^[a-z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(val), {
+    message: 'Only lowercase letters, numbers, and special symbols are allowed.'
+  });
+
+const passwordSchema = z
+  .string()
+  .min(8, { message: 'Password must be at least 8 characters long.' })
+  .max(16, { message: 'Password cannot exceed 16 characters.' })
+  .refine((val) => !/\s/.test(val), {
+    message: 'Password cannot contain any whitespace.'
+  })
+  .refine((val) => /[a-z]/.test(val), {
+    message: 'Must include at least one lowercase letter (a-z).'
+  })
+  .refine((val) => /[A-Z]/.test(val), {
+    message: 'Must include at least one uppercase letter (A-Z).'
+  })
+  .refine((val) => /[0-9]/.test(val), {
+    message: 'Must include at least one number (0-9).'
+  })
+  .refine((val) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(val), {
+    message: 'Must include at least one special symbol (!@#$% etc.).'
+  });
+
+const phoneSchema = z
+  .string()
+  .trim()
+  .optional()
+  .refine(
+    (val) => !val || /^[6789]\d{9}$/.test(val),
+    {
+      message: 'Phone number must be exactly 10 digits starting with 6, 7, 8, or 9.'
+    }
+  );
 
 const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
   const [isSignUp, setIsSignUp] = useState(initialSignUp);
@@ -17,7 +81,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
   const [authSuccess, setAuthSuccess] = useState(null);
 
   const [formData, setFormData] = useState({
-    loginIdentifier: '', // Username or Work Email for Sign In
+    loginIdentifier: '',
     firstName: '',
     lastName: '',
     username: '',
@@ -32,14 +96,91 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
 
   if (!isOpen) return null;
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
+  const validateSingleField = (field, val, currentData, signUpMode) => {
+    if (!signUpMode) {
+      if (field === 'loginIdentifier') {
+        const res = z.string().trim().min(1, { message: 'Username or work email is required.' }).safeParse(val);
+        return res.success ? null : res.error.issues[0].message;
+      }
+      if (field === 'password') {
+        const res = z.string().min(1, { message: 'Password is required.' }).safeParse(val);
+        return res.success ? null : res.error.issues[0].message;
+      }
+      return null;
+    }
+
+    if (field === 'firstName') {
+      const res = firstNameSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'lastName') {
+      const res = lastNameSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'email') {
+      const res = emailSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'username') {
+      const res = usernameSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'phone') {
+      const res = phoneSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'password') {
+      const res = passwordSchema.safeParse(val);
+      return res.success ? null : res.error.issues[0].message;
+    }
+    if (field === 'confirmPassword') {
+      if (!val) return 'Please confirm your password.';
+      if (val !== currentData.password) return 'Passwords do not match.';
+      return null;
+    }
+    return null;
+  };
+
+  const handleChange = (field, rawValue) => {
+    let value = rawValue;
+
+    if (field === 'firstName' || field === 'lastName') {
+      value = value.replace(/^\s+/, '');
+    } else if (field === 'username') {
+      value = value.replace(/\s+/g, '');
+    } else if (field === 'phone') {
+      value = value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    const nextData = { ...formData, [field]: value };
+    setFormData(nextData);
+
+    const errorMsg = validateSingleField(field, value, nextData, isSignUp);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (errorMsg) {
+        next[field] = errorMsg;
+      } else {
         delete next[field];
-        return next;
-      });
+      }
+
+      if (isSignUp && field === 'password' && nextData.confirmPassword) {
+        if (nextData.confirmPassword !== value) {
+          next.confirmPassword = 'Passwords do not match.';
+        } else {
+          delete next.confirmPassword;
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleBlur = (field) => {
+    if (typeof formData[field] === 'string') {
+      const trimmed = formData[field].trim();
+      if (trimmed !== formData[field]) {
+        handleChange(field, trimmed);
+      }
     }
   };
 
@@ -47,33 +188,34 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     const newErrors = {};
 
     if (!isSignUp) {
-      if (!formData.loginIdentifier.trim()) {
-        newErrors.loginIdentifier = 'Username or Email is required';
-      }
-      if (!formData.password) {
-        newErrors.password = 'Password is required';
-      }
+      const idRes = z.string().trim().min(1, { message: 'Username or work email is required.' }).safeParse(formData.loginIdentifier);
+      if (!idRes.success) newErrors.loginIdentifier = idRes.error.issues[0].message;
+
+      const pwdRes = z.string().min(1, { message: 'Password is required.' }).safeParse(formData.password);
+      if (!pwdRes.success) newErrors.password = pwdRes.error.issues[0].message;
     } else {
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = 'First name is required';
-      }
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = 'Last name is required';
-      }
-      if (!formData.email.trim()) {
-        newErrors.email = 'Work email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = 'Enter a valid work email address';
-      }
-      if (!formData.password) {
-        newErrors.password = 'Password is required';
-      } else if (formData.password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters';
-      }
+      const fnRes = firstNameSchema.safeParse(formData.firstName);
+      if (!fnRes.success) newErrors.firstName = fnRes.error.issues[0].message;
+
+      const lnRes = lastNameSchema.safeParse(formData.lastName);
+      if (!lnRes.success) newErrors.lastName = lnRes.error.issues[0].message;
+
+      const emRes = emailSchema.safeParse(formData.email);
+      if (!emRes.success) newErrors.email = emRes.error.issues[0].message;
+
+      const unRes = usernameSchema.safeParse(formData.username);
+      if (!unRes.success) newErrors.username = unRes.error.issues[0].message;
+
+      const phRes = phoneSchema.safeParse(formData.phone);
+      if (!phRes.success) newErrors.phone = phRes.error.issues[0].message;
+
+      const pwdRes = passwordSchema.safeParse(formData.password);
+      if (!pwdRes.success) newErrors.password = pwdRes.error.issues[0].message;
+
       if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
+        newErrors.confirmPassword = 'Please confirm your password.';
       } else if (formData.confirmPassword !== formData.password) {
-        newErrors.confirmPassword = 'Passwords do not match';
+        newErrors.confirmPassword = 'Passwords do not match.';
       }
     }
 
@@ -88,7 +230,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     setIsLoading(true);
     setAuthSuccess(null);
 
-    // Simulate backend authentication lifecycle
     setTimeout(() => {
       setIsLoading(false);
       setAuthSuccess(
@@ -118,6 +259,28 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     );
   };
 
+  const renderValidationIcon = (field) => {
+    if (errors[field]) {
+      return (
+        <AlertCircle className="w-5 h-5 text-[#ffb4ab] shrink-0 pointer-events-none" />
+      );
+    }
+    if (formData[field] && !errors[field]) {
+      return (
+        <CheckCircle2 className="w-5 h-5 text-[#2DD4BF] shrink-0 pointer-events-none" />
+      );
+    }
+    return null;
+  };
+
+  const getInputClass = (field, prClass = 'pr-11') => {
+    const base = `w-full h-12 px-4 ${prClass} rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] focus:outline-none transition-colors`;
+    if (errors[field]) {
+      return `${base} border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab] focus:ring-1 focus:ring-[#ffb4ab]`;
+    }
+    return `${base} border-[#262626] focus:border-accent`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 md:p-8 bg-black/80 backdrop-blur-sm animate-fadeIn overflow-y-auto">
       <div
@@ -125,7 +288,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           isSignUp ? 'max-w-[720px]' : 'max-w-[540px]'
         } bg-[#171717] rounded-[16px] border border-[#262626] shadow-2xl overflow-hidden p-6 md:p-8 my-auto text-[#EDEDED] transition-all duration-300`}
       >
-        {/* Close Modal CTA */}
         <button
           onClick={onClose}
           aria-label="Close authentication modal"
@@ -134,7 +296,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           <X className="w-6 h-6" />
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-2 mb-6">
           <h2 className="font-headline-md text-[24px] font-bold text-[#EDEDED]">
             {isSignUp ? 'Create your Sentinel Account' : 'Sign in to Sentinel'}
@@ -146,7 +307,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           </p>
         </div>
 
-        {/* Success Alert */}
         {authSuccess && (
           <div className="mb-6 p-4 rounded-[8px] bg-[#0D2D29] border border-[#2DD4BF]/30 text-[#2DD4BF] flex items-center gap-3 text-[16px]">
             <CheckCircle2 className="w-6 h-6 shrink-0" />
@@ -154,30 +314,16 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           </div>
         )}
 
-        {/* Social Fast-Auth Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <button
             type="button"
             className="h-12 px-4 rounded-[8px] bg-[#1F1F1F] border border-[#262626] hover:border-[#333333] hover:bg-[#262626] text-[#EDEDED] font-medium text-[16px] flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
-            {/* Custom SVG Google Icon */}
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.1 8.8 5 12 5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.3c0-.8-.1-1.7-.3-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.3 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.6 7.4C.6 9.4 0 10.9 0 12.5s.6 3.1 1.6 5.1l3.7-2.8z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.2 0-5.8-2.1-6.7-5.1L1.6 17c1.9 3.8 5.8 7 10.4 7z"
-              />
+            <svg className="w-5 h-5 shrink-0 fill-current text-[#EDEDED]" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
             </svg>
             <span>{isSignUp ? 'Sign up with Google' : 'Continue with Google'}</span>
           </button>
@@ -185,7 +331,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
             type="button"
             className="h-12 px-4 rounded-[8px] bg-[#1F1F1F] border border-[#262626] hover:border-[#333333] hover:bg-[#262626] text-[#EDEDED] font-medium text-[16px] flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
-            {/* GitHub Octocat SVG */}
             <svg className="w-5 h-5 shrink-0 fill-current text-[#EDEDED]" viewBox="0 0 24 24">
               <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
@@ -193,7 +338,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           </button>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 border-t border-[#262626]"></div>
           <span className="text-[14px] font-semibold tracking-wider text-[#A0A0A0] uppercase">
@@ -202,12 +346,9 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           <div className="flex-1 border-t border-[#262626]"></div>
         </div>
 
-        {/* Form Inputs */}
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {!isSignUp ? (
-            /* --- STATE A: SIGN IN VIEW --- */
             <>
-              {/* Username or Work Email */}
               <div>
                 <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
                   Username or Work Email
@@ -217,23 +358,16 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                     type="text"
                     value={formData.loginIdentifier}
                     onChange={(e) => handleChange('loginIdentifier', e.target.value)}
-                    placeholder="username or email@organization.local"
-                    className={`w-full h-12 px-4 pr-11 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                      errors.loginIdentifier
-                        ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                        : 'border-[#262626] focus:border-accent'
-                    }`}
+                    onBlur={() => handleBlur('loginIdentifier')}
+                    className={getInputClass('loginIdentifier')}
                   />
-                  {errors.loginIdentifier && (
-                    <div className="absolute right-3 pointer-events-none flex items-center">
-                      <AlertCircle className="w-5 h-5 text-[#ffb4ab]" />
-                    </div>
-                  )}
+                  <div className="absolute right-3 flex items-center">
+                    {renderValidationIcon('loginIdentifier')}
+                  </div>
                 </div>
                 {renderError('loginIdentifier')}
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
                   Password
@@ -243,17 +377,10 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
-                    placeholder="••••••••••••"
-                    className={`w-full h-12 px-4 pr-20 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                      errors.password
-                        ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                        : 'border-[#262626] focus:border-accent'
-                    }`}
+                    className={getInputClass('password', 'pr-20')}
                   />
                   <div className="absolute right-2 flex items-center gap-1">
-                    {errors.password && (
-                      <AlertCircle className="w-5 h-5 text-[#ffb4ab] mr-1" />
-                    )}
+                    {renderValidationIcon('password')}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -268,9 +395,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
               </div>
             </>
           ) : (
-            /* --- STATE B: SIGN UP / REGISTRATION VIEW --- */
             <>
-              {/* Row 1: First Name & Last Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
@@ -281,18 +406,12 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => handleChange('firstName', e.target.value)}
-                      placeholder="Alex"
-                      className={`w-full h-12 px-4 pr-11 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                        errors.firstName
-                          ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                          : 'border-[#262626] focus:border-accent'
-                      }`}
+                      onBlur={() => handleBlur('firstName')}
+                      className={getInputClass('firstName')}
                     />
-                    {errors.firstName && (
-                      <div className="absolute right-3 pointer-events-none flex items-center">
-                        <AlertCircle className="w-5 h-5 text-[#ffb4ab]" />
-                      </div>
-                    )}
+                    <div className="absolute right-3 flex items-center">
+                      {renderValidationIcon('firstName')}
+                    </div>
                   </div>
                   {renderError('firstName')}
                 </div>
@@ -306,24 +425,17 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type="text"
                       value={formData.lastName}
                       onChange={(e) => handleChange('lastName', e.target.value)}
-                      placeholder="Mercer"
-                      className={`w-full h-12 px-4 pr-11 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                        errors.lastName
-                          ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                          : 'border-[#262626] focus:border-accent'
-                      }`}
+                      onBlur={() => handleBlur('lastName')}
+                      className={getInputClass('lastName')}
                     />
-                    {errors.lastName && (
-                      <div className="absolute right-3 pointer-events-none flex items-center">
-                        <AlertCircle className="w-5 h-5 text-[#ffb4ab]" />
-                      </div>
-                    )}
+                    <div className="absolute right-3 flex items-center">
+                      {renderValidationIcon('lastName')}
+                    </div>
                   </div>
                   {renderError('lastName')}
                 </div>
               </div>
 
-              {/* Row 2: Work Email & Username */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
@@ -334,39 +446,35 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleChange('email', e.target.value)}
-                      placeholder="admin@organization.local"
-                      className={`w-full h-12 px-4 pr-11 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                        errors.email
-                          ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                          : 'border-[#262626] focus:border-accent'
-                      }`}
+                      onBlur={() => handleBlur('email')}
+                      className={getInputClass('email')}
                     />
-                    {errors.email && (
-                      <div className="absolute right-3 pointer-events-none flex items-center">
-                        <AlertCircle className="w-5 h-5 text-[#ffb4ab]" />
-                      </div>
-                    )}
+                    <div className="absolute right-3 flex items-center">
+                      {renderValidationIcon('email')}
+                    </div>
                   </div>
                   {renderError('email')}
                 </div>
 
                 <div>
                   <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
-                    Username <span className="text-xs text-[#A0A0A0] font-normal">(Optional)</span>
+                    Username <span className="text-accent">*</span>
                   </label>
                   <div className="relative flex items-center">
                     <input
                       type="text"
                       value={formData.username}
                       onChange={(e) => handleChange('username', e.target.value)}
-                      placeholder="amercer_dev"
-                      className="w-full h-12 px-4 rounded-[8px] bg-[#111111] border border-[#262626] text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none focus:border-accent transition-colors"
+                      className={getInputClass('username')}
                     />
+                    <div className="absolute right-3 flex items-center">
+                      {renderValidationIcon('username')}
+                    </div>
                   </div>
+                  {renderError('username')}
                 </div>
               </div>
 
-              {/* Row 3: Password & Confirm Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[16px] font-medium text-[#EDEDED] mb-1.5">
@@ -377,17 +485,10 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => handleChange('password', e.target.value)}
-                      placeholder="••••••••••••"
-                      className={`w-full h-12 px-4 pr-14 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                        errors.password
-                          ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                          : 'border-[#262626] focus:border-accent'
-                      }`}
+                      className={getInputClass('password', 'pr-20')}
                     />
-                    <div className="absolute right-1 flex items-center">
-                      {errors.password && (
-                        <AlertCircle className="w-5 h-5 text-[#ffb4ab] mr-1" />
-                      )}
+                    <div className="absolute right-2 flex items-center gap-1">
+                      {renderValidationIcon('password')}
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
@@ -410,28 +511,17 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                      placeholder="••••••••••••"
-                      className={`w-full h-12 px-4 pr-14 rounded-[8px] bg-[#111111] border text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none transition-colors ${
-                        errors.confirmPassword
-                          ? 'border-[#ffb4ab] text-[#ffb4ab] focus:border-[#ffb4ab]'
-                          : 'border-[#262626] focus:border-accent'
-                      }`}
+                      className={getInputClass('confirmPassword', 'pr-20')}
                     />
-                    <div className="absolute right-1 flex items-center">
-                      {errors.confirmPassword && (
-                        <AlertCircle className="w-5 h-5 text-[#ffb4ab] mr-1" />
-                      )}
+                    <div className="absolute right-2 flex items-center gap-1">
+                      {renderValidationIcon('confirmPassword')}
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="h-10 w-10 flex items-center justify-center text-[#A0A0A0] hover:text-[#EDEDED] rounded-[8px] transition-colors"
                         aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                       >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
                   </div>
@@ -439,7 +529,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                 </div>
               </div>
 
-              {/* Row 4: Access Role & Phone Number */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
@@ -468,9 +557,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       Software Engineer (Developer)
                     </option>
                   </select>
-                  <p className="mt-1 text-[12px] text-[#A0A0A0]">
-                    Strictly enforced under Goodhart&apos;s Law.
-                  </p>
                 </div>
 
                 <div>
@@ -482,16 +568,18 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
-                      placeholder="+1 (555) 019-2834"
-                      className="w-full h-12 px-4 rounded-[8px] bg-[#111111] border border-[#262626] text-[16px] text-[#EDEDED] placeholder-[#A0A0A0] focus:outline-none focus:border-accent transition-colors"
+                      className={getInputClass('phone')}
                     />
+                    <div className="absolute right-3 flex items-center">
+                      {renderValidationIcon('phone')}
+                    </div>
                   </div>
+                  {renderError('phone')}
                 </div>
               </div>
             </>
           )}
 
-          {/* Primary CTA Button */}
           <div className="pt-2">
             <button
               type="submit"
@@ -504,7 +592,6 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           </div>
         </form>
 
-        {/* Footer Toggle */}
         <div className="mt-6 text-center border-t border-[#262626] pt-4">
           <button
             type="button"

@@ -14,8 +14,8 @@ app.use(cors({
     credentials: true,
 }));
 
-// Better Auth Catch-All Handler (Must precede express.json())
-app.all("/api/auth/*", toNodeHandler(auth));
+// Using .use() safely routes all sub-paths without triggering the regex error
+app.use("/api/auth", toNodeHandler(auth));
 
 app.use(express.json());
 
