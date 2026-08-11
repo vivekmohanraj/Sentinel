@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AuthModal from '../components/AuthModal.jsx';
 import { useSession, authClient } from '../lib/auth-client.js';
 
-const LandingPage = () => {
+const LandingPage = ({ onNavigateToDashboard }) => {
   const { data: session } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('features');
@@ -155,6 +155,12 @@ const LandingPage = () => {
                   {session.user?.name || session.user?.email}
                 </span>
               </div>
+              <button
+                onClick={onNavigateToDashboard}
+                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-primary-container text-on-primary-container hover:opacity-90 transition-all btn-primary"
+              >
+                Dashboard
+              </button>
               <button
                 onClick={async () => {
                   await authClient.signOut();
@@ -718,6 +724,7 @@ const LandingPage = () => {
                       onClick={() => {
                         setAnalyzeState('idle');
                         setActiveModal(null);
+                        if (onNavigateToDashboard) onNavigateToDashboard();
                       }}
                       className="w-full h-[48px] rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps font-bold uppercase btn-primary"
                     >
