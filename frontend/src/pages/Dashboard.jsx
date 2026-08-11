@@ -63,12 +63,16 @@ const Dashboard = ({ onNavigateToLanding }) => {
     const loadProfile = async () => {
       setIsLoadingProfile(true);
       try {
-        const data = await fetchUserProfile();
+        const userEmail = session?.user?.email;
+        const data = await fetchUserProfile(userEmail);
         if (isMounted && data) {
+          const defaultFirstName = session?.user?.name ? session.user.name.split(' ')[0] : '';
+          const defaultLastName = session?.user?.name ? session.user.name.split(' ').slice(1).join(' ') : '';
+
           setProfileData({
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            email: data.email || '',
+            firstName: data.firstName || defaultFirstName || 'User',
+            lastName: data.lastName || defaultLastName || '',
+            email: data.email || userEmail || '',
             phone: data.phone || '',
             role: data.role || 'Engineering Manager (Project owner)'
           });
@@ -76,7 +80,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
           setGithubSync(data.githubSync !== false);
         }
       } catch (err) {
-        console.warn('Using local fallback profile data:', err);
+        console.warn('Using session fallback profile data:', err);
         if (session?.user && isMounted) {
           const parts = (session.user.name || '').split(' ');
           setProfileData((prev) => ({
@@ -119,15 +123,19 @@ const Dashboard = ({ onNavigateToLanding }) => {
     setSaveSuccess(false);
 
     try {
-      const updated = await updateUserProfile({
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-        email: profileData.email,
-        phone: profileData.phone,
-        role: profileData.role,
-        weeklyReports,
-        githubSync
-      });
+      const activeEmail = session?.user?.email || profileData.email;
+      const updated = await updateUserProfile(
+        {
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          email: activeEmail,
+          phone: profileData.phone,
+          role: profileData.role,
+          weeklyReports,
+          githubSync
+        },
+        activeEmail
+      );
 
       if (updated) {
         setProfileData({

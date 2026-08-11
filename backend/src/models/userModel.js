@@ -8,8 +8,32 @@ export const getUserById = async (userId) => {
     [userId]
   );
   if (result.rows.length === 0) return null;
+  return formatUserRow(result.rows[0]);
+};
 
-  const user = result.rows[0];
+export const getUserByEmail = async (email) => {
+  const result = await pool.query(
+    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, "createdAt"
+     FROM tbl_user
+     WHERE LOWER(email) = LOWER($1)`,
+    [email]
+  );
+  if (result.rows.length === 0) return null;
+  return formatUserRow(result.rows[0]);
+};
+
+export const getLatestUser = async () => {
+  const result = await pool.query(
+    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, "createdAt"
+     FROM tbl_user
+     ORDER BY "createdAt" DESC
+     LIMIT 1`
+  );
+  if (result.rows.length === 0) return null;
+  return formatUserRow(result.rows[0]);
+};
+
+const formatUserRow = (user) => {
   let firstName = user.first_name;
   let lastName = user.last_name;
 
@@ -21,11 +45,11 @@ export const getUserById = async (userId) => {
 
   return {
     id: user.id,
-    firstName: firstName || 'Sarah',
-    lastName: lastName || 'Dev',
-    name: user.name || `${firstName || 'Sarah'} ${lastName || 'Dev'}`,
+    firstName: firstName || '',
+    lastName: lastName || '',
+    name: user.name || `${firstName || ''} ${lastName || ''}`.trim(),
     email: user.email,
-    phone: user.phone || '+1 (555) 234-8901',
+    phone: user.phone || '',
     role: user.role || 'Engineering Manager (Project owner)',
     weeklyReports: user.weekly_reports !== false,
     githubSync: user.github_sync !== false,
@@ -33,20 +57,42 @@ export const getUserById = async (userId) => {
   };
 };
 
-export const getFirstUser = async () => {
-  const result = await pool.query(
-    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, "createdAt"
-     FROM tbl_user
-     ORDER BY "createdAt" ASC
-     LIMIT 1`
-  );
-  if (result.rows.length === 0) return null;
-  return getUserById(result.rows[0].id);
-};
-
-export const updateUserProfile = async (userId, data) => {
+export const updateUserProfile = async (identifier, data) => {
   const { firstName, lastName, email, phone, role, weeklyReports, githubSync } = data;
   const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+  const targetEmail = email || identifier;
+
+  // Check if user exists by ID or email
+  let existing = null;
+  if (identifier && identifier.includes('@')) {
+    existing = await getUserByEmail(identifier);
+  } else if (identifier) {
+    existing = await getUserById(identifier);
+  }
+
+  if (!existing && targetEmail) {
+    existing = await getUserByEmail(targetEmail);
+  }
+
+  if (!existing) {
+    // Insert new profile if user record doesn't exist yet
+    const insertRes = await pool.query(
+      `INSERT INTO tbl_user (id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync`,
+      [
+        fullName || email,
+        targetEmail,
+        role || 'Engineering Manager (Project owner)',
+        firstName,
+        lastName,
+        phone,
+        weeklyReports !== false,
+        githubSync !== false
+      ]
+    );
+    return formatUserRow(insertRes.rows[0]);
+  }
 
   const result = await pool.query(
     `UPDATE tbl_user
@@ -59,33 +105,21 @@ export const updateUserProfile = async (userId, data) => {
          weekly_reports = $7,
          github_sync = $8,
          "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $9
+     WHERE id = $9 OR LOWER(email) = LOWER($4)
      RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync`,
     [
       firstName,
       lastName,
       fullName,
-      email,
+      targetEmail,
       phone,
       role || 'Engineering Manager (Project owner)',
       weeklyReports !== false,
       githubSync !== false,
-      userId
+      existing.id
     ]
   );
 
   if (result.rows.length === 0) return null;
-  const updated = result.rows[0];
-
-  return {
-    id: updated.id,
-    firstName: updated.first_name,
-    lastName: updated.last_name,
-    name: updated.name,
-    email: updated.email,
-    phone: updated.phone,
-    role: updated.role,
-    weeklyReports: updated.weekly_reports,
-    githubSync: updated.github_sync
-  };
+  return formatUserRow(result.rows[0]);
 };

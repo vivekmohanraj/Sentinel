@@ -1,8 +1,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const fetchUserProfile = async () => {
+export const fetchUserProfile = async (email) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/user/profile`, {
+    const url = email
+      ? `${API_BASE_URL}/user/profile?email=${encodeURIComponent(email)}`
+      : `${API_BASE_URL}/user/profile`;
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
@@ -16,9 +20,13 @@ export const fetchUserProfile = async () => {
   }
 };
 
-export const updateUserProfile = async (profileData) => {
+export const updateUserProfile = async (profileData, email) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/user/profile`, {
+    const url = email
+      ? `${API_BASE_URL}/user/profile?email=${encodeURIComponent(email)}`
+      : `${API_BASE_URL}/user/profile`;
+
+    const res = await fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
