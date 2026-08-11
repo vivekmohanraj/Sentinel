@@ -3,6 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth.js";
+import { runMigrations } from "./db/migrate.js";
+import userRoutes from "./routes/userRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 
@@ -14,15 +17,29 @@ app.use(cors({
     credentials: true,
 }));
 
-// Using .use() safely routes all sub-paths without triggering the regex error
+// Better Auth endpoint routing
 app.use("/api/auth", toNodeHandler(auth));
 
 app.use(express.json());
+
+// API Routes
+app.use("/api/user", userRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
+// Centralized error handling middleware
+app.use((err, req, res, next) => {
+    console.error('[Server Error]:', err);
+    res.status(err.status || 500).json({
+        success: false,
+        error: err.message || 'Internal Server Error'
+    });
+});
+
+app.listen(PORT, async () => {
     console.log(`Sentinel backend running on port ${PORT}`);
+    await runMigrations();
 });
