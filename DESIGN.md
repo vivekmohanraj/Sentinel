@@ -1,99 +1,102 @@
 ---
-name: Sentinel Static
+name: Sentinel Cinematic Intelligence
 colors:
-  surface: '#141313'
-  surface-dim: '#141313'
-  surface-bright: '#3a3939'
-  surface-container-lowest: '#0e0e0e'
-  surface-container-low: '#1c1b1b'
-  surface-container: '#201f1f'
-  surface-container-high: '#2a2a2a'
-  surface-container-highest: '#353434'
-  on-surface: '#e5e2e1'
-  on-surface-variant: '#c4c7c8'
-  inverse-surface: '#e5e2e1'
-  inverse-on-surface: '#313030'
-  outline: '#8e9192'
-  outline-variant: '#444748'
-  surface-tint: '#c6c6c7'
-  primary: '#ffffff'
-  on-primary: '#2f3131'
-  primary-container: '#e2e2e2'
-  on-primary-container: '#636565'
-  inverse-primary: '#5d5f5f'
-  secondary: '#c7c6c6'
-  on-secondary: '#303031'
-  secondary-container: '#464747'
-  on-secondary-container: '#b5b5b5'
-  tertiary: '#ffffff'
-  on-tertiary: '#342f2e'
-  tertiary-container: '#eae0dd'
-  on-tertiary-container: '#6a6361'
+  surface: '#0f1412'
+  surface-dim: '#0f1412'
+  surface-bright: '#353a37'
+  surface-container-lowest: '#0a0f0c'
+  surface-container-low: '#181d1a'
+  surface-container: '#1c211e'
+  surface-container-high: '#262b28'
+  surface-container-highest: '#313632'
+  on-surface: '#dfe4de'
+  on-surface-variant: '#c3c9b2'
+  inverse-surface: '#dfe4de'
+  inverse-on-surface: '#2c322e'
+  outline: '#8d937e'
+  outline-variant: '#434937'
+  surface-tint: '#9fd744'
+  primary: '#f7ffe3'
+  on-primary: '#223600'
+  primary-container: '#b7f15b'
+  on-primary-container: '#486d00'
+  inverse-primary: '#456800'
+  secondary: '#92d957'
+  on-secondary: '#193700'
+  secondary-container: '#5fa125'
+  on-secondary-container: '#153000'
+  tertiary: '#fcfcfc'
+  on-tertiary: '#2f3131'
+  tertiary-container: '#dfdfdf'
+  on-tertiary-container: '#616263'
   error: '#ffb4ab'
   on-error: '#690005'
   error-container: '#93000a'
   on-error-container: '#ffdad6'
-  primary-fixed: '#e2e2e2'
-  primary-fixed-dim: '#c6c6c7'
-  on-primary-fixed: '#1a1c1c'
-  on-primary-fixed-variant: '#454747'
-  secondary-fixed: '#e3e2e2'
-  secondary-fixed-dim: '#c7c6c6'
-  on-secondary-fixed: '#1b1c1c'
-  on-secondary-fixed-variant: '#464747'
-  tertiary-fixed: '#eae0dd'
-  tertiary-fixed-dim: '#cec5c2'
-  on-tertiary-fixed: '#1f1b19'
-  on-tertiary-fixed-variant: '#4b4644'
-  background: '#141313'
-  on-background: '#e5e2e1'
-  surface-variant: '#353434'
+  primary-fixed: '#baf55e'
+  primary-fixed-dim: '#9fd744'
+  on-primary-fixed: '#121f00'
+  on-primary-fixed-variant: '#334f00'
+  secondary-fixed: '#adf670'
+  secondary-fixed-dim: '#92d957'
+  on-secondary-fixed: '#0c2000'
+  on-secondary-fixed-variant: '#275000'
+  tertiary-fixed: '#e2e2e2'
+  tertiary-fixed-dim: '#c6c6c7'
+  on-tertiary-fixed: '#1a1c1c'
+  on-tertiary-fixed-variant: '#454747'
+  background: '#0f1412'
+  on-background: '#dfe4de'
+  surface-variant: '#313632'
 typography:
-  display-lg:
+  display-hero:
     fontFamily: Geist
-    fontSize: 64px
-    fontWeight: '600'
-    lineHeight: 72px
+    fontSize: 72px
+    fontWeight: '700'
+    lineHeight: '1.1'
     letterSpacing: -0.04em
   headline-lg:
     fontFamily: Geist
-    fontSize: 32px
-    fontWeight: '500'
-    lineHeight: 40px
+    fontSize: 48px
+    fontWeight: '600'
+    lineHeight: '1.2'
     letterSpacing: -0.02em
   headline-lg-mobile:
     fontFamily: Geist
-    fontSize: 24px
-    fontWeight: '500'
-    lineHeight: 32px
+    fontSize: 32px
+    fontWeight: '600'
+    lineHeight: '1.2'
     letterSpacing: -0.02em
   headline-md:
     fontFamily: Geist
     fontSize: 24px
     fontWeight: '500'
-    lineHeight: 32px
+    lineHeight: '1.3'
     letterSpacing: -0.01em
   body-lg:
-    fontFamily: Geist
+    fontFamily: Inter
     fontSize: 18px
     fontWeight: '400'
-    lineHeight: 28px
+    lineHeight: '1.6'
+    letterSpacing: '0'
   body-md:
-    fontFamily: Geist
-    fontSize: 16px
+    fontFamily: Inter
+    fontSize: 15px
     fontWeight: '400'
-    lineHeight: 24px
-  label-md:
-    fontFamily: Geist
-    fontSize: 14px
+    lineHeight: '1.5'
+    letterSpacing: '0'
+  label-caps:
+    fontFamily: JetBrains Mono
+    fontSize: 12px
     fontWeight: '500'
-    lineHeight: 20px
-    letterSpacing: 0.01em
-  code-sm:
-    fontFamily: Geist
-    fontSize: 13px
+    lineHeight: '1.0'
+    letterSpacing: 0.1em
+  data-point:
+    fontFamily: JetBrains Mono
+    fontSize: 14px
     fontWeight: '400'
-    lineHeight: 18px
+    lineHeight: '1.0'
+    letterSpacing: '0'
 rounded:
   sm: 0.25rem
   DEFAULT: 0.5rem
@@ -102,101 +105,88 @@ rounded:
   xl: 1.5rem
   full: 9999px
 spacing:
-  unit: 4px
-  xs: 4px
-  sm: 8px
-  md: 16px
-  lg: 24px
-  xl: 32px
-  xxl: 48px
+  unit: 8px
+  container-max: 1440px
   gutter: 24px
-  margin-mobile: 16px
-  margin-desktop: 48px
+  margin-safe: 48px
+  section-gap: 120px
 ---
 
 ## Brand & Style
 
-This design system is built for high-performance developer environments where clarity and focus are paramount. The aesthetic is rooted in **Minimalism** and **Corporate Modernity**, drawing inspiration from the precise, dark-mode interfaces of leading developer tools. 
+The design system is engineered for a premium, high-stakes engineering environment. It evokes the feeling of a futuristic command center—sophisticated, predictive, and authoritative. The aesthetic leans heavily into Glassmorphism and Atmospheric Minimalist styles, prioritizing depth and light over flat surfaces.
 
-The brand personality is calm, observant, and authoritative. It utilizes a "True Dark" canvas to eliminate visual noise, allowing critical data and task-oriented workflows to surface naturally. The emotional response should be one of quiet confidence—an interface that stays out of the way until it is needed.
-
-**Key Stylistic Pillars:**
-- **Stark Contrast:** High-value whites against deep blacks for immediate legibility.
-- **Atmospheric Depth:** Depth is communicated through subtle luminosity and tonal shifts rather than traditional drop shadows.
-- **Precision Engineering:** Tight alignment, geometric typography, and consistent 4px/8px scaling.
+The visual narrative is defined by:
+- **Cinematic Depth:** Using layered transparency and backdrop blurs to create a sense of physical space within the screen.
+- **Luminous Accents:** High-vibrancy greens act as "data signals" against a deep, shadowed environment.
+- **Precision Engineering:** Sharp typography and generous whitespace reflect the accuracy of the underlying AI.
+- **Atmospheric Lighting:** Subtle radial glows and soft bloom effects simulate a high-end hardware interface.
 
 ## Colors
 
-The palette is strictly monochromatic with a singular functional accent. The background uses a true black (#0A0A0A) to ground the UI, while surface containers use slightly elevated grays to create structure without the need for heavy borders.
+The palette is rooted in a "Deep Obsidian" environment, providing a high-contrast foundation for luminous data visualization.
 
-- **Primary Text (#EDEDED):** Used for headlines and critical information.
-- **Secondary Text (#8A8A8A):** Used for descriptions, labels, and non-interactive metadata.
-- **Accent (#2DD4BF):** A muted teal used exclusively for success states, active indicators, and subtle radial glows to draw attention to primary actions.
-- **Surface (#171717):** The standard background for cards and bento-grid modules.
+- **Foundational Dark:** Use #111613 for the primary canvas and #171D19 for slightly elevated background sections.
+- **The Signal (Primary):** #B7F15B is reserved for critical actions, active states, and successful predictive insights.
+- **Atmospherics:** Use soft radial gradients of the primary accent (10-15% opacity) in the background to create "blooms" of light behind key dashboard widgets.
+- **Glass System:** Surfaces utilize rgba(255, 255, 255, 0.05) with a 20px to 40px backdrop blur to maintain legibility while preserving the cinematic depth.
 
 ## Typography
 
-The design system utilizes **Geist** for its systematic, geometric construction which excels in technical contexts. 
+This system uses a tiered typeface strategy to balance cinematic impact with technical utility.
 
-- **Headlines:** Use large sizes with tight letter-spacing to create a "display" feel. Headlines should always be Primary Text color.
-- **Body:** Focused on readability. Body-md is the default for all standard descriptions.
-- **Labels:** Used for buttons, chips, and table headers. Often paired with a slightly increased tracking (letter-spacing) for clarity at small sizes.
-- **Mobile Scaling:** Display and Large Headlines should scale down significantly on mobile devices to prevent awkward wrapping, prioritizing a 24px-32px range for the primary view.
+- **Display & Headings:** Use Geist for its precision and modern, technical edge. Hero headings should use heavy weights with tight, negative letter-spacing to feel impactful and "locked-in."
+- **Interface & Body:** Inter provides neutral, high-legibility support for dense information and descriptions.
+- **Technical Metadata:** JetBrains Mono is used for code snippets, timestamps, and "system status" labels to reinforce the developer-centric nature of the platform.
 
 ## Layout & Spacing
 
-This design system follows a **Fluid Grid** philosophy with fixed maximum widths for content readability. 
+The layout philosophy follows a Fixed-Fluid Hybrid model. Content is contained within a max-width of 1440px to maintain readability on ultra-wide monitors common in engineering.
 
-- **The 24px Rule:** A minimum spacing of 24px (lg) must be maintained between distinct functional modules (Bento cards). This ensures the "Calm" aspect of the design by providing generous whitespace.
-- **Bento Grid:** Layouts are organized into a grid of cards with consistent gutters. Cards can span multiple columns (1, 2, or 3) and rows to create visual interest.
-- **Hit Targets:** All interactive elements (buttons, inputs, menu items) must maintain a minimum height of 48px to ensure accessibility and a premium, tactile feel.
-- **Desktop Breakpoint:** 1280px.
-- **Tablet Breakpoint:** 768px.
-- **Mobile Breakpoint:** 375px (Margins reduce to 16px).
+- **Rhythm:** Built on an 8px base unit. Component padding should lean towards generous (e.g., 32px or 48px) to provide "breathing room" for the dense data.
+- **Grid:** A 12-column grid is utilized for dashboard views. For editorial or hero sections, use a 6-column centered layout.
+- **Responsive Behavior:**
+  - **Desktop:** 48px safe margins.
+  - **Tablet:** 32px margins, 2-column dashboard reflow.
+  - **Mobile:** 20px margins, typography scales down (refer to headline-lg-mobile), and glass blurs are reduced to maintain performance.
 
 ## Elevation & Depth
 
-Elevation is achieved through **Tonal Layering** and **Subtle Glows** rather than shadows. 
+Depth is not communicated through traditional shadows, but through Tonal Stacking and Refractive Surfaces.
 
-- **Surface Tiers:**
-  - Level 0 (Base): #0A0A0A
-  - Level 1 (Card/Input): #171717
-  - Level 2 (Hover/Active): #1F1F1F
-- **Luminosity:** To highlight active states or primary cards, use a very soft, large-radius radial gradient using the Accent color at 5-10% opacity, positioned behind the element.
-- **Borders:** Use low-contrast outlines (#262626) only when necessary to define boundaries on identical background colors. Otherwise, prefer tonal separation.
+- **Level 0 (Canvas):** The primary #111613 background.
+- **Level 1 (Sub-surface):** Subtle #171D19 containers for grouping large content blocks.
+- **Level 2 (Glass Floating):** The standard interface container. Features a rgba(255, 255, 255, 0.05) fill, 40px backdrop blur, and a 1px stroke of rgba(255, 255, 255, 0.08).
+- **Level 3 (Active/Hover):** Increase the border opacity to 0.2 and add a very soft primary-colored outer glow (bloom) with a 32px spread and 0.1 opacity.
 
 ## Shapes
 
-The shape language is controlled and modern. 
+The shape language is "Soft-Tech." It avoids the extreme playfulness of fully circular corners while rejecting the harshness of sharp 0px angles.
 
-- **Standard Radius:** 0.5rem (8px) is the base for all cards, buttons, and inputs.
-- **Large Radius:** 1rem (16px) is reserved for large bento-style sections or decorative containers.
-- **Buttons:** Maintain the 8px radius for a sophisticated, professional look—avoid full pills to keep the "DevTool" aesthetic.
+- **Standard Elements:** Buttons, input fields, and small cards use 0.5rem (8px).
+- **Primary Containers:** Large glass dashboard widgets use 1rem (16px) to appear more premium and distinct.
+- **Feature Elements:** Pill shapes (32px+) are reserved exclusively for status indicators, tags, and the primary "Sentinel" action button.
 
 ## Components
 
 ### Buttons
-- **Primary:** Background #EDEDED, Text #0A0A0A. High contrast.
-- **Secondary:** Background #171717, Border 1px #262626, Text #EDEDED.
-- **Ghost:** Background transparent, Text #8A8A8A, Hover Text #EDEDED.
+- **Primary:** Pill-shaped, background #B7F15B, text #111613. On hover, add a 12px bloom effect of the same color.
+- **Ghost/Glass:** Pill-shaped, transparent background with 1px border of rgba(255, 255, 255, 0.2). On hover, the background fills to rgba(255, 255, 255, 0.05).
 
-### Bento Cards
-- Background: #171717.
-- Padding: 24px.
-- Interaction: On hover, the border color shifts to #333333 or a subtle Accent glow is applied to the top border.
+### Cards (Glass Widgets)
+- Floating containers with the Level 2 elevation specs.
+- Headers within cards should use label-caps typography to categorize data.
+- Internal dividers should be 1px wide with rgba(255, 255, 255, 0.05).
 
 ### Input Fields
-- Height: 48px.
-- Background: #111111.
-- Border: 1px solid #262626.
-- Focus: 1px solid #2DD4BF.
+- Subtle, dark backgrounds (#171D19) with a bottom-only border of rgba(255, 255, 255, 0.2).
+- Focus state: The border color transitions to the primary accent #B7F15B with a soft glow.
 
-### Chips / Status Indicators
-- Small, 12px font, 4px-8px padding.
-- Neutral states: #1F1F1F background with #8A8A8A text.
-- Success states: #0D2D29 background with #2DD4BF text.
+### Charts & Data Visualization
+- Use the Primary and Secondary accents for data lines.
+- Areas under lines should use a gradient fading from the accent color (20% opacity) to transparent.
+- Grid lines in charts must be extremely subtle (rgba(255, 255, 255, 0.03)).
 
-### Lists
-- Items separated by 1px #171717 dividers.
-- Hover state: Background #171717 with a subtle transition.
-- Primary text for titles, secondary text for metadata/descriptions.
+### Status Badges
+- Small, pill-shaped components.
+- Use a "pulsing" dot next to the text to indicate real-time AI processing.
