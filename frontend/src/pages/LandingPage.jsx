@@ -10,6 +10,7 @@ const LandingPage = () => {
   const [selectedPR, setSelectedPR] = useState(0);
   const [repoUrl, setRepoUrl] = useState('');
   const [analyzeState, setAnalyzeState] = useState('idle'); // 'idle', 'scanning', 'complete'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,17 +21,13 @@ const LandingPage = () => {
       }
 
       const featuresEl = document.getElementById('features');
-      const methodologyEl = document.getElementById('methodology');
       const securityEl = document.getElementById('security');
 
       const securityTop = securityEl ? securityEl.offsetTop - 150 : Infinity;
-      const methodologyTop = methodologyEl ? methodologyEl.offsetTop - 150 : Infinity;
       const featuresTop = featuresEl ? featuresEl.offsetTop - 150 : Infinity;
 
       if (window.scrollY >= securityTop) {
         setActiveSection('security');
-      } else if (window.scrollY >= methodologyTop) {
-        setActiveSection('methodology');
       } else if (window.scrollY >= featuresTop) {
         setActiveSection('features');
       } else {
@@ -67,7 +64,7 @@ const LandingPage = () => {
       author: '@sarah_dev',
       riskScore: 84,
       riskLevel: 'HIGH RISK',
-      riskColor: 'bg-[#1F1F1F] text-[#ffb4ab] border border-[#ffb4ab]/30',
+      riskColor: 'bg-error/20 text-error border border-error/30',
       shapExplanation: 'High complexity churn in authentication path (+420 lines). Similar changes historically caused 3 regressions in production jwt handling.',
       affectedModules: ['src/auth/jwt.ts', 'src/middleware/guard.ts']
     },
@@ -76,7 +73,7 @@ const LandingPage = () => {
       author: '@alex_m',
       riskScore: 42,
       riskLevel: 'MODERATE RISK',
-      riskColor: 'bg-[#1F1F1F] text-amber-400 border border-amber-400/30',
+      riskColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
       shapExplanation: 'New webhook handler introduces unhandled retry state in queue worker under high race conditions.',
       affectedModules: ['src/billing/webhook.ts']
     },
@@ -85,83 +82,76 @@ const LandingPage = () => {
       author: '@david_k',
       riskScore: 12,
       riskLevel: 'LOW RISK',
-      riskColor: 'bg-[#0D2D29] text-[#2DD4BF] border border-[#2DD4BF]/30',
+      riskColor: 'bg-surface-tint/20 text-surface-tint border border-surface-tint/30',
       shapExplanation: 'Isolated read-only query improvement with comprehensive unit test coverage and zero structural churn.',
       affectedModules: ['src/db/cache.ts']
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#EDEDED] selection:bg-accent/30">
+    <div className="min-h-screen bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container relative">
       {/* TopNavBar */}
       <nav
-        className={`fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-[64px] transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#0A0A0A]/95 shadow-xl border-b border-[#262626] nav-blur'
-            : 'bg-[#0A0A0A]/80 border-b border-[#171717] nav-blur'
-        }`}
+            ? 'bg-surface/90 backdrop-blur-3xl border-b border-white/10 shadow-2xl'
+            : 'bg-surface/30 backdrop-blur-3xl border-b border-white/5'
+        } flex justify-between items-center px-6 md:px-margin-safe py-4 max-w-container-max mx-auto`}
       >
-        <div className="flex items-center gap-md cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <img
-            alt="Sentinel Logo"
-            className="h-8 w-8 object-contain"
-            src="https://lh3.googleusercontent.com/aida/AP1WRLvDf8kw0nSaa48w5mll2ZWC433iQBGUp7eLpuuEtJflrHMfox_NstZjA-SLO5syjZ5uW3kY-O25y9dz3FaxQby36fFp3sKEsbS2wJx0f9d9HeHnB_Mps2fk6YvrdFEC1MaXTxzov6FxgnLgX2SHMA6nTQccTu8Dh2pq0QfnYSYFzFCxsd81mlq_kf7RQ3lspSrgGU_BXOsxbO1oilOSDYTvQ9oFrViE1T29pImAom3XLeW_QCJ7XixrBwI"
-          />
-          <span className="font-headline-md text-[24px] font-bold tracking-tighter text-[#EDEDED]">
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+            radar
+          </span>
+          <span className="text-headline-md font-headline-md font-bold tracking-tighter text-on-surface uppercase">
             Sentinel
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-xl">
+
+        {/* Web Nav */}
+        <div className="hidden md:flex items-center gap-6">
           <a
-            onClick={() => setActiveSection('features')}
-            className={`font-body-md text-[16px] transition-colors duration-200 ${
-              activeSection === 'features'
-                ? 'text-accent font-bold'
-                : 'text-[#8A8A8A] hover:text-[#EDEDED] font-normal'
-            }`}
             href="#features"
+            onClick={() => setActiveSection('features')}
+            className={`font-label-caps text-label-caps uppercase rounded-full px-4 py-2 transition-colors ${
+              activeSection === 'features'
+                ? 'text-primary-container bg-white/5'
+                : 'text-on-surface/70 hover:text-on-surface hover:bg-white/5'
+            }`}
           >
-            Features
+            Intelligence
           </a>
           <a
-            onClick={() => setActiveSection('methodology')}
-            className={`font-body-md text-[16px] transition-colors duration-200 ${
-              activeSection === 'methodology'
-                ? 'text-accent font-bold'
-                : 'text-[#8A8A8A] hover:text-[#EDEDED] font-normal'
-            }`}
-            href="#methodology"
-          >
-            Methodology
-          </a>
-          <a
-            onClick={() => setActiveSection('security')}
-            className={`font-body-md text-[16px] transition-colors duration-200 ${
-              activeSection === 'security'
-                ? 'text-accent font-bold'
-                : 'text-[#8A8A8A] hover:text-[#EDEDED] font-normal'
-            }`}
             href="#security"
+            onClick={() => setActiveSection('security')}
+            className={`font-label-caps text-label-caps uppercase rounded-full px-4 py-2 transition-colors ${
+              activeSection === 'security'
+                ? 'text-primary-container bg-white/5'
+                : 'text-on-surface/70 hover:text-on-surface hover:bg-white/5'
+            }`}
           >
-            Security
+            Solutions
           </a>
         </div>
-        <div className="flex items-center gap-md">
+
+        <div className="flex items-center gap-4">
           {session ? (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-2.5 px-3.5 h-[48px] rounded-[8px] bg-[#171717] border border-[#262626] text-[#EDEDED] text-[14px] font-medium shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 px-3.5 h-[40px] rounded-full bg-surface-container-low border border-white/10 text-on-surface text-[14px]">
                 {session.user?.image ? (
                   <img
                     src={session.user.image}
-                    alt={session.user.name || 'User avatar'}
-                    className="w-6 h-6 rounded-full object-cover border border-[#333333]"
+                    alt={session.user.name || 'User'}
+                    className="w-6 h-6 rounded-full object-cover border border-white/20"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 text-accent flex items-center justify-center font-bold text-xs">
+                  <div className="w-6 h-6 rounded-full bg-primary-container/20 text-primary-container flex items-center justify-center font-bold text-xs">
                     {(session.user?.name || session.user?.email || 'U')[0].toUpperCase()}
                   </div>
                 )}
-                <span className="max-w-[140px] truncate font-medium">
+                <span className="max-w-[120px] truncate font-medium">
                   {session.user?.name || session.user?.email}
                 </span>
               </div>
@@ -169,209 +159,384 @@ const LandingPage = () => {
                 onClick={async () => {
                   await authClient.signOut();
                 }}
-                className="h-[48px] px-4 font-label-md text-[14px] font-medium rounded-[8px] bg-[#1F1F1F] border border-[#262626] hover:bg-[#262626] hover:border-[#333333] text-[#A0A0A0] hover:text-[#EDEDED] transition-all active:scale-[0.98]"
-                title="Sign out of Sentinel"
+                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-surface-container-high border border-white/10 hover:bg-white/10 text-on-surface/80 hover:text-on-surface transition-all"
               >
-                Sign out
+                Sign Out
               </button>
             </div>
           ) : (
             <button
               onClick={() => setActiveModal('signup')}
-              className="h-[48px] px-xl font-label-md text-[14px] font-semibold tracking-[0.01em] rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] hover:bg-white active:scale-[0.98] transition-all shadow-lg shadow-white/5"
+              className="hidden md:flex bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-caps text-label-caps uppercase font-bold hover:opacity-90 transition-opacity btn-primary"
             >
-              Get Started
+              Book Demo
             </button>
           )}
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-on-surface p-2"
+          >
+            <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+          </button>
         </div>
       </nav>
 
-      <main className="relative pt-[64px]">
+      {/* Mobile Dropdown */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-x-0 top-[72px] bg-surface-container-low border-b border-white/10 p-6 flex flex-col gap-4 z-40 md:hidden animate-fadeIn">
+          <a
+            href="#features"
+            onClick={() => {
+              setActiveSection('features');
+              setMobileMenuOpen(false);
+            }}
+            className="font-label-caps text-label-caps uppercase text-on-surface/80 py-2 border-b border-white/5"
+          >
+            Intelligence
+          </a>
+          <a
+            href="#security"
+            onClick={() => {
+              setActiveSection('security');
+              setMobileMenuOpen(false);
+            }}
+            className="font-label-caps text-label-caps uppercase text-on-surface/80 py-2 border-b border-white/5"
+          >
+            Solutions
+          </a>
+          {!session && (
+            <button
+              onClick={() => {
+                setActiveModal('signup');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full mt-2 bg-primary-container text-on-primary-container py-3 rounded-full font-label-caps text-label-caps uppercase font-bold text-center"
+            >
+              Book Demo
+            </button>
+          )}
+        </div>
+      )}
+
+      <main className="pt-28 md:pt-32 pb-24 relative overflow-hidden">
+        {/* Background Ambient Glows */}
+        <div className="glow-effect glow-green w-[800px] h-[800px] top-[-200px] left-[-200px] opacity-60"></div>
+        <div className="glow-effect glow-white w-[600px] h-[600px] top-[20%] right-[-100px] opacity-40"></div>
+
         {/* Hero Section */}
-        <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-margin-mobile overflow-hidden">
-          {/* Subtle Radial Glow Backdrop */}
-          <div className="absolute inset-0 glow-radial pointer-events-none -z-10"></div>
-          {/* Hero Content */}
-          <div className="max-w-4xl mx-auto space-y-xl relative z-10">
-            <h1 className="font-display-lg text-[40px] md:text-[64px] font-semibold text-[#EDEDED] leading-tight tracking-[-0.04em] max-w-5xl">
-              Predict software engineering risks before they occur.
+        <section className="max-w-container-max mx-auto px-6 md:px-margin-safe grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[780px]">
+          {/* Left Content */}
+          <div className="flex flex-col gap-8 z-10 fade-up">
+            <div className="inline-flex items-center gap-2 glass-panel rounded-full px-4 py-2 w-fit border-white/10">
+              <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+              <span className="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">
+                Engineered for High-Stakes Codebases
+              </span>
+            </div>
+            <h1 className="font-display-hero text-[36px] sm:text-[48px] lg:text-display-hero text-on-surface leading-tight">
+              Predict the future of your{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-container to-secondary">
+                codebase.
+              </span>
             </h1>
-            <p className="font-body-lg text-[18px] text-[#8A8A8A] max-w-[600px] mx-auto leading-[28px]">
-              Sentinel continuously studies your code, commits, and PRs to predict future engineering bottlenecks before they become expensive. Don't just report history—forecast your project's health.
+            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+              Sentinel analyzes your Engineering Knowledge Graph to forecast risks, technical debt, and sprint delays before they happen. Move from reactive fire-fighting to proactive engineering.
             </p>
-            <div className="pt-md flex flex-col md:flex-row items-center justify-center gap-md">
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => setActiveModal('analyze')}
-                className="h-[48px] px-xl rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] font-semibold hover:bg-white active:scale-[0.98] transition-all duration-200 shadow-xl shadow-accent/5"
+                className="bg-primary-container text-on-primary-container px-8 py-4 rounded-full font-label-caps text-label-caps font-bold uppercase btn-primary tracking-wider flex items-center gap-2"
               >
-                Analyze Project Health
+                Start Forecasting
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </button>
               <button
                 onClick={() => setActiveModal('demo')}
-                className="h-[48px] px-xl rounded-[8px] border border-[#262626] bg-[#171717] text-[#EDEDED] font-semibold hover:border-[#333333] hover:bg-[#1F1F1F] active:scale-[0.98] transition-all duration-200"
+                className="glass-panel px-8 py-4 rounded-full font-label-caps text-label-caps text-on-surface uppercase btn-glass flex items-center gap-2 border border-white/20"
               >
-                View Demo
+                <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                Watch Intelligence Demo
               </button>
             </div>
+
+            <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/5 mt-4">
+              <div>
+                <div className="font-headline-md text-headline-md text-on-surface font-bold">500M+</div>
+                <div className="font-label-caps text-label-caps text-on-surface-variant uppercase mt-1">Commits Analyzed</div>
+              </div>
+              <div>
+                <div className="font-headline-md text-headline-md text-on-surface font-bold">98%</div>
+                <div className="font-label-caps text-label-caps text-on-surface-variant uppercase mt-1">Prediction Accuracy</div>
+              </div>
+            </div>
           </div>
-          {/* Dashboard Preview */}
-          <div className="mt-xxl w-full max-w-6xl px-margin-mobile">
+
+          {/* Right Visuals (Dashboard Preview) */}
+          <div className="relative w-full h-[500px] lg:h-[600px] z-10 fade-up delay-200 perspective-[1000px]">
             <div
               onClick={() => setActiveModal('demo')}
-              className="relative rounded-[16px] border border-[#262626] bg-[#111111] shadow-2xl overflow-hidden aspect-[16/9] flex items-center justify-center group cursor-pointer"
+              className="absolute inset-0 bg-surface-container-low rounded-[32px] md:rounded-[40px] border border-white/10 shadow-2xl overflow-hidden transform lg:rotate-y-[-5deg] lg:rotate-x-[5deg] scale-95 origin-center cursor-pointer group transition-transform duration-500 hover:scale-100"
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-60 z-10"></div>
-              <img
-                className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-[1.02] transition-all duration-700"
-                alt="A high-fidelity minimalist dashboard UI for a developer tool, showing dark-mode analytics, git commit activity graphs in teal, and a risk assessment heat map."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3iOGVevdcPPZBvEKfNMV4Ap2XHIYwU45pk1bSz77O9BE5wy6QD5kGLMEyob0-VuTUhCg8BiqX9PrE1zrQeRmorNV_nhaiAP5xnyxmmPly3G06hfg1wS_r4Ix3-XGbRWOqqko4mDEkyS0o_jA1Fn_nyKt1WpADYnD3hiQKvbgjjA51v-7ubsWLoUcnV0tOh4Osu2vtlrh3-pRKGlBuOmqco9XdE9Lk-ApTcMjihZGmJJd9p5qs67RkI1GZhGo21XaI2cjIP1GfWfU"
-              />
-              <div className="absolute inset-0 flex items-center justify-center z-20">
-                <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:bg-accent/20 group-hover:border-accent transition-all duration-300">
-                  <span className="material-symbols-outlined text-[#EDEDED] text-3xl">play_arrow</span>
+              {/* Fake UI Header */}
+              <div className="h-14 border-b border-white/5 flex items-center px-6 gap-4 bg-surface/50">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-white/10"></div>
+                  <div className="w-3 h-3 rounded-full bg-white/10"></div>
+                  <div className="w-3 h-3 rounded-full bg-white/10"></div>
+                </div>
+                <div className="mx-auto font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[14px]">lan</span>
+                  Engineering Knowledge Graph
+                </div>
+              </div>
+
+              {/* Dashboard Content */}
+              <div className="p-6 md:p-8 h-full flex flex-col gap-6 bg-gradient-to-b from-transparent to-surface-container-highest/20">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Risk Heatmap</h3>
+                    <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 uppercase">Predicted for Sprint 42</p>
+                  </div>
+                  <span className="material-symbols-outlined text-primary-container">trending_up</span>
+                </div>
+
+                {/* Heatmap Grid */}
+                <div className="grid grid-cols-2 gap-4 flex-1 pb-12">
+                  {/* Module 1 */}
+                  <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between border-l-4 border-l-error">
+                    <div className="flex justify-between items-start">
+                      <span className="font-data-point text-data-point text-on-surface">/core/auth</span>
+                      <span className="px-2 py-1 bg-error/20 text-error rounded text-[10px] font-bold uppercase tracking-wider">High Risk</span>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-on-surface-variant mb-1 uppercase font-label-caps">Debt Accumulation</div>
+                      <div className="w-full bg-surface-bright rounded-full h-1">
+                        <div className="bg-error h-1 rounded-full w-[85%]"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Module 2 */}
+                  <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between border-l-4 border-l-surface-tint">
+                    <div className="flex justify-between items-start">
+                      <span className="font-data-point text-data-point text-on-surface">/api/v2</span>
+                      <span className="px-2 py-1 bg-surface-tint/20 text-surface-tint rounded text-[10px] font-bold uppercase tracking-wider">Stable</span>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-on-surface-variant mb-1 uppercase font-label-caps">Debt Accumulation</div>
+                      <div className="w-full bg-surface-bright rounded-full h-1">
+                        <div className="bg-surface-tint h-1 rounded-full w-[20%]"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Module 3 */}
+                  <div className="glass-panel rounded-2xl p-4 flex flex-col justify-between col-span-2 border-l-4 border-l-secondary">
+                    <div className="flex justify-between items-center">
+                      <span className="font-data-point text-data-point text-on-surface">/services/payment</span>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                        <span className="font-label-caps text-label-caps text-secondary uppercase">Optimized</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 h-12 w-full flex items-end gap-1 opacity-50">
+                      <div className="w-full bg-secondary rounded-t-sm h-[30%]"></div>
+                      <div className="w-full bg-secondary rounded-t-sm h-[40%]"></div>
+                      <div className="w-full bg-secondary rounded-t-sm h-[20%]"></div>
+                      <div className="w-full bg-secondary rounded-t-sm h-[60%]"></div>
+                      <div className="w-full bg-secondary rounded-t-sm h-[10%]"></div>
+                      <div className="w-full bg-secondary rounded-t-sm h-[5%]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Cards */}
+            <div className="absolute -right-4 md:-right-8 top-1/4 glass-panel p-4 rounded-2xl w-64 shadow-2xl border-white/20 transform translate-z-[50px] animate-[float_6s_ease-in-out_infinite] hidden sm:block">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-primary-container text-[16px]">psychology</span>
+                </div>
+                <div className="font-label-caps text-label-caps text-on-surface uppercase">Prioritized Refactoring</div>
+              </div>
+              <div className="font-data-point text-data-point text-on-surface-variant text-sm mt-2">
+                AI suggests focusing on auth.ts to prevent critical delay.
+              </div>
+            </div>
+
+            <div className="absolute -left-4 md:-left-12 bottom-1/4 glass-panel p-4 rounded-2xl w-56 shadow-2xl border-white/20 transform translate-z-[80px] animate-[float_5s_ease-in-out_infinite_reverse] hidden sm:block">
+              <div className="font-label-caps text-label-caps text-on-surface uppercase mb-3">Sprint Health Index</div>
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-display-hero text-primary-container">92</span>
+                <span className="font-data-point text-data-point text-on-surface-variant pb-1">/100</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof */}
+        <section className="border-y border-white/5 bg-surface-container-lowest/50 py-12 mt-16">
+          <div className="max-w-container-max mx-auto px-6 text-center">
+            <p className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-8">
+              Trusted by engineering teams at
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+              <span className="font-headline-md font-bold text-on-surface tracking-tight italic">Vercel</span>
+              <span className="font-headline-md font-bold text-on-surface tracking-tight italic">OpenAI</span>
+              <span className="font-headline-md font-bold text-on-surface tracking-tight italic">Coinbase</span>
+              <span className="font-headline-md font-bold text-on-surface tracking-tight italic">Stripe</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Bento Grid Features */}
+        <section id="features" className="py-24 max-w-container-max mx-auto px-6 md:px-margin-safe">
+          <div className="mb-16 max-w-2xl">
+            <div className="inline-flex items-center gap-2 glass-panel rounded-full px-4 py-1.5 w-fit border-white/10 mb-4">
+              <span className="font-label-caps text-label-caps text-primary-container uppercase">Foresight Engine</span>
+            </div>
+            <h2 className="font-headline-lg text-[32px] md:text-headline-lg font-semibold tracking-tight text-on-surface mb-4">
+              Engineered for foresight.
+            </h2>
+            <p className="font-body-lg text-body-lg text-on-surface-variant">
+              Identify structural weaknesses and behavioral patterns that lead to production failures long before they hit the main branch.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Box 1 */}
+            <div
+              onMouseMove={handleMouseMove}
+              onClick={() => setActiveModal('demo')}
+              className="bento-card p-6 rounded-2xl flex flex-col justify-between cursor-pointer group min-h-[360px]"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mb-6 text-primary-container group-hover:bg-primary-container/20 transition-colors">
+                  <span className="material-symbols-outlined">query_stats</span>
+                </div>
+                <h3 className="font-headline-md text-headline-md font-semibold text-on-surface mb-3">Predict Bug Hotspots</h3>
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  Predict which files or modules are most likely to contain future defects before code is merged by analyzing historical churn and complexity.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center gap-2 text-primary-container font-label-caps text-label-caps uppercase">
+                <span>Explore Hotspot Mapping</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </div>
+            </div>
+
+            {/* Box 2 */}
+            <div
+              onMouseMove={handleMouseMove}
+              onClick={() => setActiveModal('demo')}
+              className="bento-card p-6 rounded-2xl flex flex-col justify-between cursor-pointer group min-h-[360px]"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mb-6 text-primary-container group-hover:bg-primary-container/20 transition-colors">
+                  <span className="material-symbols-outlined">trending_up</span>
+                </div>
+                <h3 className="font-headline-md text-headline-md font-semibold text-on-surface mb-3">Forecast Technical Debt</h3>
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  Quantifies technical debt hotspots and ranks modules needing refactoring to reduce long-term maintenance costs and improve velocity.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center gap-2 text-primary-container font-label-caps text-label-caps uppercase">
+                <span>View Debt Forecaster</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </div>
+            </div>
+
+            {/* Box 3 */}
+            <div
+              onMouseMove={handleMouseMove}
+              onClick={() => setActiveModal('demo')}
+              className="bento-card p-6 rounded-2xl flex flex-col justify-between cursor-pointer group min-h-[360px]"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mb-6 text-primary-container group-hover:bg-primary-container/20 transition-colors">
+                  <span className="material-symbols-outlined">auto_awesome</span>
+                </div>
+                <h3 className="font-headline-md text-headline-md font-semibold text-on-surface mb-3">Explainable AI (SHAP)</h3>
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  Generates mathematically grounded, natural-language justifications for every prediction using local LLMs for absolute clarity.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center gap-2 text-primary-container font-label-caps text-label-caps uppercase">
+                <span>Test SHAP Explanations</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Security Section */}
+        <section id="security" className="py-24 border-t border-white/5 bg-surface-container-lowest/30">
+          <div className="max-w-container-max mx-auto px-6 md:px-margin-safe flex flex-col lg:flex-row items-center gap-16">
+            <div className="flex-1 space-y-6">
+              <div className="w-14 h-14 rounded-2xl bg-surface-container-high border border-white/10 flex items-center justify-center text-primary-container shadow-lg">
+                <span className="material-symbols-outlined text-3xl">shield</span>
+              </div>
+              <h2 className="font-headline-lg text-[32px] md:text-headline-lg font-semibold tracking-tight text-on-surface">Zero Data Leakage.</h2>
+              <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                Sentinel maintains strict data security by executing completely offline on your local hardware—preventing external data leakage of your proprietary source code.
+              </p>
+              <ul className="space-y-3 pt-2">
+                <li className="flex items-center gap-3 text-on-surface-variant font-body-md">
+                  <span className="material-symbols-outlined text-primary-container text-sm">check_circle</span> 100% On-Premise Analysis
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant font-body-md">
+                  <span className="material-symbols-outlined text-primary-container text-sm">check_circle</span> No External Cloud Dependencies
+                </li>
+                <li className="flex items-center gap-3 text-on-surface-variant font-body-md">
+                  <span className="material-symbols-outlined text-primary-container text-sm">check_circle</span> SOC2 Type II &amp; HIPAA Compliant Architecture
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex-1 w-full relative">
+              <div className="glass-panel p-8 rounded-3xl border border-white/10 relative z-10 overflow-hidden">
+                <div className="flex items-center justify-between pb-6 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-primary-container animate-pulse"></span>
+                    <span className="font-label-caps text-label-caps text-on-surface uppercase">On-Premise Node Active</span>
+                  </div>
+                  <span className="font-data-point text-data-point text-on-surface-variant">AIR-GAPPED</span>
+                </div>
+                <div className="py-8 space-y-4 font-data-point text-data-point">
+                  <div className="flex justify-between text-xs text-on-surface-variant">
+                    <span>MODEL ENGINE</span>
+                    <span className="text-primary-container">LOCAL SHAP TRANSFORMER</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-on-surface-variant">
+                    <span>TELEMETRY OUTBOUND</span>
+                    <span className="text-secondary">DISABLED (0 B/s)</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-on-surface-variant">
+                    <span>CODE GRAPH ENCRYPTION</span>
+                    <span className="text-on-surface">AES-256 GCM</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Bento Grid Features */}
-        <section id="features" className="py-xxl max-w-7xl mx-auto px-margin-mobile">
-          <div className="mb-xxl max-w-2xl">
-            <h2 className="font-headline-lg text-[32px] font-medium tracking-[-0.02em] text-[#EDEDED] mb-md">Engineered for foresight.</h2>
-            <p className="font-body-md text-[16px] text-[#8A8A8A]">
-              Identify structural weaknesses and behavioral patterns that lead to production failures long before they hit the main branch.
-            </p>
-          </div>
-          {/* The 24px Rule (gap-[24px]) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px]">
-            {/* Box 1 */}
-            <div
-              onMouseMove={handleMouseMove}
-              onClick={() => setActiveModal('demo')}
-              className="bento-card p-[24px] rounded-[16px] bg-[#171717] border border-[#262626] hover:border-[#333333] hover:border-t-accent/60 flex flex-col gap-md md:col-span-1 cursor-pointer group"
-            >
-              <div className="w-12 h-12 rounded-[8px] bg-accent/10 border border-accent/20 flex items-center justify-center mb-md group-hover:bg-accent/20 transition-colors">
-                <span className="material-symbols-outlined text-accent">query_stats</span>
-              </div>
-              <h3 className="font-headline-md text-[24px] font-medium text-[#EDEDED]">Predict Bug Hotspots</h3>
-              <p className="font-body-md text-[16px] text-[#8A8A8A]">
-                Predict which files or modules are most likely to contain future defects before code is merged by analyzing historical churn and complexity.
-              </p>
-              <div className="mt-auto pt-xl">
-                <img
-                  className="w-full h-32 object-cover rounded-[8px] opacity-60 group-hover:opacity-90 transition-opacity"
-                  alt="A detailed abstract visualization of software code modules represented as 3D blocks."
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcAYTg2YAVyDdDkFc1FhrXY__w_b15bRc2bvK5PlmGtOtdfLayAurbgyVt0WP62oGtV8tDpsHc7GcjIoAeJ-i6gcGJALBrWrMT_vKaM7ke2Q0NM4GY3jY6ELnG9O0Ofu59L68uxBe42GzHAS1gMq6IRh3UOIJ1FH6GbYdF9u4zaOdNk__iWbe6nLCaiNYRch-FemBza70vpfoLbaOXmwfRqkZhTHEXDFyKTHjpcrR99qi3-OVIdxVQMiA6esQY3wH8tw63bAeXJqc"
-                />
-              </div>
-            </div>
-            {/* Box 2 */}
-            <div
-              onMouseMove={handleMouseMove}
-              onClick={() => setActiveModal('demo')}
-              className="bento-card p-[24px] rounded-[16px] bg-[#171717] border border-[#262626] hover:border-[#333333] hover:border-t-accent/60 flex flex-col gap-md md:col-span-1 cursor-pointer group"
-            >
-              <div className="w-12 h-12 rounded-[8px] bg-accent/10 border border-accent/20 flex items-center justify-center mb-md group-hover:bg-accent/20 transition-colors">
-                <span className="material-symbols-outlined text-accent">trending_up</span>
-              </div>
-              <h3 className="font-headline-md text-[24px] font-medium text-[#EDEDED]">Forecast Technical Debt</h3>
-              <p className="font-body-md text-[16px] text-[#8A8A8A]">
-                Quantifies technical debt hotspots and ranks modules needing refactoring to reduce long-term maintenance costs and improve velocity.
-              </p>
-              <div className="mt-auto pt-xl">
-                <img
-                  className="w-full h-32 object-cover rounded-[8px] opacity-60 group-hover:opacity-90 transition-opacity"
-                  alt="A clean, minimalist chart depicting an upward trend of technical debt versus team velocity."
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2ql6XN3-inu5OxlSdbptPQvfcx0tHVhRQTLdsA9Ef8DuJ_6gHKy5X7OV9zxRLjj2u3pL4JyoeX_W2IcgYyZKnb7m6H3zo1-JJCW-JcFOvP0W0GetmEjgyK5U7rmyc0efZMwTNgRdjplHgAqTTJcChn_jIu4UqgL9JJpBE1vzt9-FiumKiK0jzV1CeP-JwirZ9AYySNWsWMdp4Dlo-Up5KYh9bDG5XdV4bjg6CR2ph-JjzxBKKzLHxwdjk0W_C-TTSvNNLCw-Zbic"
-                />
-              </div>
-            </div>
-            {/* Box 3 */}
-            <div
-              onMouseMove={handleMouseMove}
-              onClick={() => setActiveModal('demo')}
-              className="bento-card p-[24px] rounded-[16px] bg-[#171717] border border-[#262626] hover:border-[#333333] hover:border-t-accent/60 flex flex-col gap-md md:col-span-1 cursor-pointer group"
-            >
-              <div className="w-12 h-12 rounded-[8px] bg-accent/10 border border-accent/20 flex items-center justify-center mb-md group-hover:bg-accent/20 transition-colors">
-                <span className="material-symbols-outlined text-accent">auto_awesome</span>
-              </div>
-              <h3 className="font-headline-md text-[24px] font-medium text-[#EDEDED]">Explainable AI (SHAP)</h3>
-              <p className="font-body-md text-[16px] text-[#8A8A8A]">
-                Generates mathematically grounded, natural-language justifications for every prediction using local LLMs for absolute clarity.
-              </p>
-              <div className="mt-auto pt-xl">
-                <img
-                  className="w-full h-32 object-cover rounded-[8px] opacity-60 group-hover:opacity-90 transition-opacity"
-                  alt="A terminal-style window showing lines of code with overlaid natural language annotations explaining architectural risk."
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUkdR3476bDMSJyLLCenQO_y8w-Ns_6CeJDUyUvnHE0aJ_2ODdhCTFFkvd3cxFy9ncH-e9Wz3g8LB5PLBKyQw6QRPjGUt2YTnQXFvqKGdxXNRtDjAELKpTzrjhSZk5cw1TqleuzRJ_D1y08pp7d_MZe1nk05nHXbIl1wM-pMe-6jX1rqZAVg8CNXfi6NLBhnwEorFTO6HnqEXwM-E8ge-qXtlfe0ryi-pzHABoKAyzGBnu2B2klhygj7Wx-gU_WoCiIVaSBUiK96E"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Social Proof / Methodology */}
-        <section id="methodology" className="py-xxl border-y border-[#262626]/40 bg-[#0e0e0e]">
-          <div className="max-w-3xl mx-auto px-margin-mobile text-center">
-            <p className="font-body-md text-[16px] text-[#8A8A8A] leading-relaxed">
-              Empirical benchmarks prove behavioral metrics are <span className="text-[#EDEDED] font-semibold">6x more accurate</span> than static analysis tools at predicting actual post-release issues.
-            </p>
-            <div className="mt-xl flex flex-wrap justify-center gap-xl opacity-40 grayscale filter">
-              <span className="font-headline-md font-bold text-[#EDEDED] italic">Vercel</span>
-              <span className="font-headline-md font-bold text-[#EDEDED] italic">OpenAI</span>
-              <span className="font-headline-md font-bold text-[#EDEDED] italic">Coinbase</span>
-              <span className="font-headline-md font-bold text-[#EDEDED] italic">Stripe</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Risk Mitigation / Security */}
-        <section id="security" className="py-xxl mt-xxl border-t border-[#262626]/40">
-          <div className="max-w-7xl mx-auto px-margin-mobile flex flex-col md:flex-row items-center gap-xxl">
-            <div className="flex-1 space-y-md">
-              <div className="w-16 h-16 rounded-full bg-[#171717] border border-[#262626] flex items-center justify-center shadow-lg">
-                <span className="material-symbols-outlined text-accent text-3xl">shield</span>
-              </div>
-              <h2 className="font-headline-lg text-[32px] font-medium tracking-[-0.02em] text-[#EDEDED]">Zero Data Leakage.</h2>
-              <p className="font-body-lg text-[18px] text-[#8A8A8A] max-w-[540px] leading-[28px]">
-                Sentinel maintains strict data security by executing completely offline on your local hardware—preventing external data leakage of your proprietary source code.
-              </p>
-              <ul className="space-y-sm">
-                <li className="flex items-center gap-sm text-[#8A8A8A] font-body-md text-[16px]">
-                  <span className="material-symbols-outlined text-accent text-sm">check_circle</span> 100% On-Premise Analysis
-                </li>
-                <li className="flex items-center gap-sm text-[#8A8A8A] font-body-md text-[16px]">
-                  <span className="material-symbols-outlined text-accent text-sm">check_circle</span> No External Cloud Dependencies
-                </li>
-                <li className="flex items-center gap-sm text-[#8A8A8A] font-body-md text-[16px]">
-                  <span className="material-symbols-outlined text-accent text-sm">check_circle</span> SOC2 Type II &amp; HIPAA Compliant
-                </li>
-              </ul>
-            </div>
-            <div className="flex-1 relative">
-              <div className="absolute inset-0 bg-accent/5 blur-3xl rounded-full"></div>
-              <img
-                className="relative z-10 w-full h-auto rounded-[16px] border border-[#262626]"
-                alt="A high-tech server rack illustration with glowing teal status LEDs, representing secure on-premise hardware."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiQBYkgdDsltkuR3zLn2_53c_n5Oq3FOcViBtzmgm2RHnbZB97vQ_9CdGHL3d-EBE6l7SavKTo_k--DP1TpCyp8t2GKpRsIFcjRJS_q1AMT7zlZfhYScZgFMQMgNfM8TktU2HXVqaSq0mgxV1S3gpU0gryf5CbiTbaoI2_SNsoQGBgNx40opXbeegNWZoMNQkk9xLosLmWdRwyW15epk3qsnC58RK0kv3qeG7iid7w--dX-WrPCZ1HarXtzXAFw3QwozWuQQ6x4_k"
-              />
-            </div>
-          </div>
-        </section>
-
         {/* CTA Footer Section */}
-        <section className="py-xxl bg-[#1c1b1b] text-center border-t border-[#262626]/40">
-          <div className="max-w-3xl mx-auto px-margin-mobile py-xxl">
-            <h2 className="font-display-lg text-[40px] md:text-[32px] font-medium text-[#EDEDED] mb-md">
+        <section className="py-24 bg-surface-container-low text-center border-t border-white/5 relative overflow-hidden">
+          <div className="glow-effect glow-green w-[500px] h-[500px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
+          <div className="max-w-3xl mx-auto px-6 relative z-10">
+            <h2 className="font-headline-lg text-[32px] md:text-headline-lg font-semibold text-on-surface mb-4">
               Ready to forecast your future?
             </h2>
-            <p className="font-body-lg text-[18px] text-[#8A8A8A] mb-xl">
+            <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-xl mx-auto">
               Join the elite engineering teams using predictive intelligence to ship with confidence.
             </p>
             <button
               onClick={() => setActiveModal('signup')}
-              className="h-[48px] px-xl rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] font-bold text-lg hover:bg-white transition-all shadow-xl shadow-accent/5"
+              className="bg-primary-container text-on-primary-container px-8 py-4 rounded-full font-label-caps text-label-caps font-bold uppercase btn-primary tracking-wider"
             >
               Start Free Trial
             </button>
@@ -380,45 +545,53 @@ const LandingPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-xxl flex flex-col items-center gap-md text-center max-w-7xl mx-auto px-margin-mobile border-t border-[#262626]/40">
-        <div className="flex items-center gap-md mb-md">
-          <img
-            alt="Sentinel Logo"
-            className="h-6 w-6 object-contain opacity-80"
-            src="https://lh3.googleusercontent.com/aida/AP1WRLvDf8kw0nSaa48w5mll2ZWC433iQBGUp7eLpuuEtJflrHMfox_NstZjA-SLO5syjZ5uW3kY-O25y9dz3FaxQby36fFp3sKEsbS2wJx0f9d9HeHnB_Mps2fk6YvrdFEC1MaXTxzov6FxgnLgX2SHMA6nTQccTu8Dh2pq0QfnYSYFzFCxsd81mlq_kf7RQ3lspSrgGU_BXOsxbO1oilOSDYTvQ9oFrViE1T29pImAom3XLeW_QCJ7XixrBwI"
-          />
-          <span className="text-[24px] font-medium text-[#EDEDED]">Sentinel</span>
+      <footer className="bg-surface-container-lowest w-full border-t border-white/5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 px-6 md:px-margin-safe py-16 max-w-container-max mx-auto">
+          <div className="col-span-1 md:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                radar
+              </span>
+              <span className="font-headline-md text-headline-md text-on-surface font-bold tracking-tighter uppercase">
+                Sentinel
+              </span>
+            </div>
+            <p className="font-body-md text-body-md text-on-surface-variant max-w-xs">
+              © 2024 Sentinel Intelligence Systems. Engineered for high-stakes codebases.
+            </p>
+          </div>
+
+          <div className="col-span-1 flex flex-col gap-3">
+            <h4 className="font-label-caps text-label-caps text-on-surface uppercase tracking-widest mb-2">Product</h4>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#features">Documentation</a>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#features">Changelog</a>
+          </div>
+
+          <div className="col-span-1 flex flex-col gap-3">
+            <h4 className="font-label-caps text-label-caps text-on-surface uppercase tracking-widest mb-2">Company</h4>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#security">Security</a>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#security">Privacy Policy</a>
+          </div>
+
+          <div className="col-span-1 flex flex-col gap-3">
+            <h4 className="font-label-caps text-label-caps text-on-surface uppercase tracking-widest mb-2">Connect</h4>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="https://github.com/vivekmohanraj/Sentinel" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">LinkedIn</a>
+          </div>
         </div>
-        <div className="flex flex-wrap justify-center gap-xl mb-xl">
-          <a className="font-label-md text-[14px] text-[#8A8A8A] hover:text-[#EDEDED] transition-colors duration-300" href="#features">
-            Privacy Policy
-          </a>
-          <a className="font-label-md text-[14px] text-[#8A8A8A] hover:text-[#EDEDED] transition-colors duration-300" href="#features">
-            Terms of Service
-          </a>
-          <a className="font-label-md text-[14px] text-[#8A8A8A] hover:text-[#EDEDED] transition-colors duration-300" href="#security">
-            Security Whitepaper
-          </a>
-        </div>
-        <p className="font-body-md text-[16px] text-[#8A8A8A] max-w-[540px]">
-          Sentinel Intelligence Platform. Secured with end-to-end encryption.
-        </p>
-        <p className="font-label-md text-[14px] text-[#444748] mt-md">
-          © 2024 Sentinel Corp. Built for the future of engineering.
-        </p>
       </footer>
 
       {/* Interactive Modals */}
       {(activeModal === 'demo' || activeModal === 'analyze') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-[680px] bg-[#171717] rounded-[16px] border border-[#262626] shadow-2xl overflow-hidden p-6 md:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-[680px] bg-surface-container-low rounded-3xl border border-white/10 shadow-2xl overflow-hidden p-6 md:p-8">
             {/* Modal Close Button */}
             <button
               onClick={() => {
                 setActiveModal(null);
                 setAnalyzeState('idle');
               }}
-              className="absolute top-4 right-4 p-2 text-[#8A8A8A] hover:text-[#EDEDED] rounded-[8px] hover:bg-[#1F1F1F] transition-colors"
+              className="absolute top-4 right-4 p-2 text-on-surface-variant hover:text-on-surface rounded-full hover:bg-white/10 transition-colors"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -427,12 +600,12 @@ const LandingPage = () => {
             {activeModal === 'demo' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[8px] bg-accent/10 border border-accent/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-accent">query_stats</span>
+                  <div className="w-10 h-10 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center text-primary-container">
+                    <span className="material-symbols-outlined">query_stats</span>
                   </div>
                   <div>
-                    <h3 className="font-headline-md text-xl font-semibold text-[#EDEDED]">Live Risk Predictor Demo</h3>
-                    <p className="text-sm text-[#8A8A8A]">Select a Pull Request to view Sentinel's SHAP risk forecast</p>
+                    <h3 className="font-headline-md text-xl font-semibold text-on-surface">Live Risk Predictor Demo</h3>
+                    <p className="font-body-md text-xs text-on-surface-variant">Select a Pull Request to view Sentinel's SHAP risk forecast</p>
                   </div>
                 </div>
 
@@ -442,17 +615,17 @@ const LandingPage = () => {
                     <button
                       key={idx}
                       onClick={() => setSelectedPR(idx)}
-                      className={`text-left p-3 rounded-[8px] border transition-all flex items-center justify-between ${
+                      className={`text-left p-3.5 rounded-xl border transition-all flex items-center justify-between ${
                         selectedPR === idx
-                          ? 'border-accent bg-accent/10'
-                          : 'border-[#262626] bg-[#171717] hover:border-[#333333] hover:bg-[#1F1F1F]'
+                          ? 'border-primary-container bg-primary-container/10'
+                          : 'border-white/10 bg-surface-container hover:border-white/20 hover:bg-surface-container-high'
                       }`}
                     >
                       <div>
-                        <div className="font-semibold text-[#EDEDED] text-sm">{pr.title}</div>
-                        <div className="text-xs text-[#8A8A8A]">Author: {pr.author}</div>
+                        <div className="font-semibold text-on-surface text-sm">{pr.title}</div>
+                        <div className="font-data-point text-xs text-on-surface-variant mt-0.5">Author: {pr.author}</div>
                       </div>
-                      <span className={`text-[12px] font-medium px-2 py-1 rounded-[4px] ${pr.riskColor}`}>
+                      <span className={`text-[12px] font-bold px-2.5 py-1 rounded-full font-label-caps ${pr.riskColor}`}>
                         {pr.riskLevel} ({pr.riskScore}%)
                       </span>
                     </button>
@@ -460,17 +633,17 @@ const LandingPage = () => {
                 </div>
 
                 {/* SHAP Explanation View */}
-                <div className="p-4 rounded-[8px] bg-[#111111] border border-[#262626] space-y-3">
-                  <div className="flex items-center justify-between border-b border-[#262626] pb-2">
-                    <span className="text-xs font-mono text-accent uppercase tracking-wider">SHAP AI Explanation</span>
-                    <span className="text-xs text-[#8A8A8A]">Confidence: 96.4%</span>
+                <div className="p-4 rounded-2xl bg-surface-container-lowest border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span className="font-label-caps text-xs text-primary-container uppercase tracking-wider">SHAP AI Explanation</span>
+                    <span className="font-data-point text-xs text-on-surface-variant">Confidence: 96.4%</span>
                   </div>
-                  <p className="text-sm text-slate-300 font-mono leading-relaxed">
+                  <p className="font-data-point text-sm text-on-surface/90 leading-relaxed">
                     {samplePRs[selectedPR].shapExplanation}
                   </p>
                   <div className="pt-2 flex flex-wrap gap-2">
                     {samplePRs[selectedPR].affectedModules.map((mod, i) => (
-                      <span key={i} className="text-xs px-2 py-0.5 rounded-[4px] bg-[#1F1F1F] text-slate-300 font-mono">
+                      <span key={i} className="font-data-point text-xs px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant">
                         {mod}
                       </span>
                     ))}
@@ -480,7 +653,7 @@ const LandingPage = () => {
                 <div className="flex justify-end gap-3 pt-2">
                   <button
                     onClick={() => setActiveModal(null)}
-                    className="h-[48px] px-xl rounded-[8px] text-sm font-semibold bg-[#1F1F1F] hover:bg-[#262626] text-[#EDEDED] transition-colors"
+                    className="h-[44px] px-6 rounded-full font-label-caps text-label-caps uppercase font-bold bg-surface-container-high hover:bg-white/10 text-on-surface transition-colors"
                   >
                     Close Demo
                   </button>
@@ -492,31 +665,31 @@ const LandingPage = () => {
             {activeModal === 'analyze' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[8px] bg-accent/10 border border-accent/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-accent">radar</span>
+                  <div className="w-10 h-10 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center text-primary-container">
+                    <span className="material-symbols-outlined">radar</span>
                   </div>
                   <div>
-                    <h3 className="font-headline-md text-xl font-semibold text-[#EDEDED]">Analyze Project Health</h3>
-                    <p className="text-sm text-[#8A8A8A]">Enter your repository to forecast technical risk</p>
+                    <h3 className="font-headline-md text-xl font-semibold text-on-surface">Analyze Project Health</h3>
+                    <p className="font-body-md text-xs text-on-surface-variant">Enter your repository to forecast technical risk</p>
                   </div>
                 </div>
 
                 {analyzeState === 'idle' && (
                   <form onSubmit={startAnalysis} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1">GitHub / Gitlab Repository URL</label>
+                      <label className="block font-label-caps text-xs text-on-surface-variant mb-2 uppercase">GitHub / GitLab Repository URL</label>
                       <input
                         type="text"
                         value={repoUrl}
                         onChange={(e) => setRepoUrl(e.target.value)}
                         placeholder="https://github.com/org/repository"
-                        className="w-full h-[48px] px-4 rounded-[8px] bg-[#111111] border border-[#262626] text-[#EDEDED] placeholder-[#8A8A8A] focus:outline-none focus:border-accent"
+                        className="w-full h-[48px] px-4 rounded-xl bg-surface-container border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary-container"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full h-[48px] rounded-[8px] bg-accent text-[#0A0A0A] font-semibold hover:bg-accent/90 transition-all"
+                      className="w-full h-[48px] rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps font-bold uppercase btn-primary"
                     >
                       Run Offline Prediction Scan
                     </button>
@@ -525,20 +698,20 @@ const LandingPage = () => {
 
                 {analyzeState === 'scanning' && (
                   <div className="py-8 text-center space-y-4">
-                    <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <div className="font-semibold text-[#EDEDED]">Scanning repository commit graphs...</div>
-                    <p className="text-xs text-[#8A8A8A]">Evaluating 4,281 historical pull requests with local SHAP models</p>
+                    <div className="w-12 h-12 border-4 border-primary-container border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <div className="font-semibold text-on-surface">Scanning repository commit graphs...</div>
+                    <p className="font-data-point text-xs text-on-surface-variant">Evaluating 4,281 historical pull requests with local SHAP models</p>
                   </div>
                 )}
 
                 {analyzeState === 'complete' && (
                   <div className="space-y-4">
-                    <div className="p-4 rounded-[8px] bg-[#0D2D29] border border-[#2DD4BF]/30 text-[#2DD4BF] text-center">
+                    <div className="p-4 rounded-2xl bg-primary-container/10 border border-primary-container/30 text-primary-container text-center">
                       <div className="font-bold text-lg mb-1">Scan Complete</div>
-                      <div className="text-sm">Found 2 architectural risk hotspots in your repository.</div>
+                      <div className="font-body-md text-sm">Found 2 architectural risk hotspots in your repository.</div>
                     </div>
-                    <div className="p-4 rounded-[8px] bg-[#111111] border border-[#262626] text-xs font-mono space-y-2">
-                      <div className="text-accent">• src/engine/parser.ts — 78% regression probability</div>
+                    <div className="p-4 rounded-2xl bg-surface-container-lowest border border-white/10 font-data-point text-xs space-y-2">
+                      <div className="text-primary-container">• src/engine/parser.ts — 78% regression probability</div>
                       <div className="text-amber-400">• src/api/handlers.go — 54% technical debt growth</div>
                     </div>
                     <button
@@ -546,7 +719,7 @@ const LandingPage = () => {
                         setAnalyzeState('idle');
                         setActiveModal(null);
                       }}
-                      className="w-full h-[48px] rounded-[8px] bg-[#EDEDED] text-[#0A0A0A] font-semibold hover:bg-white/90 transition-all"
+                      className="w-full h-[48px] rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps font-bold uppercase btn-primary"
                     >
                       View Full Assessment Report
                     </button>
@@ -569,3 +742,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
