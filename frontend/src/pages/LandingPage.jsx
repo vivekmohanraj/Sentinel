@@ -169,7 +169,7 @@ const LandingPage = () => {
               onClick={() => setActiveModal('signup')}
               className="hidden md:flex bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-caps text-label-caps uppercase font-bold hover:opacity-90 transition-opacity btn-primary"
             >
-              Book Demo
+              Get Started
             </button>
           )}
 
@@ -213,7 +213,7 @@ const LandingPage = () => {
               }}
               className="w-full mt-2 bg-primary-container text-on-primary-container py-3 rounded-full font-label-caps text-label-caps uppercase font-bold text-center"
             >
-              Book Demo
+              Get Started
             </button>
           )}
         </div>
