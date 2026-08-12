@@ -24,10 +24,24 @@ import {
   Loader2,
   Users,
   ShieldAlert,
-  UserPlus
+  UserPlus,
+  Plus,
+  Trash2,
+  ExternalLink,
+  GitFork,
+  Filter
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
-import { fetchUserProfile, updateUserProfile, fetchDashboardSummary, fetchAllUsers, updateUserRoleApi } from '../lib/api.js';
+import {
+  fetchUserProfile,
+  updateUserProfile,
+  fetchDashboardSummary,
+  fetchAllUsers,
+  updateUserRoleApi,
+  fetchRepositories,
+  addRepositoryApi,
+  deleteRepositoryApi
+} from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
   const { data: session } = useSession();
@@ -56,6 +70,18 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState(null);
   const [userRoleMessage, setUserRoleMessage] = useState(null);
+
+  // Repository Management State
+  const [dbRepos, setDbRepos] = useState([]);
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [newRepoName, setNewRepoName] = useState('');
+  const [newRepoUrl, setNewRepoUrl] = useState('');
+  const [isAddingRepo, setIsAddingRepo] = useState(false);
+  const [repoMsg, setRepoMsg] = useState(null);
+  const [showAddRepoModal, setShowAddRepoModal] = useState(false);
+
+  // Risk Filter State for Risk Radar Tab
+  const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
 
   const isAdmin = profileData.role === 'Admin' || (profileData.email && profileData.email.toLowerCase() === 'vivekmohanraj5@gmail.com');
 
@@ -150,6 +176,59 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, profileData.email]);
 
+  // Fetch repositories from database when Repositories tab opens
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'Repositories') {
+      const loadRepos = async () => {
+        setIsLoadingRepos(true);
+        try {
+          const list = await fetchRepositories();
+          if (isMounted && list) setDbRepos(list || []);
+        } catch (err) {
+          console.error('Failed to load repositories:', err);
+        } finally {
+          if (isMounted) setIsLoadingRepos(false);
+        }
+      };
+      loadRepos();
+    }
+    return () => { isMounted = false; };
+  }, [activeTab]);
+
+  const handleAddRepo = async (e) => {
+    e.preventDefault();
+    if (!newRepoName || !newRepoUrl) return;
+    setIsAddingRepo(true);
+    setRepoMsg(null);
+    try {
+      const created = await addRepositoryApi(newRepoName, newRepoUrl);
+      if (created) {
+        setDbRepos((prev) => [created, ...prev]);
+        setRepoMsg(`Repository ${created.name} linked and queued for mining!`);
+        setNewRepoName('');
+        setNewRepoUrl('');
+        setShowAddRepoModal(false);
+        setTimeout(() => setRepoMsg(null), 4000);
+      }
+    } catch (err) {
+      console.error('Failed to add repository:', err);
+    } finally {
+      setIsAddingRepo(false);
+    }
+  };
+
+  const handleDeleteRepo = async (repoId, repoName) => {
+    try {
+      await deleteRepositoryApi(repoId);
+      setDbRepos((prev) => prev.filter((r) => r.id !== repoId));
+      setRepoMsg(`Repository ${repoName} unlinked.`);
+      setTimeout(() => setRepoMsg(null), 3000);
+    } catch (err) {
+      console.error('Failed to delete repository:', err);
+    }
+  };
+
   const handleRoleUpdate = async (targetUserId, targetEmail, newRole) => {
     setUpdatingUserId(targetUserId);
     setUserRoleMessage(null);
@@ -242,7 +321,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0f1412] text-[#dfe4de] font-sans antialiased flex flex-col md:flex-row selection:bg-[#b7f15b]/30 selection:text-[#b7f15b]">
+    <div className="min-h-screen bg-[#0a0d0b] text-[#dfe4de] font-sans antialiased flex flex-col md:flex-row selection:bg-[#b7f15b]/30 selection:text-[#b7f15b]">
       {/* MOBILE HEADER */}
       <div className="md:hidden flex items-center justify-between px-6 py-4 bg-[#181d1a] border-b border-white/10 sticky top-0 z-40">
         <div className="flex items-center gap-3 cursor-pointer" onClick={onNavigateToLanding}>
@@ -1003,48 +1082,370 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         )}
 
-        {/* 3. PLACEHOLDER VIEWS FOR OTHER NAVIGATION TABS */}
+        {/* 4. REPOSITORIES MANAGEMENT TAB */}
         {activeTab === 'Repositories' && (
-          <div className="p-12 rounded-2xl bg-[#1c211e] border border-white/10 text-center space-y-4 animate-fadeIn">
-            <div className="w-16 h-16 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b] mx-auto">
-              <FolderGit2 className="w-8 h-8" />
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Notification Card */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <FolderGit2 className="w-6 h-6 text-[#b7f15b]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">Repository Knowledge Index</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Connected repositories mined into PostgreSQL and Knowledge Graph indices.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowAddRepoModal(true)}
+                  className="min-h-[44px] px-5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Connect Repository</span>
+                </button>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-[#dfe4de]">Repositories View</h3>
-            <p className="text-sm text-[#c3c9b2] max-w-md mx-auto">
-              Active Knowledge Graph ingestion across organization repositories connected via PostgreSQL.
-            </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b]">
-              <span>Status: Synchronized (14 Repos Ingested)</span>
+
+            {repoMsg && (
+              <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span>{repoMsg}</span>
+              </div>
+            )}
+
+            {/* Repositories Grid */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Active Ingested Repositories</h3>
+                {isLoadingRepos && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading Repositories...</span>
+                  </div>
+                )}
+              </div>
+
+              {dbRepos.length === 0 && !isLoadingRepos ? (
+                <div className="p-8 text-center space-y-3">
+                  <FolderGit2 className="w-12 h-12 text-[#8d937e] mx-auto" />
+                  <p className="text-sm font-mono text-[#c3c9b2]/70">No custom repositories connected yet.</p>
+                  <button
+                    onClick={() => setShowAddRepoModal(true)}
+                    className="px-4 py-2 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b] hover:border-[#b7f15b] transition-colors"
+                  >
+                    + Add Your First Repository
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {dbRepos.map((repo) => (
+                    <div
+                      key={repo.id}
+                      className="p-5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-sm font-bold text-[#dfe4de] truncate flex items-center gap-2">
+                            <FolderGit2 className="w-4 h-4 text-[#b7f15b]" />
+                            {repo.name}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#92d957]/15 text-[#92d957] border border-[#92d957]/30 text-[10px] font-mono font-bold uppercase">
+                            MINED
+                          </span>
+                        </div>
+                        <p className="text-xs font-mono text-[#c3c9b2]/70 truncate flex items-center gap-1.5">
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0 text-[#8d937e]" />
+                          {repo.git_url || repo.gitUrl}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs font-mono text-[#8d937e]">
+                        <span>Last scan: {repo.last_mined_at ? new Date(repo.last_mined_at).toLocaleDateString() : 'Just now'}</span>
+                        <button
+                          onClick={() => handleDeleteRepo(repo.id, repo.name)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 text-[#8d937e] transition-colors"
+                          title="Unlink Repository"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* ADD REPOSITORY MODAL */}
+            {showAddRepoModal && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-md p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
+                        <FolderGit2 className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#dfe4de]">Connect Repository</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowAddRepoModal(false)}
+                      className="p-1 rounded-lg text-[#8d937e] hover:text-[#dfe4de] hover:bg-white/10"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddRepo} className="space-y-4">
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">
+                        Repository Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newRepoName}
+                        onChange={(e) => setNewRepoName(e.target.value)}
+                        placeholder="e.g. sentinel/auth-service"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">
+                        Git Remote URL / Path
+                      </label>
+                      <input
+                        type="text"
+                        value={newRepoUrl}
+                        onChange={(e) => setNewRepoUrl(e.target.value)}
+                        placeholder="https://github.com/org/repo.git or /local/path"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                        required
+                      />
+                    </div>
+
+                    <div className="pt-3 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddRepoModal(false)}
+                        className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-mono text-[#c3c9b2] hover:bg-white/5"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isAddingRepo}
+                        className="px-5 py-2.5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs font-bold uppercase hover:opacity-90 flex items-center gap-2"
+                      >
+                        {isAddingRepo && <Loader2 className="w-4 h-4 animate-spin" />}
+                        <span>{isAddingRepo ? 'Saving...' : 'Add Repository'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* 5. RISK RADAR TELEMETRY MATRIX TAB */}
         {activeTab === 'Risk Radar' && (
-          <div className="p-12 rounded-2xl bg-[#1c211e] border border-white/10 text-center space-y-4 animate-fadeIn">
-            <div className="w-16 h-16 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b] mx-auto">
-              <Radar className="w-8 h-8 animate-pulse" />
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Telemetry Card */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <Radar className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">Risk Radar Telemetry Matrix</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Real-time defect density scanning across active codebase branches and pull requests.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1.5 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#92d957]">
+                  Scan Velocity: 1,420 lines/sec
+                </span>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-[#dfe4de]">Risk Radar Telemetry Matrix</h3>
-            <p className="text-sm text-[#c3c9b2] max-w-md mx-auto">
-              Real-time heatmaps tracking defect probability density across active pull requests.
-            </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#92d957]">
-              <span>Matrix Scan Velocity: 1,420 Lines/sec</span>
+
+            {/* Filterable PR Telemetry List */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Active Pull Request Telemetry</h3>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-[#8d937e]" />
+                  <span className="text-xs font-mono text-[#8d937e] uppercase">Filter:</span>
+                  {['ALL', 'CRITICAL', 'WARNING'].map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setRiskFilter(filter)}
+                      className={`px-3 py-1 rounded-xl font-mono text-xs transition-colors ${
+                        riskFilter === filter
+                          ? 'bg-[#b7f15b] text-[#223600] font-bold'
+                          : 'bg-[#181d1a] text-[#c3c9b2] hover:text-[#dfe4de]'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  {
+                    pr: 'PR #402',
+                    title: 'Refactor auth token lifecycle & middleware guard',
+                    author: '@sarah_dev',
+                    score: 84,
+                    level: 'CRITICAL',
+                    reason: 'High context-switching churn (+420 lines). Untested boundary path density in token refresh handler.',
+                    modules: ['src/auth/session.ts', 'src/middleware/guard.ts']
+                  },
+                  {
+                    pr: 'PR #398',
+                    title: 'Add async Stripe webhook reconciliation queue',
+                    author: '@alex_m',
+                    score: 72,
+                    level: 'WARNING',
+                    reason: 'Async webhook reconciliation accumulated 14 conditional branches without isolated unit test assertions.',
+                    modules: ['src/api/payment_gateway.go']
+                  },
+                  {
+                    pr: 'PR #385',
+                    title: 'Optimize user session caching eviction index',
+                    author: '@david_k',
+                    score: 48,
+                    level: 'ELEVATED',
+                    reason: 'Tight coupling between Redis cache eviction and SQL migration dependency graph.',
+                    modules: ['src/db/migrations/v4.sql']
+                  }
+                ]
+                  .filter((item) => {
+                    if (riskFilter === 'CRITICAL') return item.score >= 75;
+                    if (riskFilter === 'WARNING') return item.score >= 60 && item.score < 75;
+                    return true;
+                  })
+                  .map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-xs text-[#b7f15b] font-bold">{item.pr}</span>
+                          <span className="font-semibold text-sm text-[#dfe4de]">{item.title}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-[#8d937e]">{item.author}</span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
+                              item.score >= 75
+                                ? 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/30'
+                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            }`}
+                          >
+                            Risk: {item.score}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-[#c3c9b2]/70 leading-relaxed font-mono">
+                        SHAP Diagnostic: &quot;{item.reason}&quot;
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <span className="text-[10px] font-mono text-[#8d937e] uppercase">Affected Paths:</span>
+                        {item.modules.map((mod, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="px-2.5 py-0.5 rounded-lg bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#dfe4de]"
+                          >
+                            {mod}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
 
+        {/* 6. TECH DEBT ARCHITECTURAL HOTSPOTS TAB */}
         {activeTab === 'Tech Debt' && (
-          <div className="p-12 rounded-2xl bg-[#1c211e] border border-white/10 text-center space-y-4 animate-fadeIn">
-            <div className="w-16 h-16 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b] mx-auto">
-              <TrendingUp className="w-8 h-8" />
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Telemetry Card */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <TrendingUp className="w-6 h-6 text-[#b7f15b]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">Architectural Tech Debt Hotspots</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Systemic behavioral code degradation insights and automated refactoring recommendations.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3.5 py-1.5 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b]">
+                  Health Index: 78/100
+                </span>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-[#dfe4de]">Tech Debt Architectural Hotspots</h3>
-            <p className="text-sm text-[#c3c9b2] max-w-md mx-auto">
-              Systemic behavioral code degradation insights and automated refactoring recommendations.
-            </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b]">
-              <span>Architectural Health Index: 78/100</span>
+
+            {/* Hotspots Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="text-[#c3c9b2]/70">Coupling Index</span>
+                  <span className="text-[#ffb4ab] font-bold">7.4 / 10 (HIGH)</span>
+                </div>
+                <h4 className="font-semibold text-base text-[#dfe4de]">Auth & Caching Tight Coupling</h4>
+                <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
+                  Tangled imports between session verification and cache eviction logic are driving 62% of refactoring friction.
+                </p>
+                <div className="pt-2 border-t border-white/5 text-xs font-mono text-[#b7f15b]">
+                  Action: Decouple JWT Token Handler
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="text-[#c3c9b2]/70">Complexity Churn</span>
+                  <span className="text-amber-300 font-bold">+18% This Sprint</span>
+                </div>
+                <h4 className="font-semibold text-base text-[#dfe4de]">Payment Gateway Branching</h4>
+                <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
+                  Async webhook reconciliation handler has accumulated 14 conditional branches without isolated unit tests.
+                </p>
+                <div className="pt-2 border-t border-white/5 text-xs font-mono text-amber-300">
+                  Action: Extract State Machine Interface
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="text-[#c3c9b2]/70">Refactoring Priority</span>
+                  <span className="text-[#b7f15b] font-bold">Recommended</span>
+                </div>
+                <h4 className="font-semibold text-base text-[#dfe4de]">Extract Middleware Interface</h4>
+                <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
+                  Decoupling JWT token lifecycle will reduce predicted release risk for Sprint 43 by an estimated 32%.
+                </p>
+                <div className="pt-2 border-t border-white/5 text-xs font-mono text-[#b7f15b]">
+                  Action: Priority Refactor Sprint 43
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -35,6 +35,9 @@ export const runMigrations = async () => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
+      -- Ensure organization_id in tbl_repository is optional
+      ALTER TABLE tbl_repository ALTER COLUMN organization_id DROP NOT NULL;
+
       -- 3. Commits
       CREATE TABLE IF NOT EXISTS tbl_commit_record (
           hash VARCHAR(40) PRIMARY KEY,

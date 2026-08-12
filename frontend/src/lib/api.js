@@ -113,3 +113,36 @@ export const fetchRepositories = async () => {
     throw err;
   }
 };
+
+export const addRepositoryApi = async (name, gitUrl) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, gitUrl })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to add repository:', err);
+    throw err;
+  }
+};
+
+export const deleteRepositoryApi = async (id) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/dashboard/repositories/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to delete repository:', err);
+    throw err;
+  }
+};
