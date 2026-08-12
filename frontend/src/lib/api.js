@@ -146,3 +146,27 @@ export const deleteRepositoryApi = async (id) => {
     throw err;
   }
 };
+
+export const fetchSystemTelemetry = async (adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/dashboard/telemetry?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/dashboard/telemetry`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch system telemetry:', err);
+    throw err;
+  }
+};
+
+export const getExportReportUrl = (format = 'csv') => {
+  return `${API_BASE_URL}/dashboard/export?format=${format}`;
+};

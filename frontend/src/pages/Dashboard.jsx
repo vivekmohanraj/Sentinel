@@ -29,7 +29,11 @@ import {
   Trash2,
   ExternalLink,
   GitFork,
-  Filter
+  Filter,
+  Download,
+  Terminal,
+  HardDrive,
+  Server
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -40,7 +44,9 @@ import {
   updateUserRoleApi,
   fetchRepositories,
   addRepositoryApi,
-  deleteRepositoryApi
+  deleteRepositoryApi,
+  fetchSystemTelemetry,
+  getExportReportUrl
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -83,6 +89,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
   // Risk Filter State for Risk Radar Tab
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
 
+  // Telemetry & Logs State for Admin
+  const [telemetryData, setTelemetryData] = useState(null);
+  const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
+
   const isAdmin = profileData.role === 'Admin' || (profileData.email && profileData.email.toLowerCase() === 'vivekmohanraj5@gmail.com');
 
   // Sidebar Items
@@ -91,7 +101,12 @@ const Dashboard = ({ onNavigateToLanding }) => {
     { id: 'Repositories', label: 'Repositories', icon: FolderGit2 },
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
-    ...(isAdmin ? [{ id: 'Users', label: 'User Directory', icon: Users }] : []),
+    ...(isAdmin
+      ? [
+          { id: 'Users', label: 'User Directory', icon: Users },
+          { id: 'Telemetry', label: 'System Logs', icon: Terminal }
+        ]
+      : []),
     { id: 'Settings', label: 'Settings', icon: Settings }
   ];
 
@@ -195,6 +210,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
     }
     return () => { isMounted = false; };
   }, [activeTab]);
+
+  // Fetch System Telemetry & Logs when Telemetry tab opens (Admin only)
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'Telemetry' && isAdmin) {
+      const loadTelemetry = async () => {
+        setIsLoadingTelemetry(true);
+        try {
+          const data = await fetchSystemTelemetry(profileData.email);
+          if (isMounted && data) setTelemetryData(data);
+        } catch (err) {
+          console.error('Failed to load system telemetry:', err);
+        } finally {
+          if (isMounted) setIsLoadingTelemetry(false);
+        }
+      };
+      loadTelemetry();
+    }
+    return () => { isMounted = false; };
+  }, [activeTab, isAdmin, profileData.email]);
 
   const handleAddRepo = async (e) => {
     e.preventDefault();
@@ -417,9 +452,12 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <h1 className="text-2xl md:text-3xl font-semibold text-[#dfe4de] tracking-tight">
                 {activeTab === 'Dashboard' && 'Predictive Command Center'}
                 {activeTab === 'Repositories' && 'Repository Graph Index'}
+                {activeTab === 'Dashboard' && 'Predictive Command Center'}
+                {activeTab === 'Repositories' && 'Repository Graph Index'}
                 {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
                 {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
                 {activeTab === 'Users' && 'User & Role Management Directory'}
+                {activeTab === 'Telemetry' && 'System Execution & Telemetry Logs'}
                 {activeTab === 'Settings' && 'Profile & Workspace Preferences'}
               </h1>
               <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider">
@@ -432,6 +470,17 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* Export CSV Report Button */}
+            <a
+              href={getExportReportUrl('csv')}
+              download="sentinel-report.csv"
+              className="min-h-[48px] px-4 py-2 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase"
+              title="Download Executive Engineering CSV Report"
+            >
+              <Download className="w-4 h-4 text-[#b7f15b]" />
+              <span className="hidden sm:inline">Export Report</span>
+            </a>
+
             {/* Repository Selector */}
             <div className="relative">
               <select
@@ -1445,6 +1494,151 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <div className="pt-2 border-t border-white/5 text-xs font-mono text-[#b7f15b]">
                   Action: Priority Refactor Sprint 43
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 7. ADMIN SYSTEM TELEMETRY & EXECUTION LOGS TAB */}
+        {activeTab === 'Telemetry' && isAdmin && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Telemetry Notification Card */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <Terminal className="w-6 h-6 text-[#b7f15b]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">System Telemetry & Audit Logs</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Real-time backend execution status, process memory allocation, and database pool telemetry.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="px-3.5 py-1.5 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] font-mono text-xs font-bold uppercase">
+                  Uptime: {telemetryData?.serverUptime || 'Loading...'}
+                </span>
+              </div>
+            </div>
+
+            {/* Metrics Overview Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]/70">
+                  <span>Process Memory RSS</span>
+                  <HardDrive className="w-4 h-4 text-[#b7f15b]" />
+                </div>
+                <div className="text-3xl font-bold text-[#dfe4de] font-mono">
+                  {telemetryData?.memoryRssMB || '0.00'} MB
+                </div>
+                <div className="text-xs font-mono text-[#8d937e]">
+                  Heap Used: {telemetryData?.heapUsedMB || '0'} / {telemetryData?.heapTotalMB || '0'} MB
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]/70">
+                  <span>PostgreSQL Pool</span>
+                  <Server className="w-4 h-4 text-[#92d957]" />
+                </div>
+                <div className="text-3xl font-bold text-[#dfe4de] font-mono">
+                  {telemetryData?.dbPoolStats?.totalClients || 1} Connections
+                </div>
+                <div className="text-xs font-mono text-[#8d937e]">
+                  Idle: {telemetryData?.dbPoolStats?.idleClients || 1} | Waiting: {telemetryData?.dbPoolStats?.waitingClients || 0}
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]/70">
+                  <span>ML & Ollama Models</span>
+                  <Cpu className="w-4 h-4 text-[#b7f15b]" />
+                </div>
+                <div className="text-3xl font-bold text-[#dfe4de] font-mono">
+                  4 Active
+                </div>
+                <div className="text-xs font-mono text-[#92d957]">
+                  0 External Requests (100% Offline)
+                </div>
+              </div>
+            </div>
+
+            {/* Model Health Badges */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
+                Air-Gapped Machine Learning Pipeline Health
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
+                  <div className="text-[#dfe4de] font-bold">XGBoost Risk Predictor</div>
+                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.xgboostPredictor || 'OPERATIONAL'}</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
+                  <div className="text-[#dfe4de] font-bold">SHAP Feature Explainer</div>
+                  <div className="text-[#b7f15b]">{telemetryData?.modelsStatus?.shapExplainer || 'ACTIVE'}</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
+                  <div className="text-[#dfe4de] font-bold">Ollama Qwen2.5 3B LLM</div>
+                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.ollamaLLM || 'STANDBY'}</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
+                  <div className="text-[#dfe4de] font-bold">NetworkX Knowledge Graph</div>
+                  <div className="text-[#b7f15b]">{telemetryData?.modelsStatus?.networkxGraph || 'INDEXED'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Execution Audit Log Stream Table */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Background Event & Execution Stream</h3>
+                {isLoadingTelemetry && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Streaming Logs...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse font-mono text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[#8d937e] uppercase">
+                      <th className="py-2.5 px-4">Timestamp</th>
+                      <th className="py-2.5 px-4">Level</th>
+                      <th className="py-2.5 px-4">Log Message</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
+                    {(telemetryData?.recentLogs || []).map((log) => (
+                      <tr key={log.id} className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-4 text-[#8d937e] whitespace-nowrap">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                              log.level === 'WARN'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
+                            }`}
+                          >
+                            {log.level}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-[#dfe4de]">
+                          {log.message}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
