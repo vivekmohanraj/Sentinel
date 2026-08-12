@@ -15,12 +15,15 @@ export const runMigrations = async () => {
 
       -- Add custom profile fields to tbl_user
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES tbl_organization(id) ON DELETE SET NULL;
-      ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS role VARCHAR(100) DEFAULT 'Engineering Manager (Project owner)';
+      ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS role VARCHAR(100) DEFAULT 'Software Engineer (Developer)';
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS first_name VARCHAR(255);
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS last_name VARCHAR(255);
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS weekly_reports BOOLEAN DEFAULT true;
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS github_sync BOOLEAN DEFAULT true;
+
+      -- Enforce Admin designation rule for vivekmohanraj5@gmail.com
+      UPDATE tbl_user SET role = 'Admin' WHERE LOWER(email) = 'vivekmohanraj5@gmail.com';
 
       -- 2. Repositories
       CREATE TABLE IF NOT EXISTS tbl_repository (

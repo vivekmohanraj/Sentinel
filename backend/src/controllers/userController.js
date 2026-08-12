@@ -1,4 +1,4 @@
-import { getUserById, getUserByEmail, getLatestUser, updateUserProfile } from '../models/userModel.js';
+import { getUserById, getUserByEmail, getLatestUser, updateUserProfile, getAllUsers, updateUserRoleByAdmin, ADMIN_EMAIL } from '../models/userModel.js';
 import { auth } from '../auth.js';
 
 export const getProfile = async (req, res, next) => {
@@ -29,6 +29,8 @@ export const getProfile = async (req, res, next) => {
     }
 
     if (!user) {
+      const isSuperAdmin = email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      const defaultRole = isSuperAdmin ? 'Admin' : 'Software Engineer (Developer)';
       return res.status(200).json({
         success: true,
         data: {
@@ -38,7 +40,7 @@ export const getProfile = async (req, res, next) => {
           name: email ? email.split('@')[0] : 'User',
           email: email || 'user@sentinel.engineering',
           phone: '',
-          role: 'Engineering Manager (Project owner)',
+          role: defaultRole,
           weeklyReports: true,
           githubSync: true
         }
@@ -82,6 +84,39 @@ export const updateProfile = async (req, res, next) => {
       weeklyReports,
       githubSync
     });
+
+    return res.status(200).json({
+      success: true,
+      data: updated
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAllUsersList = async (req, res, next) => {
+  try {
+    const users = await getAllUsers();
+    return res.status(200).json({
+      success: true,
+      data: users
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const adminUpdateUserRole = async (req, res, next) => {
+  try {
+    const { userId, role } = req.body;
+    if (!userId || !role) {
+      return res.status(400).json({ success: false, error: 'userId and role are required parameters.' });
+    }
+
+    const updated = await updateUserRoleByAdmin(userId, role);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
 
     return res.status(200).json({
       success: true,

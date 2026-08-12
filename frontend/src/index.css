@@ -130,7 +130,7 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
+  }fix(backend): bind profile query and update strictly to session Google account email
 
   @keyframes float {
     0% { transform: translateY(0px); }

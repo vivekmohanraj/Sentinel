@@ -21,10 +21,13 @@ import {
   GitBranch,
   Save,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Users,
+  ShieldAlert,
+  UserPlus
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
-import { fetchUserProfile, updateUserProfile, fetchDashboardSummary } from '../lib/api.js';
+import { fetchUserProfile, updateUserProfile, fetchDashboardSummary, fetchAllUsers, updateUserRoleApi } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
   const { data: session } = useSession();
@@ -48,12 +51,21 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
 
-  // Sidebar Items (Strictly 5 items per Hick's Law)
+  // Admin User & Role Management State
+  const [usersList, setUsersList] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState(null);
+  const [userRoleMessage, setUserRoleMessage] = useState(null);
+
+  const isAdmin = profileData.role === 'Admin' || (profileData.email && profileData.email.toLowerCase() === 'vivekmohanraj5@gmail.com');
+
+  // Sidebar Items
   const navItems = [
     { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'Repositories', label: 'Repositories', icon: FolderGit2 },
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
+    ...(isAdmin ? [{ id: 'Users', label: 'User Directory', icon: Users }] : []),
     { id: 'Settings', label: 'Settings', icon: Settings }
   ];
 
@@ -115,6 +127,47 @@ const Dashboard = ({ onNavigateToLanding }) => {
     loadSummary();
     return () => { isMounted = false; };
   }, []);
+
+  // Fetch all registered users for Admin User Management panel
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'Users' && isAdmin) {
+      const loadUsers = async () => {
+        setIsLoadingUsers(true);
+        try {
+          const list = await fetchAllUsers(profileData.email);
+          if (isMounted && list) {
+            setUsersList(list);
+          }
+        } catch (err) {
+          console.error('Failed to load user directory for Admin:', err);
+        } finally {
+          if (isMounted) setIsLoadingUsers(false);
+        }
+      };
+      loadUsers();
+    }
+    return () => { isMounted = false; };
+  }, [activeTab, isAdmin, profileData.email]);
+
+  const handleRoleUpdate = async (targetUserId, targetEmail, newRole) => {
+    setUpdatingUserId(targetUserId);
+    setUserRoleMessage(null);
+    try {
+      const updated = await updateUserRoleApi(targetUserId, newRole, profileData.email);
+      if (updated) {
+        setUsersList((prev) =>
+          prev.map((u) => (u.id === targetUserId || u.email.toLowerCase() === targetEmail.toLowerCase() ? { ...u, role: updated.role } : u))
+        );
+        setUserRoleMessage(`Role for ${targetEmail} updated to ${updated.role}`);
+        setTimeout(() => setUserRoleMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error('Error updating user role:', err);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
 
   // Save changes to database via PUT endpoint
   const handleProfileSave = async (e) => {
@@ -287,6 +340,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 {activeTab === 'Repositories' && 'Repository Graph Index'}
                 {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
                 {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
+                {activeTab === 'Users' && 'User & Role Management Directory'}
                 {activeTab === 'Settings' && 'Profile & Workspace Preferences'}
               </h1>
               <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider">
@@ -732,12 +786,18 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <select
                   value={profileData.role}
                   onChange={(e) => setProfileData({ ...profileData, role: e.target.value })}
-                  className="w-full min-h-[48px] px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer"
+                  disabled={isAdmin}
+                  className="w-full min-h-[48px] px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                 >
+                  <option value="Admin">System Administrator (Super Admin)</option>
                   <option value="Engineering Manager (Project owner)">Engineering Manager (Project owner)</option>
                   <option value="Software Engineer (Developer)">Software Engineer (Developer)</option>
-                  <option value="Security Auditor (Read-Only)">Security Auditor (Read-Only)</option>
                 </select>
+                {isAdmin && (
+                  <p className="text-[11px] font-mono text-[#b7f15b] mt-1.5">
+                    Super Admin role is permanently enforced for vivekmohanraj5@gmail.com.
+                  </p>
+                )}
               </div>
 
               {/* UI TOGGLES */}
@@ -811,6 +871,135 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* 3. ADMIN USER & ROLE MANAGEMENT DIRECTORY */}
+        {activeTab === 'Users' && isAdmin && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Notification Card */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <ShieldCheck className="w-6 h-6 text-[#b7f15b]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">Admin Access Directory</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2] mt-0.5">
+                    Manage team permissions and user role assignments synced with PostgreSQL `tbl_user`.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="px-3.5 py-1.5 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] font-mono text-xs font-bold uppercase">
+                  {usersList.length} Registered Users
+                </span>
+              </div>
+            </div>
+
+            {userRoleMessage && (
+              <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span>{userRoleMessage}</span>
+              </div>
+            )}
+
+            {/* User Directory Table */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Registered Organization Members</h3>
+                {isLoadingUsers && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Fetching Directory...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 font-mono text-xs text-[#8d937e] uppercase">
+                      <th className="py-3 px-4">User Identity</th>
+                      <th className="py-3 px-4">Email Address</th>
+                      <th className="py-3 px-4">Assigned Role (RBAC)</th>
+                      <th className="py-3 px-4 text-right">Role Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-sm">
+                    {usersList.map((user) => {
+                      const isSuperAdmin = user.email.toLowerCase() === 'vivekmohanraj5@gmail.com';
+                      const isUpdating = updatingUserId === user.id;
+
+                      return (
+                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-[#181d1a] border border-white/10 flex items-center justify-center font-bold text-xs text-[#b7f15b] shrink-0">
+                                {(user.firstName || user.name || user.email)[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-medium text-[#dfe4de] flex items-center gap-2">
+                                  <span>{user.name || `${user.firstName} ${user.lastName}`.trim()}</span>
+                                  {isSuperAdmin && (
+                                    <span className="px-2 py-0.5 rounded-full bg-[#b7f15b]/20 border border-[#b7f15b]/40 text-[#b7f15b] text-[10px] font-mono font-bold uppercase">
+                                      Owner Admin
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-[#8d937e] font-mono">
+                                  ID: {user.id.slice(0, 8)}...
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4 font-mono text-xs text-[#c3c9b2]">
+                            {user.email}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-mono font-bold inline-flex items-center gap-1.5 ${
+                                user.role === 'Admin'
+                                  ? 'bg-[#b7f15b]/15 text-[#b7f15b] border border-[#b7f15b]/30'
+                                  : user.role === 'Engineering Manager (Project owner)'
+                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                  : 'bg-[#181d1a] text-[#c3c9b2] border border-white/10'
+                              }`}
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>{user.role}</span>
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4 text-right">
+                            {isSuperAdmin ? (
+                              <span className="text-xs font-mono text-[#8d937e] italic">Permanent Admin</span>
+                            ) : (
+                              <div className="inline-flex items-center gap-2">
+                                {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-[#b7f15b]" />}
+                                <select
+                                  value={user.role}
+                                  disabled={isUpdating}
+                                  onChange={(e) => handleRoleUpdate(user.id, user.email, e.target.value)}
+                                  className="px-3 py-1.5 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
+                                >
+                                  <option value="Software Engineer (Developer)">Developer</option>
+                                  <option value="Engineering Manager (Project owner)">Manager</option>
+                                  <option value="Admin">Admin</option>
+                                </select>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

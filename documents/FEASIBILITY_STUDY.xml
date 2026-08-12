@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <page number="1">
+    <line>FEASIBILITY STUDY</line>
+    <line>Feasibility refers to the practical extent to which a project can be successfully developed</line>
+    <line>and implemented. A feasibility study evaluates whether the proposed solution is practical,</line>
+    <line>cost-effective, technically achievable, and beneficial to its intended users. In the case of</line>
+    <line>Sentinel: An AI-Powered Software Engineering Intelligence and Project Risk Prediction</line>
+    <line>Platform, this study examines factors such as resource availability, software development</line>
+    <line>costs, technological requirements, expected benefits, and long-term maintenance needs.</line>
+    <line>The feasibility study helps determine whether the proposed system is viable before</line>
+    <line>proceeding with full-scale development.</line>
+    <line>Conducting a feasibility study for Sentinel involves analyzing the growing need for</line>
+    <line>integrated software engineering analytics platforms, evaluating existing version control</line>
+    <line>workflows, and assessing the technological requirements needed to implement AI-</line>
+    <line>powered risk prediction and repository mining. The study considers development costs,</line>
+    <line>user adoption, system scalability, security, and future enhancement possibilities. A</line>
+    <line>comprehensive feasibility study supports informed decision-making and increases the</line>
+    <line>likelihood of successful implementation.</line>
+    <line>Types of Feasibility</line>
+    <line>•</line>
+    <line>Economic Feasibility</line>
+    <line>•</line>
+    <line>Technical Feasibility</line>
+    <line>•</line>
+    <line>Behavioral Feasibility</line>
+    <line>Economic Feasibility</line>
+    <line>Economic feasibility determines whether the project is financially viable and capable of</line>
+    <line>providing long-term value. This assessment considers the costs associated with software</line>
+    <line>development, local or cloud infrastructure, database management, AI model execution,</line>
+    <line>and system maintenance. It also evaluates the benefits offered to software engineers,</line>
+    <line>project managers, and technical leads through proactive risk identification and reduced</line>
+    <line>technical debt.</line>
+    <line>The economic feasibility study includes the following aspects:</line>
+    <line>•</line>
+    <line>Cost incurred in software development and deployment.</line>
+    <line>•</line>
+    <line>Expenses required for requirement gathering, system analysis, and testing.</line>
+    <line>•</line>
+    <line>Costs associated with local database services and offline AI model execution.</line>
+    <line>•</line>
+    <line>Long-term maintenance and system enhancement costs.</line>
+  </page>
+  <page number="2">
+    <line>The economic feasibility of Sentinel indicates that the project can be developed using</line>
+    <line>widely available open-source technologies such as React.js, Node.js, Express.js,</line>
+    <line>PostgreSQL, and Python, completely eliminating software licensing costs. Because the</line>
+    <line>machine learning models (XGBoost, LightGBM) and small language models (Qwen2.5 3B</line>
+    <line>via Ollama) run locally and offline on consumer-grade hardware, there are zero recurring</line>
+    <line>cloud AI API costs or subscription fees. The system provides substantial value by</line>
+    <line>reducing manual code review overhead, preventing release delays, and forecasting</line>
+    <line>engineering risks before they cause costly production failures.</line>
+    <line>Technical Feasibility</line>
+    <line>Technical feasibility evaluates whether the required technologies, tools, and resources are</line>
+    <line>available to successfully develop and maintain the system within the given timeframe and</line>
+    <line>budget.</line>
+    <line>The technical feasibility study includes the following aspects:</line>
+    <line>•</line>
+    <line>Evaluating the technical skills and expertise of the development team.</line>
+    <line>•</line>
+    <line>Ensuring the selected technologies are reliable, scalable, and well-supported.</line>
+    <line>•</line>
+    <line>Verifying compatibility between AI components, relational databases, and web</line>
+    <line>technologies.</line>
+    <line>•</line>
+    <line>Ensuring the system can accommodate future upgrades and enhancements.</line>
+    <line>Sentinel is technically feasible because it utilizes modern, mature, and well-documented</line>
+    <line>technology stacks optimized for standard developer hardware (such as an Intel Core i5</line>
+    <line>processor with 16 GB RAM). The frontend is built using React.js and Tailwind CSS (with</line>
+    <line>visual components prototyped via Google Stitch), while the backend is powered by</line>
+    <line>Node.js/Express.js and Python (GitPython) for repository mining. PostgreSQL serves as</line>
+    <line>the relational feature store for tabular machine learning data, supported by</line>
+    <line>NetworkX/Neo4j for graph modeling. AI functionalities—such as bug-prone module</line>
+    <line>prediction, technical debt scoring, SHAP explainability, and natural-language</line>
+    <line>justifications—rely on locally hosted XGBoost, LightGBM, and quantized Ollama models.</line>
+    <line>Development is carried out using Visual Studio Code and Git, ensuring efficient</line>
+    <line>implementation and maintenance.</line>
+    <line>Behavioral Feasibility</line>
+    <line>Behavioral feasibility examines how users will interact with the system and whether they</line>
+    <line>are likely to accept and effectively utilize its features. It focuses on usability, user</line>
+    <line>adaptability, and overall satisfaction.</line>
+  </page>
+  <page number="3">
+    <line>The behavioral feasibility study includes the following aspects:</line>
+    <line>•</line>
+    <line>Assessing user acceptance of AI-assisted engineering risk predictions.</line>
+    <line>•</line>
+    <line>Ensuring an intuitive and user-friendly interface.</line>
+    <line>•</line>
+    <line>Providing efficient workflows for software engineers, project managers, and</line>
+    <line>administrators.</line>
+    <line>•</line>
+    <line>Addressing concerns related to data privacy, metric gamification, and system</line>
+    <line>reliability.</line>
+    <line>Sentinel is designed with a clean, role-based interface that prevents punitive individual</line>
+    <line>tracking (mitigating Goodhart's Law) while giving technical leads and developers</line>
+    <line>actionable, low-friction insights. Software engineers benefit from localized branch</line>
+    <line>diagnostics and co-change risks without administrative micromanagement, while project</line>
+    <line>managers gain objective visibility into sprint delays and architectural bottlenecks. The</line>
+    <line>platform promotes transparency through Explainable AI (SHAP and natural-language</line>
+    <line>summaries), making it highly acceptable to development teams.</line>
+    <line>Feasibility Study Questionnaire</line>
+    <line>1. How would the organization cope if this system was not implemented? Without</line>
+    <line>Sentinel, development teams and project managers would continue relying on reactive,</line>
+    <line>past-facing metrics (such as raw commit counts and open issue totals) or fragmented tools</line>
+    <line>like SonarQube and GitHub Insights. This reactive posture forces teams to discover</line>
+    <line>technical debt, bug hotspots, and sprint delays only after they manifest as costly</line>
+    <line>operational failures and delayed releases.</line>
+    <line>2. What are the problems with current processes and how would a new system help</line>
+    <line>alleviate these problems? Current software management processes suffer from a lack of</line>
+    <line>predictive intelligence and cross-tool cohesion; teams must manually piece together data</line>
+    <line>from version control, task trackers, and static analyzers. Sentinel alleviates these problems</line>
+    <line>by providing a unified intelligence layer that automatically mines repositories, predicts</line>
+    <line>future engineering risks (bugs, technical debt, merge conflicts), explains why the prediction</line>
+    <line>was made using Explainable AI, and recommends targeted preventive actions.</line>
+    <line>3. What direct contribution will the system make to the business objectives and</line>
+    <line>requirements? Sentinel contributes directly by:</line>
+    <line>•</line>
+    <line>Improving software maintainability and reducing long-term technical debt</line>
+    <line>accumulation.</line>
+    <line>•</line>
+    <line>Predicting bug-prone modules and risky pull requests before code is merged.</line>
+  </page>
+  <page number="4">
+    <line>•</line>
+    <line>Providing mathematically grounded, natural-language explanations for all AI</line>
+    <line>predictions.</line>
+    <line>•</line>
+    <line>Enhancing sprint planning accuracy and forecasting delivery delays.</line>
+    <line>•</line>
+    <line>Safeguarding team trust by enforcing team-level process aggregation rather than</line>
+    <line>punitive individual metric tracking.</line>
+    <line>•</line>
+    <line>Offering a centralized engineering health dashboard and automated risk</line>
+    <line>visualization.</line>
+    <line>4. Can information be transferred to and from other organizational systems? Yes.</line>
+    <line>Sentinel is designed with a modular architecture that supports repository integrations</line>
+    <line>(GitHub, GitLab, and local Git repositories) as well as future issue tracker extensions (Jira,</line>
+    <line>Azure DevOps, Linear). The platform easily ingests version control metadata and exports</line>
+    <line>comprehensive reports in CSV and PDF formats.</line>
+    <line>5. Does the system require technology that has not previously been used in the</line>
+    <line>organization? Yes. Sentinel incorporates advanced technologies such as software</line>
+    <line>repository mining, machine learning prediction models (XGBoost/LightGBM), Engineering</line>
+    <line>Knowledge Graphs, SHAP-based explainability, and local small language models (Ollama).</line>
+    <line>While these tools may be novel to standard organizational workflows, they are industry-</line>
+    <line>standard, mature, and run entirely offline on local hardware.</line>
+    <line>6. What must be supported by the system and what need not be supported? Must</line>
+    <line>Support:</line>
+    <line>•</line>
+    <line>User authentication and role-based access control (Admin, Manager, Developer).</line>
+    <line>•</line>
+    <line>GitHub and local Git repository integration and parsing.</line>
+    <line>•</line>
+    <line>Repository mining engine for metrics extraction (complexity, churn, commit</line>
+    <line>frequency).</line>
+    <line>•</line>
+    <line>AI-driven bug prediction and technical debt hotspot identification.</line>
+    <line>•</line>
+    <line>Explainable AI (SHAP feature importance and local LLM natural-language</line>
+    <line>summaries).</line>
+    <line>•</line>
+    <line>Interactive engineering dashboard with risk heatmaps and health trends.</line>
+    <line>Need Not Support (Future Enhancements / Main Project Scope):</line>
+    <line>•</line>
+    <line>GitLab, Jira, Azure DevOps, and Jenkins CI/CD pipeline integrations.</line>
+    <line>•</line>
+    <line>Automated merge conflict prediction and sprint delay forecasting.</line>
+  </page>
+  <page number="5">
+    <line>•   Multi - project cs and enterprise - wide mdrds.   </line>
+    <line>•   Sion and architecturacking   </line>
+    <line>UML Diagrams   </line>
+    <line>Use - case  D   </line>
+  </page>
+  <page number="6">
+    <line>C l iagram   </line>
+  </page>
+  <page number="7">
+    <line>S eque nce    </line>
+  </page>
+  <page number="8">
+    <line>Compone n Diagram   </line>
+  </page>
+</document>

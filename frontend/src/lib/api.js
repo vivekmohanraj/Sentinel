@@ -41,6 +41,47 @@ export const updateUserProfile = async (profileData, email) => {
   }
 };
 
+export const fetchAllUsers = async (adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/user/all?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/user/all`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch all users:', err);
+    throw err;
+  }
+};
+
+export const updateUserRoleApi = async (userId, role, adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/user/role?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/user/role`;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ userId, role, adminEmail })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to update user role:', err);
+    throw err;
+  }
+};
+
 export const fetchDashboardSummary = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {

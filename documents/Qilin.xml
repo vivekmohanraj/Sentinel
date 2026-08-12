@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <page number="1">
+    <line>Qilin   </line>
+    <line>AI - Powered Eng Intelligence Pl for ve Stware Project  </line>
+    <line>Health ssessment   </line>
+    <line>One - Line Pitch   </line>
+    <line>AI atformat conlearns sofectde, commits,  </line>
+    <line>issues, pull requests, testing development hiy predict enginisks  </line>
+    <line>before they cur and recomns withainable reasong   </line>
+    <line>Lanatio   </line>
+    <line>Imagine ma soft with ers.   </line>
+    <line>Ey day, hchanges ha   </line>
+    <line>•   New code i   </line>
+    <line>•   Bugs are fixed.   </line>
+    <line>•   New bugs are introduced.   </line>
+    <line>•   Features are added.   </line>
+    <line>•   Pull requests    </line>
+    <line>•   Tests fail.   </line>
+    <line>•   Docum   </line>
+    <line>Current tware tools has alread.   </line>
+    <line>For exampl   </line>
+    <line>•   How mcommits were made?   </line>
+    <line>•   How mbugs are open?   </line>
+    <line>•   Who contrhe m   </line>
+    <line>But tt he i   </line>
+    <line>•   Which file ihe next?   </line>
+    <line>•   Which developer has b?</line>
+  </page>
+  <page number="2">
+    <line>•</line>
+    <line>Which module is becoming impossible to maintain?</line>
+    <line>•</line>
+    <line>Which sprint is likely to fail?</line>
+    <line>•</line>
+    <line>Which pull request needs extra review?</line>
+    <line>•</line>
+    <line>What should the team fix first?</line>
+    <line>Qilin acts like an intelligent engineering advisor.</line>
+    <line>It continuously studies everything happening inside the project and predicts future</line>
+    <line>engineering problems before they become expensive.</line>
+    <line>Instead of only reporting history, it helps the team make better decisions.</line>
+    <line>Technical Explanation</line>
+    <line>Qilin is an AI-powered engineering intelligence platform that collects information from</line>
+    <line>software repositories, issue trackers, pull requests, continuous integration pipelines, static</line>
+    <line>analysis reports, documentation, and testing systems.</line>
+    <line>The platform transforms these different software engineering artifacts into a unified</line>
+    <line>knowledge base representing the entire software development lifecycle.</line>
+    <line>Artificial intelligence models analyze this information to estimate the overall health of the</line>
+    <line>project, predict future engineering risks, identify bug-prone modules, estimate technical</line>
+    <line>debt growth, detect developer knowledge bottlenecks, predict sprint completion risks,</line>
+    <line>estimate merge conflict probability, and recommend preventive actions.</line>
+    <line>Unlike existing software engineering tools that primarily display historical metrics or</line>
+    <line>perform isolated static analysis, Qilin combines multiple sources of engineering</line>
+    <line>information into a single explainable decision support system that helps development</line>
+    <line>teams proactively improve software quality.</line>
+    <line>Abstract</line>
+    <line>Modern software development generates large volumes of information through source</line>
+    <line>code repositories, issue trackers, pull requests, code reviews, testing frameworks,</line>
+    <line>continuous integration pipelines, and project documentation. Existing software</line>
+    <line>engineering tools primarily provide descriptive analytics or isolated code analysis,</line>
+    <line>requiring development teams to manually combine information from multiple systems</line>
+    <line>before making engineering decisions.</line>
+  </page>
+  <page number="3">
+    <line>Qilin proposes an AI-powered Engineering Intelligence Platform that continuously analyzes</line>
+    <line>software engineering artifacts from multiple development sources to predict project health</line>
+    <line>and future engineering risks. Rather than simply reporting repository statistics or identifying</line>
+    <line>existing code issues, the platform estimates bug-prone modules, technical debt growth,</line>
+    <line>merge conflict probability, sprint completion risks, developer knowledge concentration,</line>
+    <line>and maintainability degradation while providing explainable recommendations for</line>
+    <line>corrective actions.</line>
+    <line>The proposed platform integrates repository mining, software engineering metrics,</line>
+    <line>explainable artificial intelligence, knowledge graph modeling, and predictive analytics into</line>
+    <line>a unified decision support system. By shifting software engineering from reactive</line>
+    <line>monitoring to proactive engineering intelligence, Qilin aims to improve software quality,</line>
+    <line>reduce maintenance costs, support informed project management decisions, and assist</line>
+    <line>development teams throughout the software development lifecycle.</line>
+    <line>Research Problem</line>
+    <line>Current software engineering tools answer questions about the past.</line>
+    <line>Examples:</line>
+    <line>•</line>
+    <line>What changed?</line>
+    <line>•</line>
+    <line>Who committed code?</line>
+    <line>•</line>
+    <line>How many bugs exist?</line>
+    <line>•</line>
+    <line>Which pull requests are open?</line>
+    <line>However, they provide limited assistance in answering predictive engineering questions</line>
+    <line>such as:</line>
+    <line>•</line>
+    <line>Which modules are likely to become unstable?</line>
+    <line>•</line>
+    <line>Which pull requests are likely to introduce defects?</line>
+    <line>•</line>
+    <line>Which sprint is at risk of failure?</line>
+    <line>•</line>
+    <line>Which developers are becoming knowledge bottlenecks?</line>
+    <line>•</line>
+    <line>Which technical debt should be addressed first?</line>
+    <line>•</line>
+    <line>How healthy is the project overall?</line>
+  </page>
+  <page number="4">
+    <line>Research Topic</line>
+    <line>Explainable Multi-Source Artificial Intelligence for Predictive Software Engineering</line>
+    <line>Intelligence Using Repository Mining and Engineering Knowledge Graphs</line>
+    <line>Research Gap</line>
+    <line>Current engineering platforms focus on individual aspects of software development.</line>
+    <line>For example:</line>
+    <line>•</line>
+    <line>GitHub manages repositories.</line>
+    <line>•</line>
+    <line>Jira manages tasks.</line>
+    <line>•</line>
+    <line>SonarQube analyzes source code.</line>
+    <line>•</line>
+    <line>Jenkins manages builds.</line>
+    <line>•</line>
+    <line>Sentry monitors runtime errors.</line>
+    <line>No single platform continuously combines these engineering artifacts to generate a</line>
+    <line>unified, explainable prediction of future software project health and engineering risks.</line>
+    <line>Main Research Contribution</line>
+    <line>Develop an AI system capable of:</line>
+    <line>•</line>
+    <line>understanding the complete software development lifecycle,</line>
+    <line>•</line>
+    <line>learning from multiple engineering artifacts,</line>
+    <line>•</line>
+    <line>predicting future engineering risks,</line>
+    <line>•</line>
+    <line>explaining every prediction,</line>
+    <line>•</line>
+    <line>recommending preventive engineering actions.</line>
+    <line>Main Novel Feature</line>
+    <line>Unified Predictive Engineering Intelligence</line>
+    <line>Instead of analyzing one aspect of software development in isolation, Qilin combines</line>
+    <line>repository activity, project management data, testing history, documentation, code quality</line>
+  </page>
+  <page number="5">
+    <line>metrieraborati to continuously estimate project and  </line>
+    <line>recommions before enginproblems    </line>
+    <line>Supporti   </line>
+    <line>Module 1: n Manageme   </line>
+    <line>•   Authentication   </line>
+    <line>•   Teams   </line>
+    <line>•   Projects   </line>
+    <line>•   Roles   </line>
+    <line>Module 2: y    </line>
+    <line>S   </line>
+    <line>•   GitHub   </line>
+    <line>•   GitL   </line>
+    <line>•   Local Git repositories   </line>
+    <line>Imports:   </line>
+    <line>•   commits   </line>
+    <line>•   branches   </line>
+    <line>•   pull requests   </line>
+    <line>•   contributors   </line>
+    <line>•   release histor   </line>
+    <line>Module 3: ntegration   </line>
+    <line>Imports:   </line>
+    <line>•   Issues   </line>
+    <line>•   L</line>
+  </page>
+  <page number="6">
+    <line>•   Milestones   </line>
+    <line>•   Sinformation   </line>
+    <line>Future:   </line>
+    <line>•   Jira   </line>
+    <line>•   Are Dev   </line>
+    <line>•   Linear   </line>
+    <line>Module 4:  RepositorMiningin   </line>
+    <line>Ext   </line>
+    <line>•   commit frequency   </line>
+    <line>•   code ownership   </line>
+    <line>•   churn   </line>
+    <line>•   complexity   </line>
+    <line>•   file histor   </line>
+    <line>•   depend   </line>
+    <line>•   contributor    </line>
+    <line>Module 5: ect Knowledge G   </line>
+    <line>Buiween:   </line>
+    <line>•   developers   </line>
+    <line>•   files   </line>
+    <line>•   modules   </line>
+    <line>•   issues   </line>
+    <line>•   pull requests   </line>
+    <line>•   docum   </line>
+    <line>•   tests</line>
+  </page>
+  <page number="7">
+    <line>This becomes the projectedge model   </line>
+    <line>Module 6: ect Health gine   </line>
+    <line>Calculan overall Project h Sultiple engineeringndicators instead of  </line>
+    <line>relying sing metric.   </line>
+    <line>Dimension   </line>
+    <line>•   maintainability   </line>
+    <line>•   coll   </line>
+    <line>•   testing   </line>
+    <line>•   architectu   </line>
+    <line>•   technical debt   </line>
+    <line>•   deliver   </line>
+    <line>•   stability   </line>
+    <line>Module 7: n Engin   </line>
+    <line>Predicts modules that likely to conta   </line>
+    <line>Module 8: cal Debt Predicti   </line>
+    <line>Identifies areas where maintenance costs are expected ncrease.   </line>
+    <line>Module 9: nt sk Predicti   </line>
+    <line>Predicts delincomplete spring    </line>
+    <line>Module 10t Predictio   </line>
+    <line>Identifies pull requests with  likelihood of    </line>
+  </page>
+  <page number="8">
+    <line>Module 11: Developer Knowledge Risk Analysis</line>
+    <line>Detects modules that depend heavily on a single developer, reducing team resilience.</line>
+    <line>Module 12: Recommendation Engine</line>
+    <line>Provides prioritized recommendations such as:</line>
+    <line>•</line>
+    <line>refactor module X</line>
+    <line>•</line>
+    <line>improve testing</line>
+    <line>•</line>
+    <line>assign an additional reviewer</line>
+    <line>•</line>
+    <line>split a large pull request</line>
+    <line>•</line>
+    <line>reduce developer workload</line>
+    <line>•</line>
+    <line>improve documentation</line>
+    <line>Module 13: Explainable AI</line>
+    <line>Every prediction includes a clear explanation.</line>
+    <line>Example:</line>
+    <line>Module authentication_service has a high predicted defect risk because it has experienced</line>
+    <line>frequent modifications by multiple developers, exhibits increasing complexity, and has</line>
+    <line>relatively low automated test coverage.</line>
+    <line>Module 14: Engineering Intelligence Dashboard</line>
+    <line>Displays:</line>
+    <line>•</line>
+    <line>Project Health Score</line>
+    <line>•</line>
+    <line>Risk trends</line>
+    <line>•</line>
+    <line>Technical debt hotspots</line>
+    <line>•</line>
+    <line>Bug-prone modules</line>
+    <line>•</line>
+    <line>Knowledge bottlenecks</line>
+    <line>•</line>
+    <line>Sprint health</line>
+  </page>
+</document>
