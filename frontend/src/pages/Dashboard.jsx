@@ -446,12 +446,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 min-w-0 p-6 md:p-10 space-y-8 overflow-y-auto">
         {/* TOP BAR / HEADER */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl md:text-3xl font-semibold text-[#dfe4de] tracking-tight">
-                {activeTab === 'Dashboard' && 'Predictive Command Center'}
-                {activeTab === 'Repositories' && 'Repository Graph Index'}
                 {activeTab === 'Dashboard' && 'Predictive Command Center'}
                 {activeTab === 'Repositories' && 'Repository Graph Index'}
                 {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
@@ -460,48 +458,48 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 {activeTab === 'Telemetry' && 'System Execution & Telemetry Logs'}
                 {activeTab === 'Settings' && 'Profile & Workspace Preferences'}
               </h1>
-              <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider shrink-0">
                 Live Scan Active
               </span>
             </div>
-            <p className="text-sm text-[#c3c9b2] mt-1 font-mono">
+            <p className="text-sm text-[#c3c9b2]/70 mt-1 font-mono">
               Engineering Knowledge Graph analysis for Sprint 42
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
             {/* Export CSV Report Button */}
             <a
               href={getExportReportUrl('csv')}
               download="sentinel-report.csv"
-              className="min-h-[48px] px-4 py-2 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase"
+              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
               title="Download Executive Engineering CSV Report"
             >
               <Download className="w-4 h-4 text-[#b7f15b]" />
-              <span className="hidden sm:inline">Export Report</span>
+              <span className="inline">Export Report</span>
             </a>
 
             {/* Repository Selector */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <select
                 value={selectedRepo}
                 onChange={(e) => setSelectedRepo(e.target.value)}
-                className="min-h-[48px] px-4 py-2 pr-10 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
               >
                 <option value="sentinel/core-engine">repo: sentinel/core-engine</option>
                 <option value="sentinel/auth-service">repo: sentinel/auth-service</option>
                 <option value="sentinel/billing-api">repo: sentinel/billing-api</option>
               </select>
-              <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             {/* Quick Action Refresh */}
             <button
-              className="min-w-[48px] min-h-[48px] p-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase"
+              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
               title="Trigger Instant AI Risk Scan"
             >
               <RefreshCw className="w-4 h-4 text-[#b7f15b]" />
-              <span className="hidden sm:inline">Rescan Codebase</span>
+              <span className="inline">Rescan Codebase</span>
             </button>
           </div>
         </header>
@@ -937,24 +935,25 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 {/* Toggle 1: Receive Weekly Risk Reports */}
                 <div className="flex items-center justify-between p-4 rounded-xl bg-[#181d1a] border border-white/5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[#b7f15b]/10 text-[#b7f15b]">
+                    <div className="p-2 rounded-lg bg-[#b7f15b]/10 text-[#b7f15b] shrink-0">
                       <Bell className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-[#dfe4de]">Receive Weekly Risk Reports</div>
-                      <div className="text-xs text-[#c3c9b2]">Automated SHAP AI summary delivered every Monday at 08:00 UTC.</div>
+                      <div className="text-xs text-[#c3c9b2]/70">Automated SHAP AI summary delivered every Monday at 08:00 UTC.</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setWeeklyReports(!weeklyReports)}
-                    className={`min-w-[48px] min-h-[48px] p-2 rounded-full flex items-center transition-colors ${
-                      weeklyReports ? 'bg-[#b7f15b]' : 'bg-[#262b28]'
+                    className={`w-14 h-8 p-1 rounded-full flex items-center transition-colors shrink-0 cursor-pointer ${
+                      weeklyReports ? 'bg-[#b7f15b]' : 'bg-[#262b28] border border-white/10'
                     }`}
+                    aria-label="Toggle weekly risk reports"
                   >
                     <div
-                      className={`w-6 h-6 rounded-full transition-transform ${
-                        weeklyReports ? 'translate-x-4 bg-[#223600]' : 'translate-x-0 bg-[#8d937e]'
+                      className={`w-6 h-6 rounded-full transition-transform shadow-md ${
+                        weeklyReports ? 'translate-x-6 bg-[#223600]' : 'translate-x-0 bg-[#8d937e]'
                       }`}
                     ></div>
                   </button>
@@ -963,24 +962,25 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 {/* Toggle 2: GitHub Sync */}
                 <div className="flex items-center justify-between p-4 rounded-xl bg-[#181d1a] border border-white/5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[#92d957]/10 text-[#92d957]">
+                    <div className="p-2 rounded-lg bg-[#92d957]/10 text-[#92d957] shrink-0">
                       <GitBranch className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-[#dfe4de]">GitHub Sync</div>
-                      <div className="text-xs text-[#c3c9b2]">Real-time webhook ingestion for PR status changes & commit graphs.</div>
+                      <div className="text-xs text-[#c3c9b2]/70">Real-time webhook ingestion for PR status changes & commit graphs.</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setGithubSync(!githubSync)}
-                    className={`min-w-[48px] min-h-[48px] p-2 rounded-full flex items-center transition-colors ${
-                      githubSync ? 'bg-[#b7f15b]' : 'bg-[#262b28]'
+                    className={`w-14 h-8 p-1 rounded-full flex items-center transition-colors shrink-0 cursor-pointer ${
+                      githubSync ? 'bg-[#b7f15b]' : 'bg-[#262b28] border border-white/10'
                     }`}
+                    aria-label="Toggle GitHub synchronization"
                   >
                     <div
-                      className={`w-6 h-6 rounded-full transition-transform ${
-                        githubSync ? 'translate-x-4 bg-[#223600]' : 'translate-x-0 bg-[#8d937e]'
+                      className={`w-6 h-6 rounded-full transition-transform shadow-md ${
+                        githubSync ? 'translate-x-6 bg-[#223600]' : 'translate-x-0 bg-[#8d937e]'
                       }`}
                     ></div>
                   </button>
@@ -992,7 +992,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="min-h-[48px] px-8 rounded-full bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2 disabled:opacity-50"
+                  className="h-11 px-8 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>{isSaving ? 'Updating Database...' : 'Save Changes'}</span>
