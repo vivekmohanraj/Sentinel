@@ -20,6 +20,29 @@ export const fetchUserProfile = async (email) => {
   }
 };
 
+export const fetchUserDetailsApi = async (userId, requesterEmail) => {
+  try {
+    const url = requesterEmail
+      ? `${API_BASE_URL}/user/details/${userId}?email=${encodeURIComponent(requesterEmail)}`
+      : `${API_BASE_URL}/user/details/${userId}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch user details:', err);
+    throw err;
+  }
+};
+
 export const updateUserProfile = async (profileData, email) => {
   try {
     const url = email

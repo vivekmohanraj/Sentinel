@@ -40,11 +40,13 @@ import {
   CheckCheck,
   UserX,
   UserMinus,
-  Lock
+  Lock,
+  ChevronLeft
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
   fetchUserProfile,
+  fetchUserDetailsApi,
   updateUserProfile,
   fetchDashboardSummary,
   fetchAllUsers,
@@ -103,6 +105,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [newUserRole, setNewUserRole] = useState('Software Engineer (Developer)');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [addUserError, setAddUserError] = useState(null);
+
+  // User Details Inspection View State
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [isLoadingUserDetail, setIsLoadingUserDetail] = useState(false);
 
   // Repository Management State
   const [dbRepos, setDbRepos] = useState([]);
@@ -384,17 +390,22 @@ const Dashboard = ({ onNavigateToLanding }) => {
     }
   };
 
-  const handleDeleteUser = async (userId, userEmail) => {
-    if (!window.confirm(`Are you sure you want to permanently delete user "${userEmail}"?`)) return;
-    setUpdatingUserId(userId);
+  const handleInspectUserDetail = async (targetUser) => {
+    if (targetUser.email.toLowerCase() === profileData.email.toLowerCase()) {
+      setActiveTab('Settings');
+      return;
+    }
+    setIsLoadingUserDetail(true);
     try {
-      await deleteUserApi(userId, profileData.email);
-      setUsersList(usersList.filter((u) => u.id !== userId));
-      setUserRoleMessage(`User account ${userEmail} permanently deleted.`);
+      const details = await fetchUserDetailsApi(targetUser.id, profileData.email);
+      if (details) {
+        setSelectedUserDetail(details);
+      }
     } catch (err) {
-      alert(err.message || 'Failed to delete user.');
+      console.error('Failed to load user details:', err);
+      alert(err.message || 'Failed to inspect user details.');
     } finally {
-      setUpdatingUserId(null);
+      setIsLoadingUserDetail(false);
     }
   };
 
@@ -1184,172 +1195,338 @@ const Dashboard = ({ onNavigateToLanding }) => {
         )}
 
         {/* 3. ADMIN USER & ROLE MANAGEMENT DIRECTORY TAB */}
-        {activeTab === 'Users' && isAdmin && (
+        {activeTab === 'Users' && (isAdmin || profileData.role === 'Engineering Manager (Project owner)') && (
           <div className="space-y-6 animate-fadeIn">
-            {/* Header Notification Card */}
-            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
-                  <Users className="w-6 h-6 text-[#b7f15b]" />
+            {/* If a user is selected for detailed inspection */}
+            {selectedUserDetail ? (
+              <div className="space-y-6">
+                {/* Top Navigation & Actions */}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setSelectedUserDetail(null)}
+                    className="h-10 px-4 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-mono uppercase"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-[#b7f15b]" />
+                    <span>Back to Directory</span>
+                  </button>
+                  <span className="text-xs font-mono text-[#8d937e]">
+                    User Inspection Mode (RBAC Authorized)
+                  </span>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[#dfe4de]">User Directory & Access Control</h2>
-                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
-                    Manage organization members, assign roles, create user accounts, or disable access.
-                  </p>
+
+                {/* User Identity Hero Card */}
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center font-bold text-2xl text-[#b7f15b]">
+                      {(selectedUserDetail.user.firstName || selectedUserDetail.user.name || selectedUserDetail.user.email)[0].toUpperCase()}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-[#dfe4de]">{selectedUserDetail.user.name}</h2>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-mono font-bold uppercase ${
+                            selectedUserDetail.user.isDisabled
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
+                          }`}
+                        >
+                          {selectedUserDetail.user.isDisabled ? 'DISABLED' : 'ACTIVE'}
+                        </span>
+                      </div>
+                      <p className="text-xs font-mono text-[#c3c9b2]">{selectedUserDetail.user.email}</p>
+                      <div className="flex items-center gap-2 pt-1 text-xs font-mono text-[#8d937e]">
+                        <ShieldCheck className="w-4 h-4 text-[#b7f15b]" />
+                        <span>Role: {selectedUserDetail.user.role}</span>
+                        <span>•</span>
+                        <span>Org: {selectedUserDetail.organizationName}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right space-y-1 font-mono text-xs text-[#8d937e]">
+                    <div>User ID: {selectedUserDetail.user.id}</div>
+                    <div>Joined: {new Date(selectedUserDetail.user.createdAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+
+                {/* Developer Metric Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Mined Commits</div>
+                    <div className="text-3xl font-bold text-[#dfe4de] font-mono">{selectedUserDetail.metrics.totalCommits}</div>
+                    <div className="text-[11px] font-mono text-[#8d937e]">Authored in Git Repos</div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Added</div>
+                    <div className="text-3xl font-bold text-[#b7f15b] font-mono">+{selectedUserDetail.metrics.totalLinesAdded}</div>
+                    <div className="text-[11px] font-mono text-[#8d937e]">Code volume added</div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Deleted</div>
+                    <div className="text-3xl font-bold text-amber-400 font-mono">-{selectedUserDetail.metrics.totalLinesDeleted}</div>
+                    <div className="text-[11px] font-mono text-[#8d937e]">Refactored / removed</div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Net Code Churn</div>
+                    <div className="text-3xl font-bold text-[#92d957] font-mono">{selectedUserDetail.metrics.netChurn}</div>
+                    <div className="text-[11px] font-mono text-[#8d937e]">Net line differential</div>
+                  </div>
+                </div>
+
+                {/* Profile Details & Account Settings */}
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+                  <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
+                    Account Profile & Preferences
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs">
+                    <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
+                      <div className="text-[#8d937e] uppercase">Phone Number</div>
+                      <div className="text-[#dfe4de] font-bold">{selectedUserDetail.user.phone || 'Not specified'}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
+                      <div className="text-[#8d937e] uppercase">Weekly Executive Reports</div>
+                      <div className="text-[#b7f15b] font-bold">{selectedUserDetail.user.weeklyReports ? 'ENABLED' : 'DISABLED'}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
+                      <div className="text-[#8d937e] uppercase">GitHub Sync Telemetry</div>
+                      <div className="text-[#b7f15b] font-bold">{selectedUserDetail.user.githubSync ? 'ACTIVE' : 'DISABLED'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Developer Commits Table */}
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+                  <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
+                    Recent Developer Commit Activity
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse font-mono text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[#8d937e] uppercase">
+                          <th className="py-2.5 px-4">SHA-1 Hash</th>
+                          <th className="py-2.5 px-4">Repository</th>
+                          <th className="py-2.5 px-4">Commit Message</th>
+                          <th className="py-2.5 px-4">Lines Delta</th>
+                          <th className="py-2.5 px-4">Timestamp</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
+                        {selectedUserDetail.recentCommits.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="py-8 text-center text-[#8d937e]">
+                              No commit activity records found for this developer.
+                            </td>
+                          </tr>
+                        ) : (
+                          selectedUserDetail.recentCommits.map((c) => (
+                            <tr key={c.hash} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="py-3.5 px-4 font-bold text-[#b7f15b]">
+                                <span className="px-2 py-1 rounded bg-[#b7f15b]/10 border border-[#b7f15b]/30">
+                                  {c.hash.substring(0, 8)}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-[#dfe4de]">{c.repo_name || 'sentinel/core-engine'}</td>
+                              <td className="py-3.5 px-4 text-[#dfe4de] max-w-md truncate">{c.message}</td>
+                              <td className="py-3.5 px-4">
+                                <span className="text-[#b7f15b] font-bold">+{c.lines_added || 0}</span> /{' '}
+                                <span className="text-amber-400 font-bold">-{c.lines_deleted || 0}</span>
+                              </td>
+                              <td className="py-3.5 px-4 text-[#8d937e] whitespace-nowrap">
+                                {new Date(c.timestamp).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
+            ) : (
+              /* User Directory Table */
+              <>
+                {/* Header Notification Card */}
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                      <Users className="w-6 h-6 text-[#b7f15b]" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-[#dfe4de]">User Directory & Access Control</h2>
+                      <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                        Manage organization members, inspect user details, assign roles, or disable access.
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowAddUserModal(true)}
-                  className="min-h-[44px] px-5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Add User</span>
-                </button>
-              </div>
-            </div>
+                  <div className="flex items-center gap-3">
+                    {isAdmin && (
+                      <button
+                        onClick={() => setShowAddUserModal(true)}
+                        className="min-h-[44px] px-5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Add User</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-            {userRoleMessage && (
-              <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
-                <span>{userRoleMessage}</span>
-              </div>
-            )}
-
-            {/* User Directory Table */}
-            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <h3 className="text-base font-semibold text-[#dfe4de]">Registered Organization Members</h3>
-                {isLoadingUsers && (
-                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Fetching Directory...</span>
+                {userRoleMessage && (
+                  <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                    <span>{userRoleMessage}</span>
                   </div>
                 )}
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-white/10 font-mono text-xs text-[#8d937e] uppercase">
-                      <th className="py-3 px-4">User Identity</th>
-                      <th className="py-3 px-4">Email Address</th>
-                      <th className="py-3 px-4">Assigned Role (RBAC)</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-sm">
-                    {usersList.map((user) => {
-                      const isSuperAdmin = user.email.toLowerCase() === 'vivekmohanraj5@gmail.com';
-                      const isUpdating = updatingUserId === user.id;
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <h3 className="text-base font-semibold text-[#dfe4de]">Registered Organization Members</h3>
+                    {(isLoadingUsers || isLoadingUserDetail) && (
+                      <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Loading Details...</span>
+                      </div>
+                    )}
+                  </div>
 
-                      return (
-                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#181d1a] border border-white/10 flex items-center justify-center font-bold text-xs text-[#b7f15b] shrink-0">
-                                {(user.firstName || user.name || user.email)[0].toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-medium text-[#dfe4de] flex items-center gap-2">
-                                  <span>{user.name || `${user.firstName} ${user.lastName}`.trim()}</span>
-                                  {isSuperAdmin && (
-                                    <span className="px-2 py-0.5 rounded-full bg-[#b7f15b]/20 border border-[#b7f15b]/40 text-[#b7f15b] text-[10px] font-mono font-bold uppercase">
-                                      Owner Admin
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-xs text-[#8d937e] font-mono">
-                                  ID: {user.id.slice(0, 8)}...
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-4 px-4 font-mono text-xs text-[#c3c9b2]">
-                            {user.email}
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-mono font-bold inline-flex items-center gap-1.5 ${
-                                user.role === 'Admin'
-                                  ? 'bg-[#b7f15b]/15 text-[#b7f15b] border border-[#b7f15b]/30'
-                                  : user.role === 'Engineering Manager (Project owner)'
-                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                  : 'bg-[#181d1a] text-[#c3c9b2] border border-white/10'
-                              }`}
-                            >
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>{user.role}</span>
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
-                                user.isDisabled
-                                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                  : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
-                              }`}
-                            >
-                              {user.isDisabled ? 'DISABLED' : 'ACTIVE'}
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4 text-right">
-                            {isSuperAdmin ? (
-                              <span className="text-xs font-mono text-[#8d937e] italic">Permanent Admin</span>
-                            ) : (
-                              <div className="inline-flex items-center gap-2">
-                                {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-[#b7f15b]" />}
-                                <select
-                                  value={user.role}
-                                  disabled={isUpdating}
-                                  onChange={(e) => handleRoleUpdate(user.id, user.email, e.target.value)}
-                                  className="px-2.5 py-1.5 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
-                                >
-                                  <option value="Software Engineer (Developer)">Developer</option>
-                                  <option value="Engineering Manager (Project owner)">Manager</option>
-                                  <option value="Admin">Admin</option>
-                                </select>
-
-                                {/* Toggle Disable Button */}
-                                <button
-                                  disabled={isUpdating}
-                                  onClick={() => handleToggleUserDisable(user.id, user.isDisabled, user.email)}
-                                  className={`p-1.5 rounded-xl border transition-colors ${
-                                    user.isDisabled
-                                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-                                  }`}
-                                  title={user.isDisabled ? 'Enable User Account' : 'Disable User Account'}
-                                >
-                                  {user.isDisabled ? <UserCheck className="w-4 h-4" /> : <UserMinus className="w-4 h-4" />}
-                                </button>
-
-                                {/* Delete User Button */}
-                                <button
-                                  disabled={isUpdating}
-                                  onClick={() => handleDeleteUser(user.id, user.email)}
-                                  className="p-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
-                                  title="Delete User Account"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 font-mono text-xs text-[#8d937e] uppercase">
+                          <th className="py-3 px-4">User Identity</th>
+                          <th className="py-3 px-4">Email Address</th>
+                          <th className="py-3 px-4">Assigned Role (RBAC)</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-sm">
+                        {usersList.map((user) => {
+                          const isSuperAdmin = user.email.toLowerCase() === 'vivekmohanraj5@gmail.com';
+                          const isSelf = user.email.toLowerCase() === profileData.email.toLowerCase();
+                          const isUpdating = updatingUserId === user.id;
+
+                          return (
+                            <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="py-4 px-4">
+                                <div
+                                  onClick={() => handleInspectUserDetail(user)}
+                                  className="flex items-center gap-3 cursor-pointer group"
+                                  title="Click to view detailed user profile & activity"
+                                >
+                                  <div className="w-9 h-9 rounded-full bg-[#181d1a] border border-white/10 flex items-center justify-center font-bold text-xs text-[#b7f15b] shrink-0 group-hover:border-[#b7f15b]">
+                                    {(user.firstName || user.name || user.email)[0].toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-[#dfe4de] group-hover:text-[#b7f15b] flex items-center gap-2 transition-colors">
+                                      <span>{user.name || `${user.firstName} ${user.lastName}`.trim()}</span>
+                                      {isSuperAdmin && (
+                                        <span className="px-2 py-0.5 rounded-full bg-[#b7f15b]/20 border border-[#b7f15b]/40 text-[#b7f15b] text-[10px] font-mono font-bold uppercase">
+                                          Owner Admin
+                                        </span>
+                                      )}
+                                      {isSelf && (
+                                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs font-mono text-[#8d937e]">
+                                          You
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-[#8d937e] font-mono">
+                                      ID: {user.id.slice(0, 8)}... (Click for Details)
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="py-4 px-4 font-mono text-xs text-[#c3c9b2]">
+                                {user.email}
+                              </td>
+
+                              <td className="py-4 px-4">
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-mono font-bold inline-flex items-center gap-1.5 ${
+                                    user.role === 'Admin'
+                                      ? 'bg-[#b7f15b]/15 text-[#b7f15b] border border-[#b7f15b]/30'
+                                      : user.role === 'Engineering Manager (Project owner)'
+                                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                      : 'bg-[#181d1a] text-[#c3c9b2] border border-white/10'
+                                  }`}
+                                >
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                  <span>{user.role}</span>
+                                </span>
+                              </td>
+
+                              <td className="py-4 px-4">
+                                <span
+                                  className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
+                                    user.isDisabled
+                                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                      : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
+                                  }`}
+                                >
+                                  {user.isDisabled ? 'DISABLED' : 'ACTIVE'}
+                                </span>
+                              </td>
+
+                              <td className="py-4 px-4 text-right">
+                                {isSuperAdmin ? (
+                                  <span className="text-xs font-mono text-[#8d937e] italic">Permanent Admin</span>
+                                ) : (
+                                  <div className="inline-flex items-center gap-2">
+                                    {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-[#b7f15b]" />}
+                                    {isAdmin && (
+                                      <>
+                                        <select
+                                          value={user.role}
+                                          disabled={isUpdating}
+                                          onChange={(e) => handleRoleUpdate(user.id, user.email, e.target.value)}
+                                          className="px-2.5 py-1.5 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
+                                        >
+                                          <option value="Software Engineer (Developer)">Developer</option>
+                                          <option value="Engineering Manager (Project owner)">Manager</option>
+                                          <option value="Admin">Admin</option>
+                                        </select>
+
+                                        <button
+                                          disabled={isUpdating}
+                                          onClick={() => handleToggleUserDisable(user.id, user.isDisabled, user.email)}
+                                          className={`p-1.5 rounded-xl border transition-colors ${
+                                            user.isDisabled
+                                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                              : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                                          }`}
+                                          title={user.isDisabled ? 'Enable User Account' : 'Disable User Account'}
+                                        >
+                                          {user.isDisabled ? <UserCheck className="w-4 h-4" /> : <UserMinus className="w-4 h-4" />}
+                                        </button>
+
+                                        <button
+                                          disabled={isUpdating}
+                                          onClick={() => handleDeleteUser(user.id, user.email)}
+                                          className="p-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+                                          title="Delete User Account"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* ADD USER MODAL */}
             {showAddUserModal && (

@@ -4,6 +4,7 @@ import {
   getLatestUser,
   updateUserProfile,
   getAllUsers,
+  getUserDetailedProfile,
   updateUserRoleByAdmin,
   createUserByAdmin,
   toggleUserDisableByAdmin,
@@ -60,6 +61,27 @@ export const getProfile = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: user
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'User ID parameter is required.' });
+    }
+
+    const details = await getUserDetailedProfile(id);
+    if (!details) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: details
     });
   } catch (err) {
     next(err);
