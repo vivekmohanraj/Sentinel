@@ -420,3 +420,40 @@ export const addCommitRecordApi = async (commitData) => {
     throw err;
   }
 };
+
+export const fetchHotspotsApi = async (repoId = '') => {
+  try {
+    const url = repoId
+      ? `${API_BASE_URL}/metrics/hotspots?repoId=${encodeURIComponent(repoId)}`
+      : `${API_BASE_URL}/metrics/hotspots`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch hotspots:', err);
+    throw err;
+  }
+};
+
+export const rescanCodebaseApi = async (repoId = '') => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/metrics/rescan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ repoId })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to rescan codebase:', err);
+    throw err;
+  }
+};

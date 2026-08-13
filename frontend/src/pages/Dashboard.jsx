@@ -66,7 +66,9 @@ import {
   fetchNotificationsApi,
   markNotificationReadApi,
   markAllNotificationsReadApi,
-  fetchCommitsApi
+  fetchCommitsApi,
+  fetchHotspotsApi,
+  rescanCodebaseApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -145,6 +147,12 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [commitsList, setCommitsList] = useState([]);
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
   const [commitSearch, setCommitSearch] = useState('');
+
+  // Module Complexity & Hotspots State
+  const [hotspotsList, setHotspotsList] = useState([]);
+  const [isLoadingHotspots, setIsLoadingHotspots] = useState(false);
+  const [isRescanning, setIsRescanning] = useState(false);
+  const [rescanMessage, setRescanMessage] = useState(null);
 
   // Sidebar Items
   const navItems = [
@@ -281,25 +289,43 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, []);
 
-  // Fetch Commits from database when Commits tab opens or search updates
+  // Fetch Hotspots from database when Tech Debt tab opens
   useEffect(() => {
     let isMounted = true;
-    if (activeTab === 'Commits') {
-      const loadCommits = async () => {
-        setIsLoadingCommits(true);
+    if (activeTab === 'Tech Debt') {
+      const loadHotspots = async () => {
+        setIsLoadingHotspots(true);
         try {
-          const list = await fetchCommitsApi(commitSearch);
-          if (isMounted && list) setCommitsList(list || []);
+          const list = await fetchHotspotsApi(selectedRepo);
+          if (isMounted && list) setHotspotsList(list || []);
         } catch (err) {
-          console.error('Failed to load commits:', err);
+          console.error('Failed to load hotspots:', err);
         } finally {
-          if (isMounted) setIsLoadingCommits(false);
+          if (isMounted) setIsLoadingHotspots(false);
         }
       };
-      loadCommits();
+      loadHotspots();
     }
     return () => { isMounted = false; };
-  }, [activeTab, commitSearch]);
+  }, [activeTab, selectedRepo]);
+
+  const handleRescanCodebase = async () => {
+    setIsRescanning(true);
+    setRescanMessage(null);
+    try {
+      const res = await rescanCodebaseApi(selectedRepo);
+      if (res?.success) {
+        setRescanMessage('Codebase rescan and static AST complexity analysis completed successfully.');
+        const updatedHotspots = await fetchHotspotsApi(selectedRepo);
+        if (updatedHotspots) setHotspotsList(updatedHotspots);
+        setTimeout(() => setRescanMessage(null), 5000);
+      }
+    } catch (err) {
+      console.error('Failed to rescan codebase:', err);
+    } finally {
+      setIsRescanning(false);
+    }
+  };
 
   const handleAddRepo = async (e) => {
     e.preventDefault();
@@ -632,6 +658,17 @@ const Dashboard = ({ onNavigateToLanding }) => {
             >
               <Plus className="w-4 h-4 text-[#b7f15b]" />
               <span className="inline">New Project</span>
+            </button>
+
+            {/* Rescan Codebase Button */}
+            <button
+              onClick={handleRescanCodebase}
+              disabled={isRescanning}
+              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
+              title="Rescan Codebase Complexity & Churn"
+            >
+              <RefreshCw className={`w-4 h-4 text-[#b7f15b] ${isRescanning ? 'animate-spin' : ''}`} />
+              <span className="inline">{isRescanning ? 'Scanning...' : 'Rescan Codebase'}</span>
             </button>
 
             {/* Export CSV Report Button */}
@@ -2040,7 +2077,78 @@ const Dashboard = ({ onNavigateToLanding }) => {
               </div>
             </div>
 
-            {/* Hotspots Breakdown */}
+            {rescanMessage && (
+              <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span>{rescanMessage}</span>
+              </div>
+            )}
+
+            {/* Ingested Module Hotspots Table */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Inferred Architectural Hotspots</h3>
+                {isLoadingHotspots && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Analyzing Modules...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse font-mono text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[#8d937e] uppercase">
+                      <th className="py-2.5 px-4">File Path</th>
+                      <th className="py-2.5 px-4">Complexity Score</th>
+                      <th className="py-2.5 px-4">Churn Rate</th>
+                      <th className="py-2.5 px-4">Bug Frequency</th>
+                      <th className="py-2.5 px-4">Severity Level</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
+                    {hotspotsList.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-[#8d937e]">
+                          No complexity hotspots indexed for this repository. Click &quot;Rescan Codebase&quot; to run analysis.
+                        </td>
+                      </tr>
+                    ) : (
+                      hotspotsList.map((h) => {
+                        const complexity = parseFloat(h.complexity_score || h.complexityScore || 0);
+                        const isCritical = complexity >= 15;
+                        const isElevated = complexity >= 10 && complexity < 15;
+
+                        return (
+                          <tr key={h.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-[#dfe4de]">{h.file_path || h.filePath}</td>
+                            <td className="py-3.5 px-4 font-bold text-[#b7f15b]">{complexity.toFixed(1)}</td>
+                            <td className="py-3.5 px-4 text-[#c3c9b2]">{h.churn_rate || h.churnRate} edits</td>
+                            <td className="py-3.5 px-4 text-[#c3c9b2]">{h.bug_frequency || h.bugFrequency} bugs</td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
+                                  isCritical
+                                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                    : isElevated
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                    : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
+                                }`}
+                              >
+                                {isCritical ? 'CRITICAL' : isElevated ? 'ELEVATED' : 'NORMAL'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Hotspots Breakdown Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
                 <div className="flex justify-between text-xs font-mono">
