@@ -77,11 +77,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
   // Profile Management State for Settings Tab
   const [profileData, setProfileData] = useState({
-    firstName: 'Sarah',
-    lastName: 'Vanderbilt',
-    email: 'sarah.dev@sentinel.engineering',
-    phone: '+1 (555) 234-8901',
-    role: 'Engineering Manager (Project owner)'
+    firstName: session?.user?.name ? session.user.name.split(' ')[0] : '',
+    lastName: session?.user?.name ? session.user.name.split(' ').slice(1).join(' ') : '',
+    email: session?.user?.email || '',
+    phone: '',
+    role: session?.user?.email?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)'
   });
 
   const [weeklyReports, setWeeklyReports] = useState(true);
@@ -175,11 +175,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
           const defaultLastName = session?.user?.name ? session.user.name.split(' ').slice(1).join(' ') : '';
 
           setProfileData({
-            firstName: data.firstName || defaultFirstName || 'User',
+            firstName: data.firstName || defaultFirstName || '',
             lastName: data.lastName || defaultLastName || '',
             email: data.email || userEmail || '',
             phone: data.phone || '',
-            role: data.role || 'Engineering Manager (Project owner)'
+            role: data.role || (userEmail?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)')
           });
           setWeeklyReports(data.weeklyReports !== false);
           setGithubSync(data.githubSync !== false);
@@ -1288,7 +1288,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     </div>
                     <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
                       <div className="text-[#8d937e] uppercase">Phone Number</div>
-                      <div className="text-[#dfe4de] font-bold">{selectedUserDetail.user.phone || 'Not specified'}</div>
+                      <div className="text-[#dfe4de] font-bold">{selectedUserDetail.user.phone || 'Not Specified'}</div>
                     </div>
                     <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
                       <div className="text-[#8d937e] uppercase">Weekly Executive Reports</div>

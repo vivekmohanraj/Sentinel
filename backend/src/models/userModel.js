@@ -16,13 +16,18 @@ const formatUserRow = (user) => {
   const isSuperAdmin = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
   const effectiveRole = isSuperAdmin ? 'Admin' : (user.role || 'Software Engineer (Developer)');
 
+  let phone = user.phone || '';
+  if (phone.includes('555')) {
+    phone = '';
+  }
+
   return {
     id: user.id,
     firstName: firstName || '',
     lastName: lastName || '',
     name: user.name || `${firstName || ''} ${lastName || ''}`.trim(),
     email: user.email,
-    phone: user.phone || '',
+    phone: phone,
     role: effectiveRole,
     organizationId: user.organization_id || null,
     weeklyReports: user.weekly_reports !== false,
@@ -78,22 +83,29 @@ export const getUserDetailedProfile = async (targetUserId) => {
   const user = await getUserById(targetUserId);
   if (!user) return null;
 
-  // Real Organization & Project Name
-  let orgName = 'Sentinel Core Engineering Group';
+  // 1. Organization Name (Strictly from DB)
+  let orgName = 'Unassigned Organization';
   if (user.organizationId) {
     const orgRes = await pool.query(`SELECT name FROM tbl_organization WHERE id = $1`, [user.organizationId]);
-    if (orgRes.rows.length > 0) orgName = orgRes.rows[0].name;
-  } else {
-    const defaultOrgRes = await pool.query(`SELECT name FROM tbl_organization LIMIT 1`);
-    if (defaultOrgRes.rows.length > 0) orgName = defaultOrgRes.rows[0].name;
+    if (orgRes.rows.length > 0) {
+      orgName = orgRes.rows[0].name;
+    }
   }
 
-  let projectName = 'Sentinel Engine Infrastructure';
-  const projRes = await pool.query(`SELECT name FROM tbl_project LIMIT 1`);
-  if (projRes.rows.length > 0) projectName = projRes.rows[0].name;
+  // 2. Project Name (Strictly from DB)
+  let projectName = 'Unassigned Project';
+  if (user.organizationId) {
+    const projRes = await pool.query(
+      `SELECT name FROM tbl_project WHERE organization_id = $1 LIMIT 1`,
+      [user.organizationId]
+    );
+    if (projRes.rows.length > 0) {
+      projectName = projRes.rows[0].name;
+    }
+  }
 
-  // Developer Commit History & Activity Metrics
-  let commitsRes = await pool.query(
+  // 3. Developer Commit History & Activity Metrics (Strictly matching author_email in tbl_commit_record)
+  const commitsRes = await pool.query(
     `SELECT c.hash, c.repository_id, c.author_email, c.message, c.lines_added, c.lines_deleted, c.timestamp, r.name as repo_name
      FROM tbl_commit_record c
      LEFT JOIN tbl_repository r ON c.repository_id = r.id
@@ -102,33 +114,7 @@ export const getUserDetailedProfile = async (targetUserId) => {
     [user.email]
   );
 
-  let commits = commitsRes.rows || [];
-
-  // Fallback: If no commits match exact email address, search by email prefix or system mined commits
-  if (commits.length === 0 && user.email) {
-    const prefix = user.email.split('@')[0];
-    const prefixRes = await pool.query(
-      `SELECT c.hash, c.repository_id, c.author_email, c.message, c.lines_added, c.lines_deleted, c.timestamp, r.name as repo_name
-       FROM tbl_commit_record c
-       LEFT JOIN tbl_repository r ON c.repository_id = r.id
-       WHERE LOWER(c.author_email) LIKE LOWER($1)
-       ORDER BY c.timestamp DESC`,
-      [`%${prefix}%`]
-    );
-    commits = prefixRes.rows || [];
-  }
-
-  if (commits.length === 0) {
-    const allCommitsRes = await pool.query(
-      `SELECT c.hash, c.repository_id, c.author_email, c.message, c.lines_added, c.lines_deleted, c.timestamp, r.name as repo_name
-       FROM tbl_commit_record c
-       LEFT JOIN tbl_repository r ON c.repository_id = r.id
-       ORDER BY c.timestamp DESC
-       LIMIT 5`
-    );
-    commits = allCommitsRes.rows || [];
-  }
-
+  const commits = commitsRes.rows || [];
   const totalCommits = commits.length;
   const totalLinesAdded = commits.reduce((acc, c) => acc + (c.lines_added || 0), 0);
   const totalLinesDeleted = commits.reduce((acc, c) => acc + (c.lines_deleted || 0), 0);
@@ -144,7 +130,7 @@ export const getUserDetailedProfile = async (targetUserId) => {
       totalLinesDeleted,
       netChurn
     },
-    recentCommits: commits.slice(0, 10)
+    recentCommits: commits
   };
 };
 
