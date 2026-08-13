@@ -1,4 +1,15 @@
-import { getUserById, getUserByEmail, getLatestUser, updateUserProfile, getAllUsers, updateUserRoleByAdmin, ADMIN_EMAIL } from '../models/userModel.js';
+import {
+  getUserById,
+  getUserByEmail,
+  getLatestUser,
+  updateUserProfile,
+  getAllUsers,
+  updateUserRoleByAdmin,
+  createUserByAdmin,
+  toggleUserDisableByAdmin,
+  deleteUserByAdmin,
+  ADMIN_EMAIL
+} from '../models/userModel.js';
 import { auth } from '../auth.js';
 
 export const getProfile = async (req, res, next) => {
@@ -6,7 +17,6 @@ export const getProfile = async (req, res, next) => {
     let email = req.query.email;
     let userId = req.query.userId;
 
-    // Try extracting Better Auth session from headers/cookies
     try {
       const session = await auth.api.getSession({ headers: req.headers });
       if (session?.user) {
@@ -24,7 +34,6 @@ export const getProfile = async (req, res, next) => {
     } else if (userId) {
       user = await getUserById(userId);
     } else {
-      // If no session email is specified, grab latest created user
       user = await getLatestUser();
     }
 
@@ -42,7 +51,8 @@ export const getProfile = async (req, res, next) => {
           phone: '',
           role: defaultRole,
           weeklyReports: true,
-          githubSync: true
+          githubSync: true,
+          isDisabled: false
         }
       });
     }
@@ -61,7 +71,6 @@ export const updateProfile = async (req, res, next) => {
     const { firstName, lastName, email, phone, role, weeklyReports, githubSync } = req.body;
     let targetEmail = email || req.query.email;
 
-    // Try extracting Better Auth session from headers/cookies
     try {
       const session = await auth.api.getSession({ headers: req.headers });
       if (session?.user?.email) {
@@ -124,5 +133,65 @@ export const adminUpdateUserRole = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const adminCreateUser = async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, error: 'Name, email, and password are required fields.' });
+    }
+
+    const created = await createUserByAdmin({ name, email, password, role });
+    return res.status(201).json({
+      success: true,
+      data: created
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: err.message || 'Failed to create user account.'
+    });
+  }
+};
+
+export const adminToggleDisable = async (req, res, next) => {
+  try {
+    const { userId, isDisabled } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId parameter is required.' });
+    }
+
+    const updated = await toggleUserDisableByAdmin(userId, isDisabled);
+    return res.status(200).json({
+      success: true,
+      data: updated
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: err.message || 'Failed to update user account status.'
+    });
+  }
+};
+
+export const adminDeleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'User ID is required.' });
+    }
+
+    await deleteUserByAdmin(id);
+    return res.status(200).json({
+      success: true,
+      message: 'User deleted successfully.'
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: err.message || 'Failed to delete user account.'
+    });
   }
 };

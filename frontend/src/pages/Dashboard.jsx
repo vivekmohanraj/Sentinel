@@ -37,7 +37,10 @@ import {
   FolderKanban,
   Info,
   GitCommit,
-  CheckCheck
+  CheckCheck,
+  UserX,
+  UserMinus,
+  Lock
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -46,6 +49,9 @@ import {
   fetchDashboardSummary,
   fetchAllUsers,
   updateUserRoleApi,
+  createUserByAdminApi,
+  toggleUserDisableApi,
+  deleteUserApi,
   fetchRepositories,
   addRepositoryApi,
   deleteRepositoryApi,
@@ -88,6 +94,15 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState(null);
   const [userRoleMessage, setUserRoleMessage] = useState(null);
+
+  // Admin Add User Modal State
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('Software Engineer (Developer)');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [addUserError, setAddUserError] = useState(null);
 
   // Repository Management State
   const [dbRepos, setDbRepos] = useState([]);
@@ -313,20 +328,71 @@ const Dashboard = ({ onNavigateToLanding }) => {
     }
   };
 
-  const handleRoleUpdate = async (targetUserId, targetEmail, newRole) => {
-    setUpdatingUserId(targetUserId);
+  const handleRoleUpdate = async (userId, userEmail, newRole) => {
+    setUpdatingUserId(userId);
     setUserRoleMessage(null);
     try {
-      const updated = await updateUserRoleApi(targetUserId, newRole, profileData.email);
+      const updated = await updateUserRoleApi(userId, newRole, profileData.email);
       if (updated) {
-        setUsersList((prev) =>
-          prev.map((u) => (u.id === targetUserId || u.email.toLowerCase() === targetEmail.toLowerCase() ? { ...u, role: updated.role } : u))
-        );
-        setUserRoleMessage(`Role for ${targetEmail} updated to ${updated.role}`);
-        setTimeout(() => setUserRoleMessage(null), 4000);
+        setUsersList(usersList.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
+        setUserRoleMessage(`Role updated to "${updated.role}" for ${userEmail}.`);
       }
     } catch (err) {
-      console.error('Error updating user role:', err);
+      console.error('Failed to update user role:', err);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleAdminAddUser = async (e) => {
+    e.preventDefault();
+    setAddUserError(null);
+    if (!newUserName || !newUserEmail || !newUserPassword) return;
+    setIsCreatingUser(true);
+    try {
+      const created = await createUserByAdminApi(
+        { name: newUserName, email: newUserEmail, password: newUserPassword, role: newUserRole },
+        profileData.email
+      );
+      if (created) {
+        setUsersList([created, ...usersList]);
+        setUserRoleMessage(`User account created for ${created.email}.`);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+        setShowAddUserModal(false);
+      }
+    } catch (err) {
+      setAddUserError(err.message || 'Failed to create user account.');
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const handleToggleUserDisable = async (userId, currentIsDisabled, userEmail) => {
+    setUpdatingUserId(userId);
+    try {
+      const updated = await toggleUserDisableApi(userId, !currentIsDisabled, profileData.email);
+      if (updated) {
+        setUsersList(usersList.map((u) => (u.id === userId ? { ...u, isDisabled: updated.isDisabled } : u)));
+        setUserRoleMessage(`Account for ${userEmail} is now ${updated.isDisabled ? 'DISABLED' : 'ACTIVE'}.`);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to toggle user status.');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userEmail) => {
+    if (!window.confirm(`Are you sure you want to permanently delete user "${userEmail}"?`)) return;
+    setUpdatingUserId(userId);
+    try {
+      await deleteUserApi(userId, profileData.email);
+      setUsersList(usersList.filter((u) => u.id !== userId));
+      setUserRoleMessage(`User account ${userEmail} permanently deleted.`);
+    } catch (err) {
+      alert(err.message || 'Failed to delete user.');
     } finally {
       setUpdatingUserId(null);
     }
@@ -1117,27 +1183,31 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         )}
 
-        {/* 3. ADMIN USER & ROLE MANAGEMENT DIRECTORY */}
+        {/* 3. ADMIN USER & ROLE MANAGEMENT DIRECTORY TAB */}
         {activeTab === 'Users' && isAdmin && (
           <div className="space-y-6 animate-fadeIn">
             {/* Header Notification Card */}
             <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
-                  <ShieldCheck className="w-6 h-6 text-[#b7f15b]" />
+                  <Users className="w-6 h-6 text-[#b7f15b]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#dfe4de]">Admin Access Directory</h2>
-                  <p className="text-xs font-mono text-[#c3c9b2] mt-0.5">
-                    Manage team permissions and user role assignments synced with PostgreSQL `tbl_user`.
+                  <h2 className="text-xl font-bold text-[#dfe4de]">User Directory & Access Control</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Manage organization members, assign roles, create user accounts, or disable access.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="px-3.5 py-1.5 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] font-mono text-xs font-bold uppercase">
-                  {usersList.length} Registered Users
-                </span>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="min-h-[44px] px-5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Add User</span>
+                </button>
               </div>
             </div>
 
@@ -1167,7 +1237,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       <th className="py-3 px-4">User Identity</th>
                       <th className="py-3 px-4">Email Address</th>
                       <th className="py-3 px-4">Assigned Role (RBAC)</th>
-                      <th className="py-3 px-4 text-right">Role Actions</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-sm">
@@ -1217,6 +1288,18 @@ const Dashboard = ({ onNavigateToLanding }) => {
                             </span>
                           </td>
 
+                          <td className="py-4 px-4">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
+                                user.isDisabled
+                                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  : 'bg-[#b7f15b]/20 text-[#b7f15b] border border-[#b7f15b]/30'
+                              }`}
+                            >
+                              {user.isDisabled ? 'DISABLED' : 'ACTIVE'}
+                            </span>
+                          </td>
+
                           <td className="py-4 px-4 text-right">
                             {isSuperAdmin ? (
                               <span className="text-xs font-mono text-[#8d937e] italic">Permanent Admin</span>
@@ -1227,12 +1310,36 @@ const Dashboard = ({ onNavigateToLanding }) => {
                                   value={user.role}
                                   disabled={isUpdating}
                                   onChange={(e) => handleRoleUpdate(user.id, user.email, e.target.value)}
-                                  className="px-3 py-1.5 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
                                 >
                                   <option value="Software Engineer (Developer)">Developer</option>
                                   <option value="Engineering Manager (Project owner)">Manager</option>
                                   <option value="Admin">Admin</option>
                                 </select>
+
+                                {/* Toggle Disable Button */}
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleToggleUserDisable(user.id, user.isDisabled, user.email)}
+                                  className={`p-1.5 rounded-xl border transition-colors ${
+                                    user.isDisabled
+                                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                      : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                                  }`}
+                                  title={user.isDisabled ? 'Enable User Account' : 'Disable User Account'}
+                                >
+                                  {user.isDisabled ? <UserCheck className="w-4 h-4" /> : <UserMinus className="w-4 h-4" />}
+                                </button>
+
+                                {/* Delete User Button */}
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={() => handleDeleteUser(user.id, user.email)}
+                                  className="p-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
+                                  title="Delete User Account"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             )}
                           </td>
@@ -1243,6 +1350,106 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </table>
               </div>
             </div>
+
+            {/* ADD USER MODAL */}
+            {showAddUserModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+                <div className="w-full max-w-md p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                        <UserPlus className="w-5 h-5 text-[#b7f15b]" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-[#dfe4de]">Add New User</h3>
+                        <p className="text-xs font-mono text-[#c3c9b2]/70">Create a user account with signup credentials.</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowAddUserModal(false)}
+                      className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {addUserError && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+                      {addUserError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleAdminAddUser} className="space-y-4">
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">Full Name</label>
+                      <input
+                        type="text"
+                        value={newUserName}
+                        onChange={(e) => setNewUserName(e.target.value)}
+                        placeholder="e.g. Alex Engineer"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">Work Email Address</label>
+                      <input
+                        type="email"
+                        value={newUserEmail}
+                        onChange={(e) => setNewUserEmail(e.target.value)}
+                        placeholder="alex@sentinel.engineering"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">Password</label>
+                      <input
+                        type="password"
+                        value={newUserPassword}
+                        onChange={(e) => setNewUserPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] font-mono"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">Assigned Role</label>
+                      <select
+                        value={newUserRole}
+                        onChange={(e) => setNewUserRole(e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] font-mono cursor-pointer"
+                      >
+                        <option value="Software Engineer (Developer)">Software Engineer (Developer)</option>
+                        <option value="Engineering Manager (Project owner)">Engineering Manager (Project owner)</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddUserModal(false)}
+                        className="h-10 px-4 rounded-xl bg-white/5 text-[#c3c9b2] hover:bg-white/10 font-mono text-xs uppercase"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isCreatingUser}
+                        className="h-10 px-6 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {isCreatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                        <span>{isCreatingUser ? 'Creating...' : 'Create Account'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

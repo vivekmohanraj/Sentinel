@@ -1,5 +1,13 @@
 import express from 'express';
-import { getProfile, updateProfile, getAllUsersList, adminUpdateUserRole } from '../controllers/userController.js';
+import {
+  getProfile,
+  updateProfile,
+  getAllUsersList,
+  adminUpdateUserRole,
+  adminCreateUser,
+  adminToggleDisable,
+  adminDeleteUser
+} from '../controllers/userController.js';
 import { getUserByEmail, ADMIN_EMAIL } from '../models/userModel.js';
 import { auth } from '../auth.js';
 
@@ -46,5 +54,8 @@ router.put('/profile', updateProfile);
 // Admin-only endpoints
 router.get('/all', requireAdmin, getAllUsersList);
 router.put('/role', requireAdmin, adminUpdateUserRole);
+router.post('/create', requireAdmin, adminCreateUser);
+router.put('/disable', requireAdmin, adminToggleDisable);
+router.delete('/:id', requireAdmin, adminDeleteUser);
 
 export default router;

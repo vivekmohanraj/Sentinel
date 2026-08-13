@@ -82,6 +82,77 @@ export const updateUserRoleApi = async (userId, role, adminEmail) => {
   }
 };
 
+export const createUserByAdminApi = async (userData, adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/user/create?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/user/create`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ...userData, adminEmail })
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to create user:', err);
+    throw err;
+  }
+};
+
+export const toggleUserDisableApi = async (userId, isDisabled, adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/user/disable?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/user/disable`;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ userId, isDisabled, adminEmail })
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to toggle user status:', err);
+    throw err;
+  }
+};
+
+export const deleteUserApi = async (userId, adminEmail) => {
+  try {
+    const url = adminEmail
+      ? `${API_BASE_URL}/user/${userId}?email=${encodeURIComponent(adminEmail)}`
+      : `${API_BASE_URL}/user/${userId}`;
+
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to delete user:', err);
+    throw err;
+  }
+};
+
 export const fetchDashboardSummary = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {

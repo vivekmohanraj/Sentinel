@@ -21,6 +21,7 @@ export const runMigrations = async () => {
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS weekly_reports BOOLEAN DEFAULT true;
       ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS github_sync BOOLEAN DEFAULT true;
+      ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS is_disabled BOOLEAN DEFAULT false;
 
       -- Enforce Admin designation rule for vivekmohanraj5@gmail.com
       UPDATE tbl_user SET role = 'Admin' WHERE LOWER(email) = 'vivekmohanraj5@gmail.com';
