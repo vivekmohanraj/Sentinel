@@ -660,6 +660,41 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </div>
               </div>
 
+              {/* Interactive Defect Risk Probability Trend SVG Chart */}
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between text-[11px] font-mono text-[#c3c9b2]/70">
+                  <span>Sprint 38–42 Risk Trend</span>
+                  <span className="text-amber-400 font-bold">70% Threshold Marker</span>
+                </div>
+                <div className="h-20 w-full relative pt-1">
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 70" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    {/* 70% Threshold Line */}
+                    <line x1="0" y1="21" x2="300" y2="21" stroke="#ef4444" strokeDasharray="3 3" strokeWidth="1" opacity="0.6" />
+                    <text x="5" y="16" fill="#ef4444" fontSize="8" fontFamily="monospace" opacity="0.8">Critical 70%</text>
+                    
+                    {/* Area Fill */}
+                    <path d="M 0 42 L 75 32 L 150 28 L 225 23 L 300 17 L 300 70 L 0 70 Z" fill="url(#riskGrad)" />
+                    
+                    {/* Risk Line Path */}
+                    <path d="M 0 42 L 75 32 L 150 28 L 225 23 L 300 17" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    
+                    {/* Data Points */}
+                    {[[0, 42, '42%'], [75, 32, '55%'], [150, 28, '61%'], [225, 23, '68%'], [300, 17, '76%']].map(([cx, cy, label], i) => (
+                      <g key={i}>
+                        <circle cx={cx} cy={cy} r="3.5" fill="#1c211e" stroke="#f59e0b" strokeWidth="2" />
+                        <text x={cx} y={cy - 6} fill="#dfe4de" fontSize="8" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{label}</text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+              </div>
+
               <div className="p-3.5 rounded-xl bg-[#262b28] border border-white/5 space-y-1.5 text-xs">
                 <div className="font-mono text-[#dfe4de] flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
@@ -1529,6 +1564,91 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <span className="px-3.5 py-1.5 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b]">
                   Health Index: 78/100
                 </span>
+              </div>
+            </div>
+
+            {/* Architectural Dependency Node Diagram & Radial Gauge Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Architectural Module Coupling & Dependency Node Diagram */}
+              <div className="lg:col-span-8 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#dfe4de]">Architectural Dependency & Coupling Graph</h3>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70">Inter-module coupling index map and tangled import vectors.</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
+                    7.4 / 10 Coupling Index
+                  </span>
+                </div>
+
+                <div className="relative w-full h-64 bg-[#181d1a] rounded-xl border border-white/5 p-4 flex items-center justify-center overflow-hidden">
+                  <svg className="w-full h-full" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet">
+                    {/* Connection Edges */}
+                    <path d="M 100 110 Q 250 50 400 110" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 2" />
+                    <path d="M 100 110 Q 250 170 400 110" fill="none" stroke="#f59e0b" strokeWidth="2" />
+                    <path d="M 400 110 Q 480 60 520 110" fill="none" stroke="#b7f15b" strokeWidth="1.5" />
+                    <path d="M 100 110 Q 300 110 520 110" fill="none" stroke="#8d937e" strokeWidth="1" strokeDasharray="2 2" />
+
+                    {/* Coupling Weight Badges */}
+                    <rect x="230" y="65" width="45" height="18" rx="4" fill="#1c211e" stroke="#ef4444" strokeWidth="1" />
+                    <text x="252" y="78" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">7.4 CPL</text>
+
+                    <rect x="230" y="140" width="45" height="18" rx="4" fill="#1c211e" stroke="#f59e0b" strokeWidth="1" />
+                    <text x="252" y="153" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">5.8 CPL</text>
+
+                    {/* Node 1: Auth Session */}
+                    <g transform="translate(100, 110)">
+                      <circle r="26" fill="#1c211e" stroke="#ef4444" strokeWidth="3" />
+                      <circle r="32" fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.3" />
+                      <text y="-35" fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">Auth Session</text>
+                      <text y="4" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle">84% Risk</text>
+                    </g>
+
+                    {/* Node 2: Payment Gateway */}
+                    <g transform="translate(400, 110)">
+                      <circle r="24" fill="#1c211e" stroke="#f59e0b" strokeWidth="3" />
+                      <text y="-33" fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">Payment Gateway</text>
+                      <text y="4" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle">72% Risk</text>
+                    </g>
+
+                    {/* Node 3: Cache Eviction */}
+                    <g transform="translate(250, 40)">
+                      <circle r="18" fill="#1c211e" stroke="#a855f7" strokeWidth="2.5" />
+                      <text y="-25" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">Cache Eviction</text>
+                    </g>
+
+                    {/* Node 4: Planner Engine */}
+                    <g transform="translate(250, 180)">
+                      <circle r="18" fill="#1c211e" stroke="#b7f15b" strokeWidth="2.5" />
+                      <text y="30" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">Planner Engine</text>
+                    </g>
+
+                    {/* Node 5: DB Migrations */}
+                    <g transform="translate(520, 110)">
+                      <circle r="20" fill="#1c211e" stroke="#92d957" strokeWidth="2.5" />
+                      <text y="-28" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">DB Migrations</text>
+                      <text y="4" fill="#92d957" fontSize="9" fontFamily="monospace" textAnchor="middle">48% Risk</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Technical Debt Degradation Radial Gauge Arc */}
+              <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col justify-between items-center space-y-4 text-center">
+                <span className="text-xs font-mono text-[#c3c9b2]/70 uppercase tracking-wider">Technical Debt Arc Gauge</span>
+                <div className="relative w-36 h-36 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#262b28" strokeWidth="8" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="65" strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
+                    <span className="text-3xl font-bold text-amber-400">7.4</span>
+                    <span className="text-[10px] text-[#8d937e]">DEBT INDEX</span>
+                  </div>
+                </div>
+                <p className="text-xs text-[#c3c9b2]/70 font-mono">
+                  Decoupling Auth & Cache interface will reduce predicted release risk by <span className="text-[#b7f15b] font-bold">32%</span>.
+                </p>
               </div>
             </div>
 
