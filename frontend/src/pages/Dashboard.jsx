@@ -1281,7 +1281,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
                     Account Profile & Preferences
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs">
+                    <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
+                      <div className="text-[#8d937e] uppercase">Assigned Project</div>
+                      <div className="text-[#b7f15b] font-bold truncate">{selectedUserDetail.projectName || 'Sentinel Engine Infrastructure'}</div>
+                    </div>
                     <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
                       <div className="text-[#8d937e] uppercase">Phone Number</div>
                       <div className="text-[#dfe4de] font-bold">{selectedUserDetail.user.phone || 'Not specified'}</div>

@@ -38,24 +38,19 @@ export const getProfile = async (req, res, next) => {
       user = await getLatestUser();
     }
 
-    if (!user) {
-      const isSuperAdmin = email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-      const defaultRole = isSuperAdmin ? 'Admin' : 'Software Engineer (Developer)';
-      return res.status(200).json({
-        success: true,
-        data: {
-          id: 'demo-user-id',
-          firstName: email ? email.split('@')[0] : 'User',
-          lastName: '',
-          name: email ? email.split('@')[0] : 'User',
-          email: email || 'user@sentinel.engineering',
-          phone: '',
-          role: defaultRole,
-          weeklyReports: true,
-          githubSync: true,
-          isDisabled: false
-        }
+    // Automatically upsert real user account in PostgreSQL if not found
+    if (!user && (email || userId)) {
+      const targetEmail = email || 'user@sentinel.engineering';
+      const namePart = targetEmail.split('@')[0];
+      user = await updateUserProfile(targetEmail, {
+        firstName: namePart,
+        lastName: '',
+        email: targetEmail
       });
+    }
+
+    if (!user) {
+      user = await getLatestUser();
     }
 
     return res.status(200).json({
