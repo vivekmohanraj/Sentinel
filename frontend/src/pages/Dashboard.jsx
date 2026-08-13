@@ -35,7 +35,7 @@ import {
   HardDrive,
   Server,
   FolderKanban,
-  Building2
+  Info
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -52,7 +52,10 @@ import {
   fetchOrganizations,
   createOrganizationApi,
   fetchProjects,
-  createProjectApi
+  createProjectApi,
+  fetchNotificationsApi,
+  markNotificationReadApi,
+  markAllNotificationsReadApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -99,6 +102,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+
+  // Notifications & Alert Center State
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
+  const unreadCount = notificationsList.filter((n) => !n.is_read).length;
 
   // Risk Filter State for Risk Radar Tab
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
@@ -242,6 +250,21 @@ const Dashboard = ({ onNavigateToLanding }) => {
     loadProjects();
     return () => { isMounted = false; };
   }, []);
+
+  // Fetch Notifications on load
+  useEffect(() => {
+    let isMounted = true;
+    const loadNotifs = async () => {
+      try {
+        const list = await fetchNotificationsApi(profileData.email);
+        if (isMounted && list) setNotificationsList(list || []);
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    };
+    loadNotifs();
+    return () => { isMounted = false; };
+  }, [profileData.email]);
 
   const handleAddRepo = async (e) => {
     e.preventDefault();
@@ -529,6 +552,20 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <Download className="w-4 h-4 text-[#b7f15b]" />
               <span className="inline">Export Report</span>
             </a>
+
+            {/* Notification Bell Button */}
+            <button
+              onClick={() => setShowNotificationDrawer(true)}
+              className="relative h-10 w-10 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center shrink-0"
+              title="Open System Alerts & Notifications"
+            >
+              <Bell className="w-4 h-4 text-[#c3c9b2]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#b7f15b] text-[#223600] font-mono text-[10px] font-bold flex items-center justify-center shadow-md">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
           </div>
         </header>
 
@@ -1756,6 +1793,106 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* SYSTEM NOTIFICATION & ALERT CENTER DRAWER */}
+        {showNotificationDrawer && (
+          <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+              <div className="w-screen max-w-md bg-[#1c211e] border-l border-white/10 shadow-2xl flex flex-col justify-between">
+                {/* Drawer Header */}
+                <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                      <Bell className="w-5 h-5 text-[#b7f15b]" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-[#dfe4de]">System Alerts & Notifications</h3>
+                      <p className="text-xs font-mono text-[#c3c9b2]/70">
+                        {unreadCount} unread system alert{unreadCount !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowNotificationDrawer(false)}
+                    className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Notification List */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {notificationsList.length === 0 ? (
+                    <div className="text-center py-12 text-xs font-mono text-[#8d937e]">
+                      No notifications available.
+                    </div>
+                  ) : (
+                    notificationsList.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={async () => {
+                          if (!n.is_read) {
+                            await markNotificationReadApi(n.id);
+                            setNotificationsList(
+                              notificationsList.map((item) =>
+                                item.id === n.id ? { ...item, is_read: true } : item
+                              )
+                            );
+                          }
+                        }}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                          n.is_read
+                            ? 'bg-[#181d1a]/50 border-white/5 opacity-70'
+                            : 'bg-[#181d1a] border-[#b7f15b]/30 shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {n.type === 'SECURITY' && <ShieldAlert className="w-4 h-4 text-emerald-400" />}
+                            {n.type === 'WARN' && <AlertTriangle className="w-4 h-4 text-amber-400" />}
+                            {n.type === 'INFO' && <Info className="w-4 h-4 text-[#b7f15b]" />}
+                            <span className="font-bold text-xs text-[#dfe4de] font-mono">{n.title}</span>
+                          </div>
+                          {!n.is_read && (
+                            <span className="w-2 h-2 rounded-full bg-[#b7f15b] shrink-0" title="Unread" />
+                          )}
+                        </div>
+
+                        <p className="text-xs text-[#c3c9b2]/70 leading-relaxed font-mono">{n.message}</p>
+
+                        <div className="text-[10px] font-mono text-[#8d937e] pt-1 flex items-center justify-between border-t border-white/5">
+                          <span>{new Date(n.created_at).toLocaleString()}</span>
+                          <span className="uppercase text-[#92d957]">{n.type}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Drawer Footer Actions */}
+                <div className="p-6 border-t border-white/10 flex items-center justify-between bg-[#181d1a]">
+                  <button
+                    onClick={async () => {
+                      await markAllNotificationsReadApi(profileData.email);
+                      setNotificationsList(notificationsList.map((item) => ({ ...item, is_read: true })));
+                    }}
+                    className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-[#dfe4de] transition-all font-mono text-xs uppercase flex items-center gap-2"
+                  >
+                    <CheckCheck className="w-4 h-4 text-[#b7f15b]" />
+                    <span>Mark All Read</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowNotificationDrawer(false)}
+                    className="h-10 px-6 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

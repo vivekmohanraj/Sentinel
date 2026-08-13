@@ -236,3 +236,56 @@ export const createProjectApi = async (orgId, name, description) => {
     throw err;
   }
 };
+
+export const fetchNotificationsApi = async (email) => {
+  try {
+    const url = email
+      ? `${API_BASE_URL}/notifications?email=${encodeURIComponent(email)}`
+      : `${API_BASE_URL}/notifications`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch notifications:', err);
+    throw err;
+  }
+};
+
+export const markNotificationReadApi = async (id) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to mark notification as read:', err);
+    throw err;
+  }
+};
+
+export const markAllNotificationsReadApi = async (email) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to mark all notifications as read:', err);
+    throw err;
+  }
+};

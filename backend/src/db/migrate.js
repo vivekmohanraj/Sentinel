@@ -81,7 +81,34 @@ export const runMigrations = async () => {
           llm_explanation TEXT,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- 7. System Notifications
+      CREATE TABLE IF NOT EXISTS tbl_notification (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          user_id TEXT REFERENCES tbl_user(id) ON DELETE CASCADE,
+          type VARCHAR(50) NOT NULL DEFAULT 'INFO',
+          title VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          is_read BOOLEAN DEFAULT false,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
+
+    // Seed default notification for Admin user if table is empty
+    const notifCount = await pool.query(`SELECT COUNT(*) FROM tbl_notification`);
+    if (parseInt(notifCount.rows[0].count, 10) === 0) {
+      const adminUser = await pool.query(`SELECT id FROM tbl_user WHERE LOWER(email) = 'vivekmohanraj5@gmail.com' LIMIT 1`);
+      const userId = adminUser.rows.length > 0 ? adminUser.rows[0].id : null;
+
+      await pool.query(`
+        INSERT INTO tbl_notification (user_id, type, title, message, is_read)
+        VALUES 
+          ($1, 'SECURITY', 'Super Admin Activated', 'Super Admin privileges permanently active for vivekmohanraj5@gmail.com.', false),
+          ($1, 'INFO', 'Sentinel Command Center Live', 'Air-gapped telemetry and PostgreSQL knowledge graph initialized.', false),
+          ($1, 'WARN', 'High Churn Alert', 'Developer context switching churn detected in auth module session verification.', false)
+      `, [userId]);
+    }
+
     console.log('[Database] Migrations applied successfully.');
   } catch (err) {
     console.error('[Database] Migration error:', err.message);
