@@ -35,7 +35,8 @@ import {
   HardDrive,
   Server,
   FolderKanban,
-  Info
+  Info,
+  GitCommit
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -55,7 +56,8 @@ import {
   createProjectApi,
   fetchNotificationsApi,
   markNotificationReadApi,
-  markAllNotificationsReadApi
+  markAllNotificationsReadApi,
+  fetchCommitsApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -117,10 +119,16 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
   const isAdmin = profileData.role === 'Admin' || (profileData.email && profileData.email.toLowerCase() === 'vivekmohanraj5@gmail.com');
 
+  // Commit Records & Developer Activity State
+  const [commitsList, setCommitsList] = useState([]);
+  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
+  const [commitSearch, setCommitSearch] = useState('');
+
   // Sidebar Items
   const navItems = [
     { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'Repositories', label: 'Repositories', icon: FolderGit2 },
+    { id: 'Commits', label: 'Commits Log', icon: GitCommit },
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
     ...(isAdmin
@@ -251,20 +259,25 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, []);
 
-  // Fetch Notifications on load
+  // Fetch Commits from database when Commits tab opens or search updates
   useEffect(() => {
     let isMounted = true;
-    const loadNotifs = async () => {
-      try {
-        const list = await fetchNotificationsApi(profileData.email);
-        if (isMounted && list) setNotificationsList(list || []);
-      } catch (err) {
-        console.error('Failed to load notifications:', err);
-      }
-    };
-    loadNotifs();
+    if (activeTab === 'Commits') {
+      const loadCommits = async () => {
+        setIsLoadingCommits(true);
+        try {
+          const list = await fetchCommitsApi(commitSearch);
+          if (isMounted && list) setCommitsList(list || []);
+        } catch (err) {
+          console.error('Failed to load commits:', err);
+        } finally {
+          if (isMounted) setIsLoadingCommits(false);
+        }
+      };
+      loadCommits();
+    }
     return () => { isMounted = false; };
-  }, [profileData.email]);
+  }, [activeTab, commitSearch]);
 
   const handleAddRepo = async (e) => {
     e.preventDefault();
@@ -487,6 +500,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <h1 className="text-2xl md:text-3xl font-semibold text-[#dfe4de] tracking-tight">
                 {activeTab === 'Dashboard' && 'Predictive Command Center'}
                 {activeTab === 'Repositories' && 'Repository Graph Index'}
+                {activeTab === 'Commits' && 'Commit Log & Developer Churn Activity'}
                 {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
                 {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
                 {activeTab === 'Users' && 'User & Role Management Directory'}
@@ -1892,6 +1906,126 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     Close
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 8. COMMITS LOG & DEVELOPER ACTIVITY TAB */}
+        {activeTab === 'Commits' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Banner & Search */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                  <GitCommit className="w-6 h-6 text-[#b7f15b]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#dfe4de]">Commit Log & Code Churn Analytics</h2>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                    Mined Git commit history, developer contribution records, and line delta telemetry.
+                  </p>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative w-full md:w-72">
+                <input
+                  type="text"
+                  value={commitSearch}
+                  onChange={(e) => setCommitSearch(e.target.value)}
+                  placeholder="Search hash, message, or author..."
+                  className="w-full h-10 pl-9 pr-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors"
+                />
+                <Filter className="w-4 h-4 text-[#8d937e] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Commits Summary Metric Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Mined Commits</div>
+                <div className="text-3xl font-bold text-[#dfe4de] font-mono">{commitsList.length}</div>
+                <div className="text-[11px] font-mono text-[#8d937e]">Indexed in PostgreSQL</div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Added</div>
+                <div className="text-3xl font-bold text-[#b7f15b] font-mono">
+                  +{commitsList.reduce((acc, c) => acc + (c.lines_added || 0), 0)}
+                </div>
+                <div className="text-[11px] font-mono text-[#8d937e]">Total growth delta</div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Deleted</div>
+                <div className="text-3xl font-bold text-amber-400 font-mono">
+                  -{commitsList.reduce((acc, c) => acc + (c.lines_deleted || 0), 0)}
+                </div>
+                <div className="text-[11px] font-mono text-[#8d937e]">Refactored / removed</div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
+                <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Net Code Churn</div>
+                <div className="text-3xl font-bold text-[#92d957] font-mono">
+                  {commitsList.reduce((acc, c) => acc + ((c.lines_added || 0) - (c.lines_deleted || 0)), 0)}
+                </div>
+                <div className="text-[11px] font-mono text-[#8d937e]">Net line differential</div>
+              </div>
+            </div>
+
+            {/* Commit Log Table */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-base font-semibold text-[#dfe4de]">Mined Commit Log Records</h3>
+                {isLoadingCommits && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading Commits...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse font-mono text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[#8d937e] uppercase">
+                      <th className="py-2.5 px-4">SHA-1 Hash</th>
+                      <th className="py-2.5 px-4">Author</th>
+                      <th className="py-2.5 px-4">Commit Message</th>
+                      <th className="py-2.5 px-4">Lines Delta</th>
+                      <th className="py-2.5 px-4">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
+                    {commitsList.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-[#8d937e]">
+                          No commits found matching query.
+                        </td>
+                      </tr>
+                    ) : (
+                      commitsList.map((c) => (
+                        <tr key={c.hash} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-[#b7f15b]">
+                            <span className="px-2 py-1 rounded bg-[#b7f15b]/10 border border-[#b7f15b]/30">
+                              {c.hash.substring(0, 8)}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-[#dfe4de]">{c.author_email}</td>
+                          <td className="py-3.5 px-4 text-[#dfe4de] max-w-md truncate">{c.message}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="text-[#b7f15b] font-bold">+{c.lines_added || 0}</span> /{' '}
+                            <span className="text-amber-400 font-bold">-{c.lines_deleted || 0}</span>
+                          </td>
+                          <td className="py-3.5 px-4 text-[#8d937e] whitespace-nowrap">
+                            {new Date(c.timestamp).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

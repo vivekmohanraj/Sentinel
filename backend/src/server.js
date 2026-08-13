@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import orgRoutes from "./routes/orgRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import commitRoutes from "./routes/commitRoutes.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/org", orgRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/commits", commitRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });

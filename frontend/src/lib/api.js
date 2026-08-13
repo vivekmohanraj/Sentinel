@@ -289,3 +289,40 @@ export const markAllNotificationsReadApi = async (email) => {
     throw err;
   }
 };
+
+export const fetchCommitsApi = async (search = '') => {
+  try {
+    const url = search
+      ? `${API_BASE_URL}/commits?search=${encodeURIComponent(search)}`
+      : `${API_BASE_URL}/commits`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch commits:', err);
+    throw err;
+  }
+};
+
+export const addCommitRecordApi = async (commitData) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/commits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(commitData)
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to add commit record:', err);
+    throw err;
+  }
+};
