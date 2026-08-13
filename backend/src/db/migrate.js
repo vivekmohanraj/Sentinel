@@ -25,10 +25,20 @@ export const runMigrations = async () => {
       -- Enforce Admin designation rule for vivekmohanraj5@gmail.com
       UPDATE tbl_user SET role = 'Admin' WHERE LOWER(email) = 'vivekmohanraj5@gmail.com';
 
-      -- 2. Repositories
+      -- 2. Projects (Organization -> Project Hierarchy)
+      CREATE TABLE IF NOT EXISTS tbl_project (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          organization_id UUID REFERENCES tbl_organization(id) ON DELETE CASCADE,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- 3. Repositories
       CREATE TABLE IF NOT EXISTS tbl_repository (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           organization_id UUID REFERENCES tbl_organization(id) ON DELETE CASCADE,
+          project_id UUID REFERENCES tbl_project(id) ON DELETE CASCADE,
           name VARCHAR(255) NOT NULL,
           git_url VARCHAR(512) NOT NULL,
           last_mined_at TIMESTAMP WITH TIME ZONE,
@@ -37,8 +47,9 @@ export const runMigrations = async () => {
 
       -- Ensure organization_id in tbl_repository is optional
       ALTER TABLE tbl_repository ALTER COLUMN organization_id DROP NOT NULL;
+      ALTER TABLE tbl_repository ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES tbl_project(id) ON DELETE CASCADE;
 
-      -- 3. Commits
+      -- 4. Commits
       CREATE TABLE IF NOT EXISTS tbl_commit_record (
           hash VARCHAR(40) PRIMARY KEY,
           repository_id UUID REFERENCES tbl_repository(id) ON DELETE CASCADE,
@@ -49,7 +60,7 @@ export const runMigrations = async () => {
           timestamp TIMESTAMP WITH TIME ZONE NOT NULL
       );
 
-      -- 4. Module Metrics
+      -- 5. Module Metrics
       CREATE TABLE IF NOT EXISTS tbl_module_metric (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           repository_id UUID REFERENCES tbl_repository(id) ON DELETE CASCADE,
@@ -60,7 +71,7 @@ export const runMigrations = async () => {
           recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- 5. AI Predictions
+      -- 6. AI Predictions
       CREATE TABLE IF NOT EXISTS tbl_ai_prediction (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           module_id UUID REFERENCES tbl_module_metric(id) ON DELETE CASCADE,

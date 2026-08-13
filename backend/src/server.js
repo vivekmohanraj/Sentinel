@@ -6,6 +6,7 @@ import { auth } from "./auth.js";
 import { runMigrations } from "./db/migrate.js";
 import userRoutes from "./routes/userRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import orgRoutes from "./routes/orgRoutes.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(express.json());
 // API Routes
 app.use("/api/user", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/org", orgRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });

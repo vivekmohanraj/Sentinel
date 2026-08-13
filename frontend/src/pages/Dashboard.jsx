@@ -33,7 +33,9 @@ import {
   Download,
   Terminal,
   HardDrive,
-  Server
+  Server,
+  FolderKanban,
+  Building2
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -46,7 +48,11 @@ import {
   addRepositoryApi,
   deleteRepositoryApi,
   fetchSystemTelemetry,
-  getExportReportUrl
+  getExportReportUrl,
+  fetchOrganizations,
+  createOrganizationApi,
+  fetchProjects,
+  createProjectApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -85,6 +91,14 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [isAddingRepo, setIsAddingRepo] = useState(false);
   const [repoMsg, setRepoMsg] = useState(null);
   const [showAddRepoModal, setShowAddRepoModal] = useState(false);
+
+  // Project & Organization State
+  const [projectsList, setProjectsList] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   // Risk Filter State for Risk Radar Tab
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
@@ -211,25 +225,23 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab]);
 
-  // Fetch System Telemetry & Logs when Telemetry tab opens (Admin only)
+  // Fetch Projects from database on mount
   useEffect(() => {
     let isMounted = true;
-    if (activeTab === 'Telemetry' && isAdmin) {
-      const loadTelemetry = async () => {
-        setIsLoadingTelemetry(true);
-        try {
-          const data = await fetchSystemTelemetry(profileData.email);
-          if (isMounted && data) setTelemetryData(data);
-        } catch (err) {
-          console.error('Failed to load system telemetry:', err);
-        } finally {
-          if (isMounted) setIsLoadingTelemetry(false);
+    const loadProjects = async () => {
+      try {
+        const list = await fetchProjects();
+        if (isMounted && list) {
+          setProjectsList(list || []);
+          if (list.length > 0) setSelectedProject(list[0].id);
         }
-      };
-      loadTelemetry();
-    }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      }
+    };
+    loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab, isAdmin, profileData.email]);
+  }, []);
 
   const handleAddRepo = async (e) => {
     e.preventDefault();
@@ -468,16 +480,20 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-            {/* Export CSV Report Button */}
-            <a
-              href={getExportReportUrl('csv')}
-              download="sentinel-report.csv"
-              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
-              title="Download Executive Engineering CSV Report"
-            >
-              <Download className="w-4 h-4 text-[#b7f15b]" />
-              <span className="inline">Export Report</span>
-            </a>
+            {/* Project Selector */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+              >
+                {projectsList.length === 0 && <option value="">proj: Main Engineering</option>}
+                {projectsList.map((p) => (
+                  <option key={p.id} value={p.id}>proj: {p.name}</option>
+                ))}
+              </select>
+              <FolderKanban className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
             {/* Repository Selector */}
             <div className="relative shrink-0">
@@ -493,14 +509,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Quick Action Refresh */}
+            {/* Add Project Button */}
             <button
+              onClick={() => setShowAddProjectModal(true)}
               className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
-              title="Trigger Instant AI Risk Scan"
+              title="Create New Project"
             >
-              <RefreshCw className="w-4 h-4 text-[#b7f15b]" />
-              <span className="inline">Rescan Codebase</span>
+              <Plus className="w-4 h-4 text-[#b7f15b]" />
+              <span className="inline">New Project</span>
             </button>
+
+            {/* Export CSV Report Button */}
+            <a
+              href={getExportReportUrl('csv')}
+              download="sentinel-report.csv"
+              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
+              title="Download Executive Engineering CSV Report"
+            >
+              <Download className="w-4 h-4 text-[#b7f15b]" />
+              <span className="inline">Export Report</span>
+            </a>
           </div>
         </header>
 
@@ -1640,6 +1668,94 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* CREATE PROJECT MODAL */}
+        {showAddProjectModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-md p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                    <FolderKanban className="w-5 h-5 text-[#b7f15b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#dfe4de]">Create New Project</h3>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70">Add a project structure under your Organization.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAddProjectModal(false)}
+                  className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newProjectName) return;
+                  setIsCreatingProject(true);
+                  try {
+                    const created = await createProjectApi(null, newProjectName, newProjectDesc);
+                    if (created) {
+                      setProjectsList([created, ...projectsList]);
+                      setSelectedProject(created.id);
+                      setNewProjectName('');
+                      setNewProjectDesc('');
+                      setShowAddProjectModal(false);
+                    }
+                  } catch (err) {
+                    console.error('Failed to create project:', err);
+                  } finally {
+                    setIsCreatingProject(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-2">Project Name</label>
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="e.g. Core Engine v2"
+                    className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-2">Description</label>
+                  <textarea
+                    value={newProjectDesc}
+                    onChange={(e) => setNewProjectDesc(e.target.value)}
+                    placeholder="Brief architectural scope or sprint target..."
+                    className="w-full h-24 p-3 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors font-mono"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddProjectModal(false)}
+                    className="h-10 px-4 rounded-xl bg-white/5 text-[#c3c9b2] hover:bg-white/10 transition-all font-mono text-xs uppercase"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingProject}
+                    className="h-10 px-6 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isCreatingProject ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    <span>{isCreatingProject ? 'Creating...' : 'Create Project'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

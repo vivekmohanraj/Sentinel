@@ -170,3 +170,69 @@ export const fetchSystemTelemetry = async (adminEmail) => {
 export const getExportReportUrl = (format = 'csv') => {
   return `${API_BASE_URL}/dashboard/export?format=${format}`;
 };
+
+export const fetchOrganizations = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/orgs`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch organizations:', err);
+    throw err;
+  }
+};
+
+export const createOrganizationApi = async (name) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/orgs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to create organization:', err);
+    throw err;
+  }
+};
+
+export const fetchProjects = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch projects:', err);
+    throw err;
+  }
+};
+
+export const createProjectApi = async (orgId, name, description) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ orgId, name, description })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to create project:', err);
+    throw err;
+  }
+};
