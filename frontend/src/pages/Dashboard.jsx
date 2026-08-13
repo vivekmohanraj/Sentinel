@@ -257,23 +257,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, profileData.email]);
 
-  // Fetch repositories from database when Repositories tab opens
+  // Fetch repositories from database on mount & tab changes
   useEffect(() => {
     let isMounted = true;
-    if (activeTab === 'Repositories') {
-      const loadRepos = async () => {
-        setIsLoadingRepos(true);
-        try {
-          const list = await fetchRepositories();
-          if (isMounted && list) setDbRepos(list || []);
-        } catch (err) {
-          console.error('Failed to load repositories:', err);
-        } finally {
-          if (isMounted) setIsLoadingRepos(false);
+    const loadRepos = async () => {
+      setIsLoadingRepos(true);
+      try {
+        const list = await fetchRepositories();
+        if (isMounted && list) {
+          setDbRepos(list || []);
+          if (list.length > 0 && (!selectedRepo || selectedRepo === 'sentinel/core-engine')) {
+            setSelectedRepo(list[0].name);
+          }
         }
-      };
-      loadRepos();
-    }
+      } catch (err) {
+        console.error('Failed to load repositories:', err);
+      } finally {
+        if (isMounted) setIsLoadingRepos(false);
+      }
+    };
+    loadRepos();
     return () => { isMounted = false; };
   }, [activeTab]);
 
@@ -361,12 +364,17 @@ const Dashboard = ({ onNavigateToLanding }) => {
     try {
       const created = await addRepositoryApi(newRepoName, newRepoUrl);
       if (created) {
-        setDbRepos((prev) => [created, ...prev]);
-        setRepoMsg(`Repository ${created.name} linked and queued for mining!`);
+        const updatedList = await fetchRepositories();
+        setDbRepos(updatedList || [created, ...dbRepos]);
+        setSelectedRepo(created.name);
+        setRepoMsg(`Repository ${created.name} linked and selected! Rescanning metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
         setShowAddRepoModal(false);
-        setTimeout(() => setRepoMsg(null), 4000);
+        await rescanCodebaseApi(created.id);
+        const updatedHotspots = await fetchHotspotsApi(created.id);
+        if (updatedHotspots) setHotspotsList(updatedHotspots);
+        setTimeout(() => setRepoMsg(null), 5000);
       }
     } catch (err) {
       console.error('Failed to add repository:', err);
@@ -669,9 +677,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 onChange={(e) => setSelectedRepo(e.target.value)}
                 className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
               >
-                <option value="sentinel/core-engine">repo: sentinel/core-engine</option>
-                <option value="sentinel/auth-service">repo: sentinel/auth-service</option>
-                <option value="sentinel/billing-api">repo: sentinel/billing-api</option>
+                {dbRepos.length === 0 && <option value="sentinel/core-engine">repo: sentinel/core-engine</option>}
+                {dbRepos.map((r) => (
+                  <option key={r.id} value={r.name}>repo: {r.name}</option>
+                ))}
               </select>
               <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
