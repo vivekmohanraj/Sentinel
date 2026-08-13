@@ -21,7 +21,8 @@ export const getSummary = async (req, res, next) => {
 
 export const getRepos = async (req, res, next) => {
   try {
-    const repos = await getAllRepositories();
+    const { projectId } = req.query;
+    const repos = await getAllRepositories(projectId);
     return res.status(200).json({
       success: true,
       data: repos

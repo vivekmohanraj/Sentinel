@@ -30,7 +30,7 @@ export const mineRepositoryData = async (repoId, repoName, gitUrl = null) => {
 
   const parsed = parseGitHubUrl(repoGitUrl || repoName);
 
-  // 1. Mine Commits for this repository (Attempt GitHub API for real authors)
+  // 1. Mine Commits for this repository
   const commitCountRes = await pool.query(`SELECT COUNT(*) FROM tbl_commit_record WHERE repository_id = $1`, [repoId]);
 
   if (parseInt(commitCountRes.rows[0].count) === 0) {
@@ -168,20 +168,30 @@ export const mineRepositoryData = async (repoId, repoName, gitUrl = null) => {
     }
   }
 
-  // 4. Automatically Link Project in tbl_project for this Repository
+  // 4. Automatically Link Project in tbl_project for this Repository & set project_id
+  let targetProjectId = null;
   const projectCheck = await pool.query(`SELECT id FROM tbl_project WHERE LOWER(name) = LOWER($1)`, [repoName]);
-  if (projectCheck.rows.length === 0) {
+  if (projectCheck.rows.length > 0) {
+    targetProjectId = projectCheck.rows[0].id;
+  } else {
     const orgRes = await pool.query(`SELECT id FROM tbl_organization LIMIT 1`);
     const orgId = orgRes.rows.length > 0 ? orgRes.rows[0].id : null;
 
-    await pool.query(
+    const insRes = await pool.query(
       `INSERT INTO tbl_project (id, organization_id, name, description, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, CURRENT_TIMESTAMP)`,
+       VALUES (gen_random_uuid(), $1, $2, $3, CURRENT_TIMESTAMP)
+       RETURNING id`,
       [orgId, repoName, `Engineering Project for ${repoName}`]
     );
+    targetProjectId = insRes.rows[0].id;
   }
 
-  await pool.query(`UPDATE tbl_repository SET last_mined_at = CURRENT_TIMESTAMP WHERE id = $1`, [repoId]);
+  if (targetProjectId) {
+    await pool.query(
+      `UPDATE tbl_repository SET project_id = $1, last_mined_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      [targetProjectId, repoId]
+    );
+  }
 };
 
 export const getDashboardSummary = async (repoFilter = null) => {
@@ -267,10 +277,18 @@ export const getDashboardSummary = async (repoFilter = null) => {
   }
 };
 
-export const getAllRepositories = async () => {
-  const result = await pool.query(
-    `SELECT id, name, git_url, last_mined_at, created_at FROM tbl_repository ORDER BY created_at DESC`
-  );
+export const getAllRepositories = async (projectId = null) => {
+  let query = `SELECT id, project_id, organization_id, name, git_url, last_mined_at, created_at FROM tbl_repository`;
+  const params = [];
+
+  if (projectId) {
+    query += ` WHERE project_id::text = $1 OR project_id IN (SELECT id FROM tbl_project WHERE LOWER(name) = LOWER($1))`;
+    params.push(projectId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
+
+  const result = await pool.query(query, params);
   const repos = result.rows;
 
   for (const r of repos) {

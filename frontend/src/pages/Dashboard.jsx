@@ -257,17 +257,20 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, profileData.email]);
 
-  // Fetch repositories from database on mount & tab changes
+  // Fetch repositories from database filtered by selected project
   useEffect(() => {
     let isMounted = true;
     const loadRepos = async () => {
       setIsLoadingRepos(true);
       try {
-        const list = await fetchRepositories();
+        const list = await fetchRepositories(selectedProject);
         if (isMounted && list) {
           setDbRepos(list || []);
-          if (list.length > 0 && (!selectedRepo || selectedRepo === 'sentinel/core-engine')) {
-            setSelectedRepo(list[0].name);
+          if (list.length > 0) {
+            const hasSelectedInList = list.some(r => r.name === selectedRepo);
+            if (!hasSelectedInList) {
+              setSelectedRepo(list[0].name);
+            }
           }
         }
       } catch (err) {
@@ -278,7 +281,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadRepos();
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, selectedProject]);
 
   // Fetch Projects from database on mount & tab changes
   useEffect(() => {

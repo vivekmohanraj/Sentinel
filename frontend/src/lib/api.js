@@ -196,9 +196,13 @@ export const fetchDashboardSummary = async (repoName = '') => {
   }
 };
 
-export const fetchRepositories = async () => {
+export const fetchRepositories = async (projectId = '') => {
   try {
-    const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
+    const url = projectId
+      ? `${API_BASE_URL}/dashboard/repositories?projectId=${encodeURIComponent(projectId)}`
+      : `${API_BASE_URL}/dashboard/repositories`;
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
