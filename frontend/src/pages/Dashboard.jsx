@@ -280,7 +280,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab]);
 
-  // Fetch Projects from database on mount
+  // Fetch Projects from database on mount & tab changes
   useEffect(() => {
     let isMounted = true;
     const loadProjects = async () => {
@@ -288,7 +288,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
         const list = await fetchProjects();
         if (isMounted && list) {
           setProjectsList(list || []);
-          if (list.length > 0) setSelectedProject(list[0].id);
+          if (list.length > 0 && !selectedProject) setSelectedProject(list[0].id);
         }
       } catch (err) {
         console.error('Failed to load projects:', err);
@@ -296,7 +296,19 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, []);
+  }, [activeTab]);
+
+  // Sync Project Dropdown selection when Repository selection changes
+  useEffect(() => {
+    if (selectedRepo && projectsList.length > 0) {
+      const matchedProj = projectsList.find(
+        (p) => p.name.toLowerCase() === selectedRepo.toLowerCase() || p.name.toLowerCase().includes(selectedRepo.toLowerCase())
+      );
+      if (matchedProj) {
+        setSelectedProject(matchedProj.id);
+      }
+    }
+  }, [selectedRepo, projectsList]);
 
   // Fetch Hotspots from database when Tech Debt tab opens
   useEffect(() => {
