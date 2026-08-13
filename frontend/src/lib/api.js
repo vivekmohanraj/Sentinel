@@ -457,3 +457,36 @@ export const rescanCodebaseApi = async (repoId = '') => {
     throw err;
   }
 };
+
+export const fetchRiskRadarApi = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/predictions/risk-radar`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch Risk Radar predictions:', err);
+    throw err;
+  }
+};
+
+export const scanPullRequestApi = async (prData) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/predictions/scan-pr`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(prData)
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to scan pull request:', err);
+    throw err;
+  }
+};

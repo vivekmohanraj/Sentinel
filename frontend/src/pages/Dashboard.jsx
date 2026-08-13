@@ -68,7 +68,9 @@ import {
   markAllNotificationsReadApi,
   fetchCommitsApi,
   fetchHotspotsApi,
-  rescanCodebaseApi
+  rescanCodebaseApi,
+  fetchRiskRadarApi,
+  scanPullRequestApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -153,6 +155,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [isLoadingHotspots, setIsLoadingHotspots] = useState(false);
   const [isRescanning, setIsRescanning] = useState(false);
   const [rescanMessage, setRescanMessage] = useState(null);
+
+  // Risk Radar Predictions State
+  const [riskPredictions, setRiskPredictions] = useState([]);
+  const [isLoadingRiskRadar, setIsLoadingRiskRadar] = useState(false);
 
   // Sidebar Items
   const navItems = [
@@ -308,6 +314,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
     }
     return () => { isMounted = false; };
   }, [activeTab, selectedRepo]);
+
+  // Fetch Risk Radar predictions when Risk Radar tab opens
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'Risk Radar') {
+      const loadRiskRadar = async () => {
+        setIsLoadingRiskRadar(true);
+        try {
+          const list = await fetchRiskRadarApi();
+          if (isMounted && list) setRiskPredictions(list || []);
+        } catch (err) {
+          console.error('Failed to load risk predictions:', err);
+        } finally {
+          if (isMounted) setIsLoadingRiskRadar(false);
+        }
+      };
+      loadRiskRadar();
+    }
+    return () => { isMounted = false; };
+  }, [activeTab]);
 
   const handleRescanCodebase = async () => {
     setIsRescanning(true);
@@ -1888,81 +1914,64 @@ const Dashboard = ({ onNavigateToLanding }) => {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    pr: 'PR #402',
-                    title: 'Refactor auth token lifecycle & middleware guard',
-                    author: '@sarah_dev',
-                    score: 84,
-                    level: 'CRITICAL',
-                    reason: 'High context-switching churn (+420 lines). Untested boundary path density in token refresh handler.',
-                    modules: ['src/auth/session.ts', 'src/middleware/guard.ts']
-                  },
-                  {
-                    pr: 'PR #398',
-                    title: 'Add async Stripe webhook reconciliation queue',
-                    author: '@alex_m',
-                    score: 72,
-                    level: 'WARNING',
-                    reason: 'Async webhook reconciliation accumulated 14 conditional branches without isolated unit test assertions.',
-                    modules: ['src/api/payment_gateway.go']
-                  },
-                  {
-                    pr: 'PR #385',
-                    title: 'Optimize user session caching eviction index',
-                    author: '@david_k',
-                    score: 48,
-                    level: 'ELEVATED',
-                    reason: 'Tight coupling between Redis cache eviction and SQL migration dependency graph.',
-                    modules: ['src/db/migrations/v4.sql']
-                  }
-                ]
-                  .filter((item) => {
-                    if (riskFilter === 'CRITICAL') return item.score >= 75;
-                    if (riskFilter === 'WARNING') return item.score >= 60 && item.score < 75;
-                    return true;
-                  })
-                  .map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-xs text-[#b7f15b] font-bold">{item.pr}</span>
-                          <span className="font-semibold text-sm text-[#dfe4de]">{item.title}</span>
+                {isLoadingRiskRadar ? (
+                  <div className="p-8 text-center text-xs font-mono text-[#b7f15b] flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Ingesting PR Defect Telemetry from PostgreSQL...</span>
+                  </div>
+                ) : riskPredictions.length === 0 ? (
+                  <div className="p-8 text-center text-xs font-mono text-[#8d937e]">
+                    No pull request defect risk assessments recorded yet.
+                  </div>
+                ) : (
+                  riskPredictions
+                    .filter((item) => {
+                      if (riskFilter === 'CRITICAL') return item.score >= 75;
+                      if (riskFilter === 'WARNING') return item.score >= 60 && item.score < 75;
+                      return true;
+                    })
+                    .map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="p-5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-xs text-[#b7f15b] font-bold">{item.pr}</span>
+                            <span className="font-semibold text-sm text-[#dfe4de]">{item.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-[#8d937e]">{item.author}</span>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
+                                item.score >= 75
+                                  ? 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/30'
+                                  : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                              }`}
+                            >
+                              Risk: {item.score}%
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-[#8d937e]">{item.author}</span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
-                              item.score >= 75
-                                ? 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/30'
-                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                            }`}
-                          >
-                            Risk: {item.score}%
-                          </span>
+
+                        <p className="text-xs text-[#c3c9b2]/70 leading-relaxed font-mono">
+                          SHAP Diagnostic: &quot;{item.reason}&quot;
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span className="text-[10px] font-mono text-[#8d937e] uppercase">Affected Paths:</span>
+                          {(item.modules || []).map((mod, mIdx) => (
+                            <span
+                              key={mIdx}
+                              className="px-2.5 py-0.5 rounded-lg bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#dfe4de]"
+                            >
+                              {mod}
+                            </span>
+                          ))}
                         </div>
                       </div>
-
-                      <p className="text-xs text-[#c3c9b2]/70 leading-relaxed font-mono">
-                        SHAP Diagnostic: &quot;{item.reason}&quot;
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <span className="text-[10px] font-mono text-[#8d937e] uppercase">Affected Paths:</span>
-                        {item.modules.map((mod, mIdx) => (
-                          <span
-                            key={mIdx}
-                            className="px-2.5 py-0.5 rounded-lg bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#dfe4de]"
-                          >
-                            {mod}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                )}
               </div>
             </div>
           </div>

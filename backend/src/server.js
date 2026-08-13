@@ -10,6 +10,7 @@ import orgRoutes from "./routes/orgRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import commitRoutes from "./routes/commitRoutes.js";
 import moduleMetricRoutes from "./routes/moduleMetricRoutes.js";
+import predictionRoutes from "./routes/predictionRoutes.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/org", orgRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/commits", commitRoutes);
 app.use("/api/metrics", moduleMetricRoutes);
+app.use("/api/predictions", predictionRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });
