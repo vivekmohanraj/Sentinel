@@ -36,7 +36,8 @@ import {
   Server,
   FolderKanban,
   Info,
-  GitCommit
+  GitCommit,
+  CheckCheck
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
