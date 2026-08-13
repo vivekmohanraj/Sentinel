@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-export const getCommits = async ({ search = '', limit = 50 } = {}) => {
+export const getCommits = async ({ search = '', repoFilter = '', limit = 50 } = {}) => {
   // Check if tbl_commit_record has entries; if empty, seed default commits
   const countRes = await pool.query(`SELECT COUNT(*) FROM tbl_commit_record`);
   if (parseInt(countRes.rows[0].count, 10) === 0) {
@@ -25,10 +25,20 @@ export const getCommits = async ({ search = '', limit = 50 } = {}) => {
     LEFT JOIN tbl_repository r ON c.repository_id = r.id
   `;
   const params = [];
+  const whereConditions = [];
 
   if (search) {
-    query += ` WHERE LOWER(c.message) LIKE LOWER($1) OR LOWER(c.author_email) LIKE LOWER($1) OR LOWER(c.hash) LIKE LOWER($1)`;
+    whereConditions.push(`(LOWER(c.message) LIKE LOWER($${params.length + 1}) OR LOWER(c.author_email) LIKE LOWER($${params.length + 1}) OR LOWER(c.hash) LIKE LOWER($${params.length + 1}))`);
     params.push(`%${search}%`);
+  }
+
+  if (repoFilter) {
+    whereConditions.push(`(c.repository_id::text = $${params.length + 1} OR LOWER(r.name) = LOWER($${params.length + 1}))`);
+    params.push(repoFilter);
+  }
+
+  if (whereConditions.length > 0) {
+    query += ` WHERE ` + whereConditions.join(' AND ');
   }
 
   query += ` ORDER BY c.timestamp DESC LIMIT $${params.length + 1}`;

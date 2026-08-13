@@ -8,7 +8,8 @@ import pool from '../config/db.js';
 
 export const getSummary = async (req, res, next) => {
   try {
-    const summary = await getDashboardSummary();
+    const { repoName, repoId } = req.query;
+    const summary = await getDashboardSummary(repoName || repoId);
     return res.status(200).json({
       success: true,
       data: summary

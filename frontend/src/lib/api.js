@@ -176,9 +176,13 @@ export const deleteUserApi = async (userId, adminEmail) => {
   }
 };
 
-export const fetchDashboardSummary = async () => {
+export const fetchDashboardSummary = async (repoName = '') => {
   try {
-    const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {
+    const url = repoName
+      ? `${API_BASE_URL}/dashboard/summary?repoName=${encodeURIComponent(repoName)}`
+      : `${API_BASE_URL}/dashboard/summary`;
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
@@ -384,11 +388,13 @@ export const markAllNotificationsReadApi = async (email) => {
   }
 };
 
-export const fetchCommitsApi = async (search = '') => {
+export const fetchCommitsApi = async (search = '', repoName = '') => {
   try {
-    const url = search
-      ? `${API_BASE_URL}/commits?search=${encodeURIComponent(search)}`
-      : `${API_BASE_URL}/commits`;
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (repoName) params.append('repoName', repoName);
+    const queryString = params.toString();
+    const url = queryString ? `${API_BASE_URL}/commits?${queryString}` : `${API_BASE_URL}/commits`;
 
     const res = await fetch(url, {
       method: 'GET',
@@ -458,9 +464,13 @@ export const rescanCodebaseApi = async (repoId = '') => {
   }
 };
 
-export const fetchRiskRadarApi = async () => {
+export const fetchRiskRadarApi = async (repoName = '') => {
   try {
-    const res = await fetch(`${API_BASE_URL}/predictions/risk-radar`, {
+    const url = repoName
+      ? `${API_BASE_URL}/predictions/risk-radar?repoName=${encodeURIComponent(repoName)}`
+      : `${API_BASE_URL}/predictions/risk-radar`;
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'

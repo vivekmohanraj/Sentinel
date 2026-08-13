@@ -2,8 +2,12 @@ import { getCommits, createCommitRecord } from '../models/commitModel.js';
 
 export const listCommits = async (req, res, next) => {
   try {
-    const { search, limit } = req.query;
-    const commits = await getCommits({ search, limit: limit ? parseInt(limit, 10) : 50 });
+    const { search, repoName, repoId, limit } = req.query;
+    const commits = await getCommits({
+      search,
+      repoFilter: repoName || repoId,
+      limit: limit ? parseInt(limit, 10) : 50
+    });
     return res.status(200).json({
       success: true,
       data: commits

@@ -223,7 +223,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     let isMounted = true;
     const loadSummary = async () => {
       try {
-        const data = await fetchDashboardSummary();
+        const data = await fetchDashboardSummary(selectedRepo);
         if (isMounted && data) {
           setDashboardData(data);
         }
@@ -233,7 +233,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadSummary();
     return () => { isMounted = false; };
-  }, []);
+  }, [selectedRepo]);
 
   // Fetch all registered users for Admin User Management panel
   useEffect(() => {
@@ -325,7 +325,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
       const loadRiskRadar = async () => {
         setIsLoadingRiskRadar(true);
         try {
-          const list = await fetchRiskRadarApi();
+          const list = await fetchRiskRadarApi(selectedRepo);
           if (isMounted && list) setRiskPredictions(list || []);
         } catch (err) {
           console.error('Failed to load risk predictions:', err);
@@ -336,7 +336,27 @@ const Dashboard = ({ onNavigateToLanding }) => {
       loadRiskRadar();
     }
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, selectedRepo]);
+
+  // Fetch Commits from database when Commits tab opens or selectedRepo changes
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'Commits') {
+      const loadCommits = async () => {
+        setIsLoadingCommits(true);
+        try {
+          const list = await fetchCommitsApi(commitSearch, selectedRepo);
+          if (isMounted && list) setCommitsList(list || []);
+        } catch (err) {
+          console.error('Failed to load commits:', err);
+        } finally {
+          if (isMounted) setIsLoadingCommits(false);
+        }
+      };
+      loadCommits();
+    }
+    return () => { isMounted = false; };
+  }, [activeTab, commitSearch, selectedRepo]);
 
   const handleRescanCodebase = async () => {
     setIsRescanning(true);

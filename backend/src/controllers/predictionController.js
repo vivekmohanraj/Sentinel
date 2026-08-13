@@ -2,7 +2,8 @@ import { getRiskRadarPredictions, createPRPrediction } from '../models/predictio
 
 export const getRiskRadar = async (req, res, next) => {
   try {
-    const predictions = await getRiskRadarPredictions();
+    const { repoName, repoId } = req.query;
+    const predictions = await getRiskRadarPredictions(repoName || repoId);
     return res.status(200).json({
       success: true,
       data: predictions

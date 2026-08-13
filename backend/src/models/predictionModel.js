@@ -1,28 +1,37 @@
 import pool from '../config/db.js';
 
-export const getRiskRadarPredictions = async () => {
-  const result = await pool.query(
-    `SELECT p.id, p.module_id, p.risk_score, p.prediction_type, p.shap_values, p.llm_explanation, p.created_at
-     FROM tbl_ai_prediction p
-     ORDER BY p.risk_score DESC, p.created_at DESC`
-  );
+export const getRiskRadarPredictions = async (repoFilter = null) => {
+  let query = `
+    SELECT p.id, p.module_id, p.risk_score, p.prediction_type, p.shap_values, p.llm_explanation, p.created_at
+    FROM tbl_ai_prediction p
+    LEFT JOIN tbl_module_metric m ON p.module_id = m.id
+    LEFT JOIN tbl_repository r ON m.repository_id = r.id
+  `;
+  const params = [];
 
-  // If table is empty, auto-seed initial static PR risk radar predictions
+  if (repoFilter) {
+    query += ` WHERE m.repository_id::text = $1 OR LOWER(r.name) = LOWER($1)`;
+    params.push(repoFilter);
+  }
+
+  query += ` ORDER BY p.risk_score DESC, p.created_at DESC`;
+
+  const result = await pool.query(query, params);
+
+  // If result is empty, fallback to returning all predictions
   if (result.rows.length === 0) {
-    await seedInitialPRPredictions();
-    const retryRes = await pool.query(
+    const fallbackRes = await pool.query(
       `SELECT p.id, p.module_id, p.risk_score, p.prediction_type, p.shap_values, p.llm_explanation, p.created_at
        FROM tbl_ai_prediction p
        ORDER BY p.risk_score DESC, p.created_at DESC`
     );
-    return retryRes.rows.map(formatPredictionRow);
+    return fallbackRes.rows.map(formatPredictionRow);
   }
 
   return result.rows.map(formatPredictionRow);
 };
 
 export const seedInitialPRPredictions = async () => {
-  // Get an active module metric ID or null
   const modRes = await pool.query(`SELECT id FROM tbl_module_metric LIMIT 1`);
   const moduleId = modRes.rows.length > 0 ? modRes.rows[0].id : null;
 
