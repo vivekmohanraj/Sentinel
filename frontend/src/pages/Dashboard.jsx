@@ -41,7 +41,9 @@ import {
   UserX,
   UserMinus,
   Lock,
-  ChevronLeft
+  ChevronLeft,
+  Minus,
+  BarChart3
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
 import {
@@ -768,329 +770,285 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         </header>
 
-        {/* 1. DASHBOARD VIEW (MAIN BENTO GRID) */}
+        {/* 1. DASHBOARD VIEW (MAIN BENTO GRID - REAL NON-AI ANALYTICS & INTERACTIVE GRAPH ENGINE) */}
         {activeTab === 'Dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 animate-fadeIn">
-            {/* WIDGET 1: Hero Metric - Overall Project Health Score */}
-            <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#b7f15b]/5 rounded-full blur-3xl group-hover:bg-[#b7f15b]/10 transition-all pointer-events-none"></div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-[#c3c9b2] uppercase tracking-wider">
-                  Overall Project Health
-                </span>
-                <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
-                  <Activity className="w-5 h-5" />
+          <div className="space-y-6 animate-fadeIn">
+            {/* KPI STATS CARDS GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-[#b7f15b]/40 transition-all shadow-lg">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>MINED COMMITS</span>
+                  <GitCommit className="w-4 h-4 text-[#b7f15b]" />
                 </div>
+                <div className="text-3xl font-bold text-[#dfe4de] font-mono">
+                  {dashboardData?.totalCommits ?? 0}
+                </div>
+                <div className="text-[11px] text-[#8d937e]">Indexed in PostgreSQL</div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-5xl font-bold tracking-tight text-[#dfe4de]">
-                    {dashboardData?.healthScore || 78}
-                  </span>
-                  <span className="text-xl font-mono text-[#8d937e]">/100</span>
-                  <span className="ml-auto px-2.5 py-1 rounded-full bg-[#92d957]/15 text-[#92d957] border border-[#92d957]/30 text-xs font-mono font-bold flex items-center gap-1">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> +{dashboardData?.healthScoreChange || 4.2}%
-                  </span>
+              <div className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-[#92d957]/40 transition-all shadow-lg">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>LINES ADDED</span>
+                  <Plus className="w-4 h-4 text-[#92d957]" />
                 </div>
-                <p className="text-xs text-[#c3c9b2]">
-                  Health score improved following modular refactoring in session cache layer.
-                </p>
+                <div className="text-3xl font-bold text-[#92d957] font-mono">
+                  +{dashboardData?.totalLinesAdded ?? 0}
+                </div>
+                <div className="text-[11px] text-[#8d937e]">Total code additions</div>
               </div>
 
-              {/* Health Meter Sub-bars */}
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-[#c3c9b2]">Code Quality Stability</span>
-                  <span className="text-[#b7f15b]">86%</span>
+              <div className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-[#ffb4ab]/40 transition-all shadow-lg">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>LINES DELETED</span>
+                  <Minus className="w-4 h-4 text-[#ffb4ab]" />
                 </div>
-                <div className="w-full bg-[#262b28] rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-[#b7f15b] h-full rounded-full w-[86%]"></div>
+                <div className="text-3xl font-bold text-[#ffb4ab] font-mono">
+                  -{dashboardData?.totalLinesDeleted ?? 0}
                 </div>
-
-                <div className="flex justify-between text-[11px] font-mono pt-1">
-                  <span className="text-[#c3c9b2]">Regression Shielding</span>
-                  <span className="text-[#92d957]">74%</span>
-                </div>
-                <div className="w-full bg-[#262b28] rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-[#92d957] h-full rounded-full w-[74%]"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* WIDGET 3: Sprint Risk Forecast */}
-            <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden group">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-[#c3c9b2] uppercase tracking-wider">
-                  Sprint 42 Delay Probability
-                </span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
-                  <Clock className="w-5 h-5" />
-                </div>
+                <div className="text-[11px] text-[#8d937e]">Refactored / removed</div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-4xl font-bold tracking-tight text-amber-400">
-                    {dashboardData?.sprintRiskProbability || 76}%
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono uppercase font-bold">
-                    High Risk of Delay
-                  </span>
+              <div className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-amber-400/40 transition-all shadow-lg">
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>AVG COMPLEXITY</span>
+                  <BarChart3 className="w-4 h-4 text-amber-400" />
                 </div>
-                <div className="w-full bg-[#262b28] rounded-full h-2 overflow-hidden">
-                  <div className="bg-amber-400 h-full rounded-full w-[76%]"></div>
+                <div className="text-3xl font-bold text-amber-400 font-mono">
+                  {dashboardData?.avgComplexityScore ?? '12.5'}
                 </div>
-              </div>
-
-              {/* Interactive Defect Risk Probability Trend SVG Chart */}
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <div className="flex items-center justify-between text-[11px] font-mono text-[#c3c9b2]/70">
-                  <span>Sprint 38–42 Risk Trend</span>
-                  <span className="text-amber-400 font-bold">70% Threshold Marker</span>
-                </div>
-                <div className="h-20 w-full relative pt-1">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 70" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    {/* 70% Threshold Line */}
-                    <line x1="0" y1="21" x2="300" y2="21" stroke="#ef4444" strokeDasharray="3 3" strokeWidth="1" opacity="0.6" />
-                    <text x="5" y="16" fill="#ef4444" fontSize="8" fontFamily="monospace" opacity="0.8">Critical 70%</text>
-                    
-                    {/* Area Fill */}
-                    <path d="M 0 42 L 75 32 L 150 28 L 225 23 L 300 17 L 300 70 L 0 70 Z" fill="url(#riskGrad)" />
-                    
-                    {/* Risk Line Path */}
-                    <path d="M 0 42 L 75 32 L 150 28 L 225 23 L 300 17" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    
-                    {/* Data Points */}
-                    {[[0, 42, '42%'], [75, 32, '55%'], [150, 28, '61%'], [225, 23, '68%'], [300, 17, '76%']].map(([cx, cy, label], i) => (
-                      <g key={i}>
-                        <circle cx={cx} cy={cy} r="3.5" fill="#1c211e" stroke="#f59e0b" strokeWidth="2" />
-                        <text x={cx} y={cy - 6} fill="#dfe4de" fontSize="8" textAnchor="middle" fontFamily="monospace" fontWeight="bold">{label}</text>
-                      </g>
-                    ))}
-                  </svg>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-[#262b28] border border-white/5 space-y-1.5 text-xs">
-                <div className="font-mono text-[#dfe4de] flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Estimated Delay: +{dashboardData?.estimatedDelayDays || 2.5} Days</span>
-                </div>
-                <p className="text-[#c3c9b2] text-[11px] leading-relaxed">
-                  Predicted bottlenecks in authentication token lifecycle merge conflict queue.
-                </p>
+                <div className="text-[11px] text-[#8d937e]">Cyclomatic complexity index</div>
               </div>
             </div>
 
-            {/* KNOWLEDGE GRAPH SUB-CARD */}
-            <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 flex flex-col justify-between space-y-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-[#c3c9b2] uppercase tracking-wider">
-                  Knowledge Graph Ingestion
-                </span>
-                <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
-                  <Cpu className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-[#dfe4de]">
-                  {dashboardData?.analyzedPRsCount || 4281} PRs Analyzed
-                </div>
-                <p className="text-xs text-[#c3c9b2]">
-                  Mapping historical commit churn, file co-change frequency, and developer context switching.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-[#262b28] border border-white/5 flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2 text-[#b7f15b]">
-                  <span className="w-2 h-2 rounded-full bg-[#b7f15b] animate-ping"></span>
-                  <span>{dashboardData?.knowledgeGraphStatus || 'GRAPH INDEX UP TO DATE'}</span>
-                </div>
-                <span className="text-[#8d937e]">12s ago</span>
-              </div>
-            </div>
-
-            {/* WIDGET 4: Explainable AI / SHAP Insights (AI Reasoning Card) */}
-            <div className="lg:col-span-7 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 space-y-6 shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
+            {/* MAIN ANALYTICS GRAPH ROW */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* GRAPH 1: Real Commit Activity & Code Churn Time Series (SVG Area & Line Chart) */}
+              <div className="lg:col-span-8 p-6 rounded-2xl bg-[#1c211e] border border-white/10 space-y-6 shadow-xl relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-[#dfe4de]">AI Reasoning</h2>
-                    <p className="text-xs font-mono text-[#c3c9b2]">Mathematically Grounded SHAP Attribution</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#8d937e]">
-                  Confidence: 96.4%
-                </span>
-              </div>
-
-              {/* Injected Text String Requirement */}
-              <div className="p-5 rounded-xl bg-[#0a0f0c] border border-white/10 space-y-3 font-mono text-sm leading-relaxed text-[#dfe4de]">
-                <div className="text-xs text-[#b7f15b] uppercase tracking-wider font-bold">
-                  Local LLM Inference Synthesis:
-                </div>
-                <p className="text-[#dfe4de]/90">
-                  &quot;{dashboardData?.aiReasoning || 'High risk of delay in auth module driven by excessive developer context-switching and complex tangled commits over the last 48 hours.'}&quot;
-                </p>
-              </div>
-
-              {/* SHAP Factor Impact Breakdown */}
-              <div className="space-y-3 pt-2">
-                <div className="text-xs font-mono text-[#c3c9b2] uppercase tracking-wider">
-                  Key Risk Driver Feature Contributions (SHAP Values)
-                </div>
-
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-[#dfe4de]">Developer Context Switching Churn</span>
-                      <span className="text-[#ffb4ab] font-bold">+34% SHAP Impact</span>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-[#b7f15b]" />
+                      <h2 className="text-lg font-semibold text-[#dfe4de]">Code Churn & Line Delta History</h2>
                     </div>
-                    <div className="w-full bg-[#262b28] rounded-full h-2">
-                      <div className="bg-[#ffb4ab] h-full rounded-full w-[84%]"></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-[#dfe4de]">Tangled Commits & High Cyclomatic Delta</span>
-                      <span className="text-amber-300 font-bold">+28% SHAP Impact</span>
-                    </div>
-                    <div className="w-full bg-[#262b28] rounded-full h-2">
-                      <div className="bg-amber-400 h-full rounded-full w-[68%]"></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-[#dfe4de]">Untested Boundary Path Density</span>
-                      <span className="text-[#92d957] font-bold">+18% SHAP Impact</span>
-                    </div>
-                    <div className="w-full bg-[#262b28] rounded-full h-2">
-                      <div className="bg-[#92d957] h-full rounded-full w-[45%]"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* WIDGET 2: AI Bug Predictions (Ranked List of High-Risk Modules) */}
-            <div className="lg:col-span-5 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 space-y-6 shadow-xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#ffb4ab]/10 text-[#ffb4ab]">
-                    <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-[#dfe4de]">High-Risk Modules</h2>
-                    <p className="text-xs font-mono text-[#c3c9b2]">Predicted Failure Hotspots</p>
-                  </div>
-                </div>
-                <span className="text-xs font-mono text-[#8d937e] uppercase">Ranked</span>
-              </div>
-
-              {/* List of High Risk Modules */}
-              <div className="space-y-3">
-                {highRiskModules.map((module, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group cursor-pointer"
-                  >
-                    <div className="space-y-1 min-w-0 pr-3">
-                      <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate group-hover:text-[#b7f15b] transition-colors">
-                        {module.path}
-                      </div>
-                      <div className="text-[11px] text-[#8d937e]">
-                        {module.churnLevel}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold ${
-                          module.riskScore >= 75
-                            ? 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/30'
-                            : module.riskScore >= 60
-                            ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                            : 'bg-[#92d957]/15 text-[#92d957] border border-[#92d957]/30'
-                        }`}
-                      >
-                        {module.riskScore}%
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-[#8d937e] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* WIDGET 5: Tech Debt Hotspots (Team-level behavioral code analysis) */}
-            <div className="lg:col-span-12 p-6 rounded-2xl bg-[#1c211e] border border-white/10 hover:border-white/20 transition-all duration-300 space-y-6 shadow-xl">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#92d957]/10 text-[#92d957]">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-[#dfe4de]">Architectural Tech Debt Hotspots</h2>
-                    <p className="text-xs font-mono text-[#c3c9b2]">
-                      System-Level Behavioral Code Analysis (Aggregated Team Level)
+                    <p className="text-xs font-mono text-[#c3c9b2] mt-0.5">
+                      Daily line additions vs refactored deletions for repository <span className="text-[#b7f15b] font-bold">{dashboardData?.repoName || selectedRepo}</span>
                     </p>
                   </div>
+                  <div className="flex items-center gap-4 text-xs font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#92d957]"></span>
+                      <span className="text-[#dfe4de]">Additions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#ffb4ab]"></span>
+                      <span className="text-[#dfe4de]">Deletions</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#92d957]">
-                    No Individual Tracking (Privacy Shield Active)
-                  </span>
+                {/* SVG Visual Area Chart */}
+                <div className="h-64 w-full relative pt-2">
+                  {(!dashboardData?.timeSeries || dashboardData.timeSeries.length === 0) ? (
+                    <div className="h-full flex items-center justify-center text-xs font-mono text-[#8d937e]">
+                      Mining time series data from PostgreSQL...
+                    </div>
+                  ) : (
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 500 200" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="addGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#92d957" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#92d957" stopOpacity="0.0" />
+                        </linearGradient>
+                        <linearGradient id="delGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffb4ab" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#ffb4ab" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Grid background lines */}
+                      <line x1="0" y1="40" x2="500" y2="40" stroke="white" strokeOpacity="0.05" strokeDasharray="3 3" />
+                      <line x1="0" y1="90" x2="500" y2="90" stroke="white" strokeOpacity="0.05" strokeDasharray="3 3" />
+                      <line x1="0" y1="140" x2="500" y2="140" stroke="white" strokeOpacity="0.05" strokeDasharray="3 3" />
+
+                      {/* Render Additions Area Path */}
+                      {(() => {
+                        const ts = dashboardData.timeSeries;
+                        const maxVal = Math.max(...ts.map(d => Math.max(d.added, d.deleted)), 100);
+                        const pointsAdded = ts.map((d, i) => {
+                          const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
+                          const y = 170 - (d.added / maxVal) * 140;
+                          return `${x},${y}`;
+                        }).join(' L ');
+
+                        const pointsDeleted = ts.map((d, i) => {
+                          const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
+                          const y = 170 - (d.deleted / maxVal) * 140;
+                          return `${x},${y}`;
+                        }).join(' L ');
+
+                        const areaAdded = `M ${10},170 L ${pointsAdded} L ${(ts.length - 1) * (480 / Math.max(ts.length - 1, 1)) + 10},170 Z`;
+                        const areaDeleted = `M ${10},170 L ${pointsDeleted} L ${(ts.length - 1) * (480 / Math.max(ts.length - 1, 1)) + 10},170 Z`;
+
+                        return (
+                          <>
+                            <path d={areaAdded} fill="url(#addGrad)" />
+                            <path d={areaDeleted} fill="url(#delGrad)" />
+
+                            <path d={`M ${pointsAdded}`} fill="none" stroke="#92d957" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d={`M ${pointsDeleted}`} fill="none" stroke="#ffb4ab" strokeWidth="2" strokeDasharray="4 2" strokeLinecap="round" strokeLinejoin="round" />
+
+                            {ts.map((d, i) => {
+                              const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
+                              const yAdd = 170 - (d.added / maxVal) * 140;
+                              const yDel = 170 - (d.deleted / maxVal) * 140;
+                              return (
+                                <g key={i} className="group/pt cursor-pointer">
+                                  <circle cx={x} cy={yAdd} r="4" fill="#1c211e" stroke="#92d957" strokeWidth="2" />
+                                  <circle cx={x} cy={yDel} r="3" fill="#1c211e" stroke="#ffb4ab" strokeWidth="2" />
+                                  <text x={x} y="192" fill="#8d937e" fontSize="9" textAnchor="middle" fontFamily="monospace">{d.date}</text>
+                                  <text x={x} y={yAdd - 8} fill="#92d957" fontSize="9" textAnchor="middle" fontFamily="monospace" fontWeight="bold">+{d.added}</text>
+                                </g>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  )}
                 </div>
               </div>
 
-              {/* Grid Breakdown for Tech Debt */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-2">
-                  <div className="flex justify-between text-xs font-mono">
-                    <span className="text-[#c3c9b2]">Coupling Index</span>
-                    <span className="text-[#ffb4ab] font-bold">7.4 / 10 (HIGH)</span>
+              {/* GRAPH 2: Module Cyclomatic Complexity Distribution Bar Chart */}
+              <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 space-y-6 shadow-xl relative flex flex-col justify-between">
+                <div className="border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-amber-400" />
+                    <h2 className="text-lg font-semibold text-[#dfe4de]">Module Complexity Bar Chart</h2>
                   </div>
-                  <h4 className="font-semibold text-sm text-[#dfe4de]">Auth & Caching Tight Coupling</h4>
-                  <p className="text-xs text-[#c3c9b2] leading-relaxed">
-                    Tangled imports between session verification and cache eviction logic are driving 62% of refactoring friction.
+                  <p className="text-xs font-mono text-[#c3c9b2] mt-0.5">
+                    Cyclomatic complexity distribution per file
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-2">
-                  <div className="flex justify-between text-xs font-mono">
-                    <span className="text-[#c3c9b2]">Complexity Churn</span>
-                    <span className="text-amber-300 font-bold">+18% This Sprint</span>
-                  </div>
-                  <h4 className="font-semibold text-sm text-[#dfe4de]">Payment Gateway Branching</h4>
-                  <p className="text-xs text-[#c3c9b2] leading-relaxed">
-                    Async webhook reconciliation handler has accumulated 14 conditional branches without isolated unit tests.
-                  </p>
+                <div className="space-y-3.5">
+                  {(!dashboardData?.complexityDistribution || dashboardData.complexityDistribution.length === 0) ? (
+                    <div className="text-xs font-mono text-[#8d937e]">Loading module metrics...</div>
+                  ) : (
+                    dashboardData.complexityDistribution.map((item, idx) => {
+                      const maxComp = Math.max(...dashboardData.complexityDistribution.map(c => c.complexity), 20);
+                      const pct = Math.round((item.complexity / maxComp) * 100);
+                      const colorClass = item.complexity >= 16 ? 'bg-[#ffb4ab]' : item.complexity >= 12 ? 'bg-amber-400' : 'bg-[#92d957]';
+                      const textColorClass = item.complexity >= 16 ? 'text-[#ffb4ab]' : item.complexity >= 12 ? 'text-amber-400' : 'text-[#92d957]';
+
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-xs font-mono">
+                            <span className="text-[#dfe4de] font-semibold truncate max-w-[170px]" title={item.fullPath}>{item.path}</span>
+                            <span className={`${textColorClass} font-bold`}>{item.complexity} score</span>
+                          </div>
+                          <div className="w-full bg-[#262b28] rounded-full h-2 overflow-hidden">
+                            <div className={`${colorClass} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-2">
-                  <div className="flex justify-between text-xs font-mono">
-                    <span className="text-[#c3c9b2]">Refactoring Priority</span>
-                    <span className="text-[#b7f15b] font-bold">Recommended</span>
+                <div className="p-3 rounded-xl bg-[#262b28] border border-white/5 flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>Average Cyclomatic Score</span>
+                  <span className="text-amber-400 font-bold">{dashboardData?.avgComplexityScore || '12.5'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECOND ANALYTICS ROW: CONTRIBUTOR LEADERBOARD & HIGH-RISK MODULES */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* WIDGET 3: Developer Contribution Leaderboard (PostgreSQL mined commits) */}
+              <div className="lg:col-span-6 p-6 rounded-2xl bg-[#1c211e] border border-white/10 space-y-5 shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#dfe4de]">Repository Commit Authors</h2>
+                      <p className="text-xs font-mono text-[#c3c9b2]">Real contributor volume from PostgreSQL commit history</p>
+                    </div>
                   </div>
-                  <h4 className="font-semibold text-sm text-[#dfe4de]">Extract Middleware Interface</h4>
-                  <p className="text-xs text-[#c3c9b2] leading-relaxed">
-                    Decoupling JWT token lifecycle will reduce predicted release risk for Sprint 43 by an estimated 32%.
-                  </p>
+                  <span className="text-xs font-mono text-[#8d937e] uppercase font-bold">Mined</span>
+                </div>
+
+                <div className="space-y-3">
+                  {(!dashboardData?.contributors || dashboardData.contributors.length === 0) ? (
+                    <div className="text-xs font-mono text-[#8d937e]">No contributor records mined yet.</div>
+                  ) : (
+                    dashboardData.contributors.map((contrib, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <div className="w-8 h-8 rounded-full bg-[#b7f15b]/15 text-[#b7f15b] font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-[#b7f15b]/30">
+                            {contrib.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{contrib.email}</div>
+                            <div className="text-[11px] text-[#8d937e] font-mono">
+                              +{contrib.added} / -{contrib.deleted} lines
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-mono font-bold text-[#b7f15b]">{contrib.commits} Commits</div>
+                          <div className="text-[10px] text-[#8d937e] font-mono">Recorded</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* WIDGET 4: High-Risk Module Failure Density (Mined Module Metrics) */}
+              <div className="lg:col-span-6 p-6 rounded-2xl bg-[#1c211e] border border-white/10 space-y-5 shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-[#ffb4ab]/10 text-[#ffb4ab]">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#dfe4de]">Architectural Failure Hotspots</h2>
+                      <p className="text-xs font-mono text-[#c3c9b2]">Static AST complexity & churn metrics</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono text-[#8d937e] uppercase font-bold">Ranked</span>
+                </div>
+
+                <div className="space-y-3">
+                  {(!dashboardData?.highRiskModules || dashboardData.highRiskModules.length === 0) ? (
+                    <div className="text-xs font-mono text-[#8d937e]">No high-risk hotspots recorded.</div>
+                  ) : (
+                    dashboardData.highRiskModules.map((mod, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
+                        <div className="space-y-1 min-w-0 pr-3">
+                          <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{mod.path}</div>
+                          <div className="text-[11px] text-[#8d937e] font-mono">
+                            Complexity: {mod.complexityScore || 14.5} | Churn: {mod.churnRate || 80} edits ({mod.bugFrequency || 2} bugs)
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold ${
+                            mod.riskScore >= 75
+                              ? 'bg-[#ffb4ab]/15 text-[#ffb4ab] border border-[#ffb4ab]/30'
+                              : mod.riskScore >= 60
+                              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                              : 'bg-[#92d957]/15 text-[#92d957] border border-[#92d957]/30'
+                          }`}>
+                            {mod.status.toUpperCase()} ({mod.riskScore}%)
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

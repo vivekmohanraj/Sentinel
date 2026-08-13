@@ -30,7 +30,7 @@ export const mineRepositoryData = async (repoId, repoName, gitUrl = null) => {
 
   const parsed = parseGitHubUrl(repoGitUrl || repoName);
 
-  // 1. Mine Commits for this repository
+  // 1. Mine Commits for this repository (Attempt GitHub API for real authors)
   const commitCountRes = await pool.query(`SELECT COUNT(*) FROM tbl_commit_record WHERE repository_id = $1`, [repoId]);
 
   if (parseInt(commitCountRes.rows[0].count) === 0) {
@@ -219,32 +219,96 @@ export const getDashboardSummary = async (repoFilter = null) => {
       await mineRepositoryData(repoObj.id, repoObj.name, repoObj.git_url);
     }
 
+    const targetRepoName = repoObj ? repoObj.name : 'sentinel/core-engine';
+    const repoId = repoObj ? repoObj.id : null;
+
+    // 1. Fetch Module Metrics for this Repository
     let modulesQuery = `SELECT file_path, complexity_score, churn_rate, bug_frequency FROM tbl_module_metric`;
     let params = [];
-    if (repoObj) {
+    if (repoId) {
       modulesQuery += ` WHERE repository_id = $1`;
-      params.push(repoObj.id);
+      params.push(repoId);
     }
     modulesQuery += ` ORDER BY complexity_score DESC`;
 
     const modulesRes = await pool.query(modulesQuery, params);
     const modules = modulesRes.rows || [];
 
+    // 2. Fetch Commits Statistics & Time Series for this Repository
+    let commitsQuery = `
+      SELECT DATE_TRUNC('day', timestamp)::date as date_label,
+             COUNT(*) as commit_count,
+             COALESCE(SUM(lines_added), 0) as lines_added,
+             COALESCE(SUM(lines_deleted), 0) as lines_deleted
+      FROM tbl_commit_record
+    `;
+    let commitParams = [];
+    if (repoId) {
+      commitsQuery += ` WHERE repository_id = $1`;
+      commitParams.push(repoId);
+    }
+    commitsQuery += ` GROUP BY DATE_TRUNC('day', timestamp)::date ORDER BY date_label ASC LIMIT 10`;
+
+    const timeSeriesRes = await pool.query(commitsQuery, commitParams);
+    const timeSeries = timeSeriesRes.rows.map((row) => ({
+      date: new Date(row.date_label).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      commits: parseInt(row.commit_count, 10),
+      added: parseInt(row.lines_added, 10),
+      deleted: parseInt(row.lines_deleted, 10),
+      netChurn: parseInt(row.lines_added, 10) - parseInt(row.lines_deleted, 10)
+    }));
+
+    // 3. Fetch Contributor Leaderboard for this Repository
+    let contribQuery = `
+      SELECT author_email,
+             COUNT(*) as total_commits,
+             COALESCE(SUM(lines_added), 0) as lines_added,
+             COALESCE(SUM(lines_deleted), 0) as lines_deleted
+      FROM tbl_commit_record
+    `;
+    let contribParams = [];
+    if (repoId) {
+      contribQuery += ` WHERE repository_id = $1`;
+      contribParams.push(repoId);
+    }
+    contribQuery += ` GROUP BY author_email ORDER BY total_commits DESC LIMIT 5`;
+
+    const contribRes = await pool.query(contribQuery, contribParams);
+    const contributors = contribRes.rows.map((c) => ({
+      email: c.author_email,
+      name: c.author_email.split('@')[0],
+      commits: parseInt(c.total_commits, 10),
+      added: parseInt(c.lines_added, 10),
+      deleted: parseInt(c.lines_deleted, 10)
+    }));
+
+    // 4. Overall Metric KPI Aggregations
+    let totalCommitsQuery = `SELECT COUNT(*), COALESCE(SUM(lines_added), 0) as total_added, COALESCE(SUM(lines_deleted), 0) as total_deleted FROM tbl_commit_record`;
+    let totalParams = [];
+    if (repoId) {
+      totalCommitsQuery += ` WHERE repository_id = $1`;
+      totalParams.push(repoId);
+    }
+    const totalCommitsRes = await pool.query(totalCommitsQuery, totalParams);
+    const totalCommits = parseInt(totalCommitsRes.rows[0].count, 10);
+    const totalLinesAdded = parseInt(totalCommitsRes.rows[0].total_added, 10);
+    const totalLinesDeleted = parseInt(totalCommitsRes.rows[0].total_deleted, 10);
+    const netChurn = totalLinesAdded - totalLinesDeleted;
+
     const avgComplexity = modules.length > 0
       ? modules.reduce((acc, m) => acc + parseFloat(m.complexity_score || 0), 0) / modules.length
-      : 12;
+      : 12.5;
 
     const healthScore = Math.max(45, Math.min(98, Math.round(100 - (avgComplexity * 2.5))));
-    const sprintRiskProbability = Math.min(92, Math.max(15, Math.round(avgComplexity * 4.4)));
 
-    const targetRepoName = repoObj ? repoObj.name : 'sentinel/core-engine';
-
-    const highRiskModules = modules.slice(0, 4).map((m) => {
+    const highRiskModules = modules.slice(0, 5).map((m) => {
       const score = Math.round(parseFloat(m.complexity_score || 0) * 4.5);
       return {
         path: m.file_path,
+        complexityScore: parseFloat(m.complexity_score || 0),
+        churnRate: parseInt(m.churn_rate || 0, 10),
+        bugFrequency: parseInt(m.bug_frequency || 0, 10),
         riskScore: Math.min(96, Math.max(45, score)),
-        churnLevel: `${m.churn_rate || 80} Edits (${m.bug_frequency || 2} Bugs)`,
         status: score >= 75 ? 'Critical' : score >= 60 ? 'Warning' : 'Elevated'
       };
     });
@@ -252,24 +316,21 @@ export const getDashboardSummary = async (repoFilter = null) => {
     return {
       repoName: targetRepoName,
       healthScore: healthScore,
-      healthScoreChange: 3.8,
-      sprintRiskProbability: sprintRiskProbability,
-      estimatedDelayDays: (sprintRiskProbability * 0.04).toFixed(1),
-      analyzedPRsCount: modules.length * 140 + 120,
-      knowledgeGraphStatus: `GRAPH INDEX FOR ${targetRepoName.toUpperCase()} ACTIVE`,
-      aiReasoning: `Analytical code health score for ${targetRepoName} evaluated across ${modules.length} modules in PostgreSQL database.`,
-      shapAttributions: [
-        { name: 'Developer Context Switching Churn', impact: '+34% SHAP Impact', score: 84 },
-        { name: 'Tangled Commits & High Cyclomatic Delta', impact: '+28% SHAP Impact', score: 68 },
-        { name: 'Untested Boundary Path Density', impact: '+18% SHAP Impact', score: 45 }
-      ],
-      highRiskModules: highRiskModules.length > 0 ? highRiskModules : [
-        { path: `src/${targetRepoName}/main.js`, riskScore: 78, churnLevel: 'High Churn (+220 lines)', status: 'Warning' }
-      ],
-      techDebtHotspots: [
-        { title: `${targetRepoName} Module Coupling`, couplingIndex: '7.2 / 10', description: `Tangled imports and architectural complexity in ${targetRepoName}.` },
-        { title: `${targetRepoName} Branching Complexity`, complexityChurn: '+16% This Sprint', description: `Conditional branch growth detected in ${targetRepoName}.` }
-      ]
+      avgComplexityScore: avgComplexity.toFixed(1),
+      totalCommits: totalCommits,
+      totalLinesAdded: totalLinesAdded,
+      totalLinesDeleted: totalLinesDeleted,
+      netChurn: netChurn,
+      totalModulesCount: modules.length,
+      timeSeries: timeSeries,
+      contributors: contributors,
+      highRiskModules: highRiskModules,
+      complexityDistribution: modules.slice(0, 6).map((m) => ({
+        path: m.file_path.split('/').pop(),
+        fullPath: m.file_path,
+        complexity: parseFloat(m.complexity_score || 0),
+        churn: parseInt(m.churn_rate || 0, 10)
+      }))
     };
   } catch (err) {
     console.error('Error fetching dashboard summary:', err);
