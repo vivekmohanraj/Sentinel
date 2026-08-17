@@ -3116,14 +3116,30 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
-                    {commitsList.length === 0 ? (
+                    {commitsList.filter((c) => {
+                      const query = (commitSearch || '').toLowerCase().trim();
+                      if (!query) return true;
+                      const msg = (c.message || '').toLowerCase();
+                      const author = (c.author_email || c.author || '').toLowerCase();
+                      const hash = (c.hash || '').toLowerCase();
+                      return msg.includes(query) || author.includes(query) || hash.includes(query);
+                    }).length === 0 ? (
                       <tr>
                         <td colSpan="5" className="py-8 text-center text-[#8d937e]">
                           No commits found matching query.
                         </td>
                       </tr>
                     ) : (
-                      commitsList.map((c) => (
+                      commitsList
+                        .filter((c) => {
+                          const query = (commitSearch || '').toLowerCase().trim();
+                          if (!query) return true;
+                          const msg = (c.message || '').toLowerCase();
+                          const author = (c.author_email || c.author || '').toLowerCase();
+                          const hash = (c.hash || '').toLowerCase();
+                          return msg.includes(query) || author.includes(query) || hash.includes(query);
+                        })
+                        .map((c) => (
                         <tr key={c.hash} className="hover:bg-white/[0.02] transition-colors">
                           <td className="py-3.5 px-4 font-mono font-bold text-[#b7f15b]">
                             <span className="px-2 py-1 rounded bg-[#b7f15b]/10 border border-[#b7f15b]/30">
