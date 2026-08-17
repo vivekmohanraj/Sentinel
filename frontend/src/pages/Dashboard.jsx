@@ -166,9 +166,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
   const unreadCount = notificationsList.filter((n) => !n.is_read).length;
 
-  // Risk & Pattern Filter State
+  // Risk & Pattern & User Filter State
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
   const [patternFilter, setPatternFilter] = useState('ALL'); // 'ALL' | 'FACADE' | 'REPOSITORY' | 'MIDDLEWARE'
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
 
   // Telemetry & Logs State for Admin
   const [telemetryData, setTelemetryData] = useState(null);
@@ -1809,14 +1811,31 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 )}
 
                 <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <h3 className="text-base font-semibold text-[#dfe4de]">Registered Organization Members</h3>
-                    {(isLoadingUsers || isLoadingUserDetail) && (
-                      <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Loading Details...</span>
-                      </div>
-                    )}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div>
+                      <h3 className="text-base font-semibold text-[#dfe4de]">Registered Organization Members</h3>
+                      <p className="text-xs font-mono text-[#c3c9b2]/70">Search members or filter by assigned RBAC governance roles.</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <input
+                        type="text"
+                        placeholder="Search user name or email..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        className="h-9 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                      />
+                      <select
+                        value={userRoleFilter}
+                        onChange={(e) => setUserRoleFilter(e.target.value)}
+                        className="h-9 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
+                      >
+                        <option value="ALL">All Roles</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Engineering Manager">Engineering Manager</option>
+                        <option value="Software Engineer">Developer</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -1831,7 +1850,23 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-sm">
-                        {usersList.map((user) => {
+                        {usersList
+                          .filter((user) => {
+                            const name = (user.name || `${user.firstName || ''} ${user.lastName || ''}`).toLowerCase();
+                            const email = (user.email || '').toLowerCase();
+                            const query = userSearchQuery.toLowerCase().trim();
+                            const matchesSearch = !query || name.includes(query) || email.includes(query);
+
+                            const role = (user.role || '').toLowerCase();
+                            const matchesRole =
+                              userRoleFilter === 'ALL' ||
+                              (userRoleFilter === 'Admin' && role.includes('admin')) ||
+                              (userRoleFilter === 'Engineering Manager' && role.includes('manager')) ||
+                              (userRoleFilter === 'Software Engineer' && role.includes('developer'));
+
+                            return matchesSearch && matchesRole;
+                          })
+                          .map((user) => {
                           const isSuperAdmin = user.email.toLowerCase() === 'vivekmohanraj5@gmail.com';
                           const isSelf = user.email.toLowerCase() === profileData.email.toLowerCase();
                           const isUpdating = updatingUserId === user.id;
