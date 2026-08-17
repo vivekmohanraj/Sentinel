@@ -207,7 +207,9 @@ const KnowledgeGraphView = ({ selectedRepo = 'sentinel/core-engine', onSelectRef
                 <div className="text-[#8d937e]">PRIMARY BUS FACTOR OWNER</div>
                 <div className="text-[#b7f15b] font-bold">{selectedNode.busFactorOwner}</div>
                 <div className="text-[11px] text-[#c3c9b2]/70 pt-1">
-                  84% of commit volume authored by single contributor. High knowledge concentration risk.
+                  {selectedNode.ownershipPct
+                    ? `${selectedNode.ownershipPct}% of commit volume authored by this contributor in this repository.`
+                    : 'Active repository contributor.'}
                 </div>
               </div>
 

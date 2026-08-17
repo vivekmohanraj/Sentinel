@@ -203,13 +203,9 @@ const Dashboard = ({ onNavigateToLanding }) => {
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
     { id: 'Knowledge Graph', label: 'Knowledge Graph', icon: Network },
-    ...((isAdmin || isManager)
-      ? [
-          { id: 'Users', label: 'User Directory', icon: Users }
-        ]
-      : []),
     ...(isAdmin
       ? [
+          { id: 'Users', label: 'User Directory', icon: Users },
           { id: 'Telemetry', label: 'System Logs', icon: Terminal }
         ]
       : []),
@@ -280,7 +276,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
   // Fetch all registered users for Admin & Manager User Directory panel
   useEffect(() => {
     let isMounted = true;
-    if (activeTab === 'Users' && (isAdmin || isManager)) {
+    if (activeTab === 'Users' && isAdmin) {
       const loadUsers = async () => {
         setIsLoadingUsers(true);
         try {
@@ -726,153 +722,163 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 min-w-0 p-6 md:p-10 space-y-8 overflow-y-auto">
-        {/* TOP BAR / HEADER */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-semibold text-[#dfe4de] tracking-tight">
-                {activeTab === 'Dashboard' && 'Predictive Command Center'}
-                {activeTab === 'Repositories' && 'Repository Graph Index'}
-                {activeTab === 'Commits' && 'Commit Log & Developer Churn Activity'}
-                {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
-                {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
-                {activeTab === 'Users' && 'User & Role Management Directory'}
-                {activeTab === 'Telemetry' && 'System Execution & Telemetry Logs'}
-                {activeTab === 'Settings' && 'Profile & Workspace Preferences'}
-              </h1>
-              <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider shrink-0">
-                Live Scan Active
-              </span>
+        {/* TOP BAR / HEADER (2-TIER CLEAN COMMAND DECK) */}
+        <header className="space-y-4 pb-6 border-b border-white/10">
+          {/* TIER 1: TITLE, STATUS & QUICK ACTIONS */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-semibold text-[#dfe4de] tracking-tight">
+                  {activeTab === 'Dashboard' && 'Predictive Command Center'}
+                  {activeTab === 'Repositories' && 'Repository Graph Index'}
+                  {activeTab === 'Commits' && 'Commit Log & Developer Churn Activity'}
+                  {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
+                  {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
+                  {activeTab === 'Knowledge Graph' && 'Engineering Knowledge Graph'}
+                  {activeTab === 'Users' && 'User & Role Management Directory'}
+                  {activeTab === 'Telemetry' && 'System Execution & Telemetry Logs'}
+                  {activeTab === 'Settings' && 'Profile & Workspace Preferences'}
+                </h1>
+                <span className="px-3 py-1 rounded-full bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase tracking-wider shrink-0">
+                  Live Scan Active
+                </span>
+              </div>
+              <p className="text-xs text-[#c3c9b2]/70 mt-1 font-mono">
+                Engineering Knowledge Graph analysis • {dashboardData?.totalCommits || 0} commits indexed • repo: <span className="text-[#b7f15b] font-bold">{selectedRepo}</span>
+              </p>
             </div>
-            <p className="text-sm text-[#c3c9b2]/70 mt-1 font-mono">
-              Engineering Knowledge Graph analysis • {dashboardData?.totalCommits || 0} commits indexed • repo: {selectedRepo}
-            </p>
+
+            {/* Quick Actions & User Profile */}
+            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+              {/* PR Pre-Merge Risk Scanner Button */}
+              <button
+                onClick={() => setShowPrScanModal(true)}
+                className="h-9 px-3 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase cursor-pointer"
+                title="Run Automated Pull Request Pre-Merge Risk Scan"
+              >
+                <GitPullRequest className="w-3.5 h-3.5 text-[#b7f15b]" />
+                <span className="hidden sm:inline">PR Scan</span>
+              </button>
+
+              {/* Export CSV Report Button */}
+              <a
+                href={getExportReportUrl('csv')}
+                download="sentinel-report.csv"
+                className="h-9 px-3 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase cursor-pointer"
+                title="Download Executive Engineering CSV Report"
+              >
+                <Download className="w-3.5 h-3.5 text-[#b7f15b]" />
+                <span className="hidden sm:inline">Export</span>
+              </a>
+
+              {/* Notification Bell Button */}
+              <button
+                onClick={() => setShowNotificationDrawer(true)}
+                className="relative h-9 w-9 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                title="Open System Alerts & Notifications"
+              >
+                <Bell className="w-4 h-4 text-[#c3c9b2]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#b7f15b] text-[#223600] font-mono text-[9px] font-bold flex items-center justify-center shadow-md">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Profile Avatar Badge Button */}
+              <button
+                onClick={() => setActiveTab('Settings')}
+                className="h-9 px-2.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                title="View Profile Settings"
+              >
+                <img
+                  src={profileData.image || session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`}
+                  alt={profileData.firstName || 'User Avatar'}
+                  className="w-6 h-6 rounded-lg object-cover border border-[#b7f15b]/40"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`;
+                  }}
+                />
+                <span className="text-xs font-mono font-semibold max-w-[90px] truncate hidden md:inline text-[#dfe4de]">
+                  {profileData.firstName || profileData.email.split('@')[0]}
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-            {/* Organization Selector */}
-            <div className="relative shrink-0">
-              <select
-                value={selectedOrg}
-                onChange={(e) => setSelectedOrg(e.target.value)}
-                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
-              >
-                {orgsList.length === 0 && <option value="">org: Sentinel Engineering</option>}
-                {orgsList.map((o) => (
-                  <option key={o.id} value={o.id}>org: {o.name}</option>
-                ))}
-              </select>
-              <Building2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          {/* TIER 2: CONTEXT HIERARCHY BAR & CODEBASE CONTROLS */}
+          <div className="p-2.5 rounded-2xl bg-[#181d1a] border border-white/10 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Organization Selector */}
+              <div className="relative">
+                <select
+                  value={selectedOrg}
+                  onChange={(e) => setSelectedOrg(e.target.value)}
+                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                >
+                  {orgsList.length === 0 && <option value="">org: Sentinel Core Org</option>}
+                  {orgsList.map((o) => (
+                    <option key={o.id} value={o.id}>org: {o.name}</option>
+                  ))}
+                </select>
+                <Building2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              {/* Project Selector */}
+              <div className="relative">
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                >
+                  {projectsList.length === 0 && <option value="">proj: Main Engineering</option>}
+                  {projectsList.map((p) => (
+                    <option key={p.id} value={p.id}>proj: {p.name}</option>
+                  ))}
+                </select>
+                <FolderKanban className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              {/* Repository Selector */}
+              <div className="relative">
+                <select
+                  value={selectedRepo}
+                  onChange={(e) => setSelectedRepo(e.target.value)}
+                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                >
+                  {dbRepos.length === 0 && <option value="sentinel/core-engine">repo: sentinel/core-engine</option>}
+                  {dbRepos.map((r) => (
+                    <option key={r.id} value={r.name}>repo: {r.name}</option>
+                  ))}
+                </select>
+                <FolderGit2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
-            {/* Project Selector */}
-            <div className="relative shrink-0">
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
-              >
-                {projectsList.length === 0 && <option value="">proj: Main Engineering</option>}
-                {projectsList.map((p) => (
-                  <option key={p.id} value={p.id}>proj: {p.name}</option>
-                ))}
-              </select>
-              <FolderKanban className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Repository Selector */}
-            <div className="relative shrink-0">
-              <select
-                value={selectedRepo}
-                onChange={(e) => setSelectedRepo(e.target.value)}
-                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
-              >
-                {dbRepos.length === 0 && <option value="sentinel/core-engine">repo: sentinel/core-engine</option>}
-                {dbRepos.map((r) => (
-                  <option key={r.id} value={r.name}>repo: {r.name}</option>
-                ))}
-              </select>
-              <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-
-            {/* Add Project & Rescan Codebase Buttons (Admin & Manager Only) */}
+            {/* Admin/Manager Codebase Controls */}
             {(isAdmin || isManager) && (
-              <>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowAddProjectModal(true)}
-                  className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
+                  className="h-9 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-1.5 text-xs font-mono uppercase cursor-pointer"
                   title="Create New Project"
                 >
-                  <Plus className="w-4 h-4 text-[#b7f15b]" />
-                  <span className="inline">New Project</span>
+                  <Plus className="w-3.5 h-3.5 text-[#b7f15b]" />
+                  <span>New Project</span>
                 </button>
 
                 <button
                   onClick={handleRescanCodebase}
                   disabled={isRescanning}
-                  className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
+                  className="h-9 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-1.5 text-xs font-mono uppercase cursor-pointer"
                   title="Rescan Codebase Complexity & Churn"
                 >
-                  <RefreshCw className={`w-4 h-4 text-[#b7f15b] ${isRescanning ? 'animate-spin' : ''}`} />
-                  <span className="inline">{isRescanning ? 'Scanning...' : 'Rescan Codebase'}</span>
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#b7f15b] ${isRescanning ? 'animate-spin' : ''}`} />
+                  <span>{isRescanning ? 'Scanning...' : 'Rescan Codebase'}</span>
                 </button>
-              </>
+              </div>
             )}
-
-            {/* PR Pre-Merge Risk Scanner Button */}
-            <button
-              onClick={() => setShowPrScanModal(true)}
-              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
-              title="Run Automated Pull Request Pre-Merge Risk Scan"
-            >
-              <GitPullRequest className="w-4 h-4 text-[#b7f15b]" />
-              <span className="inline">PR Scan</span>
-            </button>
-
-            {/* Export CSV Report Button */}
-            <a
-              href={getExportReportUrl('csv')}
-              download="sentinel-report.csv"
-              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
-              title="Download Executive Engineering CSV Report"
-            >
-              <Download className="w-4 h-4 text-[#b7f15b]" />
-              <span className="inline">Export Report</span>
-            </a>
-
-            {/* Notification Bell Button */}
-            <button
-              onClick={() => setShowNotificationDrawer(true)}
-              className="relative h-10 w-10 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center shrink-0"
-              title="Open System Alerts & Notifications"
-            >
-              <Bell className="w-4 h-4 text-[#c3c9b2]" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#b7f15b] text-[#223600] font-mono text-[10px] font-bold flex items-center justify-center shadow-md">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Profile Avatar Badge Button */}
-            <button
-              onClick={() => setActiveTab('Settings')}
-              className="h-10 px-2.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2.5 shrink-0"
-              title="View Profile Settings"
-            >
-              <img
-                src={profileData.image || session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`}
-                alt={profileData.firstName || 'User Avatar'}
-                className="w-7 h-7 rounded-lg object-cover border border-[#b7f15b]/40"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`;
-                }}
-              />
-              <span className="text-xs font-mono font-semibold max-w-[100px] truncate hidden sm:inline text-[#dfe4de]">
-                {profileData.firstName || profileData.email.split('@')[0]}
-              </span>
-            </button>
           </div>
         </header>
 
@@ -1612,8 +1618,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         )}
 
-        {/* 3. USER DIRECTORY TAB (ADMIN & MANAGER ACCESS) */}
-        {activeTab === 'Users' && (isAdmin || isManager) && (
+        {/* 3. USER DIRECTORY TAB (ADMIN ACCESS) */}
+        {activeTab === 'Users' && isAdmin && (
           <div className="space-y-6 animate-fadeIn">
             {/* If a user is selected for detailed inspection */}
             {selectedUserDetail ? (

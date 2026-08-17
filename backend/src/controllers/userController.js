@@ -122,6 +122,25 @@ export const updateProfile = async (req, res, next) => {
 
 export const getAllUsersList = async (req, res, next) => {
   try {
+    let requestingEmail = req.query.adminEmail || req.query.email;
+    try {
+      const session = await auth.api.getSession({ headers: req.headers });
+      if (session?.user?.email) {
+        requestingEmail = session.user.email;
+      }
+    } catch (e) {}
+
+    const reqUser = requestingEmail ? await getUserByEmail(requestingEmail) : null;
+    const isSuperAdmin = requestingEmail?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    const isAdminRole = reqUser?.role === 'Admin';
+
+    if (!isSuperAdmin && !isAdminRole) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: Only administrators are authorized to access the organization user directory.'
+      });
+    }
+
     const users = await getAllUsers();
     return res.status(200).json({
       success: true,
