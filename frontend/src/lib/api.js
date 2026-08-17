@@ -541,3 +541,40 @@ export const generateRefactoringSnippetApi = async (filePath, complexityScore) =
     throw err;
   }
 };
+
+export const fetchShapExplanationApi = async (filePath, riskScore) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/predictions/shap-explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ filePath, riskScore })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch SHAP explanation:', err);
+    throw err;
+  }
+};
+
+export const fetchBusFactorMetricsApi = async (repoName = '') => {
+  try {
+    const url = repoName
+      ? `${API_BASE_URL}/bus-factor/bus-factor?repoName=${encodeURIComponent(repoName)}`
+      : `${API_BASE_URL}/bus-factor/bus-factor`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch Bus Factor metrics:', err);
+    throw err;
+  }
+};

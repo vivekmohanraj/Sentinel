@@ -136,6 +136,87 @@ export const exportReportData = async (req, res, next) => {
       return res.status(200).send(csvContent);
     }
 
+    if (format === 'html' || format === 'pdf') {
+      const htmlReport = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sentinel Executive Engineering Report - ${summary.repoName}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #111613; color: #dfe4de; padding: 40px; margin: 0; }
+    .header { border-bottom: 2px solid #b7f15b; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+    h1 { color: #b7f15b; font-size: 24px; margin: 0; text-transform: uppercase; font-family: monospace; }
+    .meta { font-family: monospace; font-size: 12px; color: #8d937e; margin-top: 5px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+    .card { background: #1c211e; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; }
+    .card-title { font-family: monospace; font-size: 11px; color: #8d937e; text-transform: uppercase; }
+    .card-value { font-family: monospace; font-size: 24px; font-weight: bold; color: #b7f15b; margin-top: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: monospace; font-size: 12px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    th { color: #8d937e; text-transform: uppercase; background: #181d1a; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; }
+    .critical { background: rgba(255,180,171,0.2); color: #ffb4ab; border: 1px solid rgba(255,180,171,0.4); }
+    .warning { background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Sentinel Executive Engineering Sprint Report</h1>
+      <div class="meta">Repository: ${summary.repoName} • Generated: ${new Date().toLocaleString()}</div>
+    </div>
+    <div style="font-family: monospace; font-weight: bold; color: #b7f15b;">AIR-GAPPED PREDICTIVE NODE</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">Sprint Health Index</div>
+      <div class="card-value">${summary.healthScore}/100</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg Cyclomatic Complexity</div>
+      <div class="card-value">${summary.avgComplexityScore}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Total Mined Commits</div>
+      <div class="card-value">${summary.totalCommits}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Net Code Churn</div>
+      <div class="card-value">+${summary.netChurn}</div>
+    </div>
+  </div>
+
+  <h2>High-Risk Module Predictions</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>File Path</th>
+        <th>Complexity</th>
+        <th>Churn Edits</th>
+        <th>Bug Frequency</th>
+        <th>Risk Level</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${summary.highRiskModules.map(m => `
+        <tr>
+          <td><strong>${m.path}</strong></td>
+          <td>${m.complexityScore}</td>
+          <td>${m.churnRate}</td>
+          <td>${m.bugFrequency}</td>
+          <td><span class="badge ${m.status === 'Critical' ? 'critical' : 'warning'}">${m.status}</span></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.status(200).send(htmlReport);
+    }
+
     return res.status(200).json({
       success: true,
       data: {

@@ -51,6 +51,8 @@ import { useSession } from '../lib/auth-client.js';
 import PrScanModal from '../components/PrScanModal.jsx';
 import KnowledgeGraphView from '../components/KnowledgeGraphView.jsx';
 import RefactorModal from '../components/RefactorModal.jsx';
+import ShapExplainerModal from '../components/ShapExplainerModal.jsx';
+import BusFactorDrawer from '../components/BusFactorDrawer.jsx';
 
 import {
   fetchUserProfile,
@@ -78,7 +80,9 @@ import {
   fetchHotspotsApi,
   rescanCodebaseApi,
   fetchRiskRadarApi,
-  scanPullRequestApi
+  scanPullRequestApi,
+  fetchShapExplanationApi,
+  fetchBusFactorMetricsApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -87,9 +91,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('sentinel/core-engine');
 
-  // Modal States for Phase 2 Extension Modules
+  // Modal States for Phase 2 & 3 Extension Modules
   const [showPrScanModal, setShowPrScanModal] = useState(false);
   const [refactorModalData, setRefactorModalData] = useState({ isOpen: false, filePath: '', complexityScore: 18.5 });
+  const [shapModalData, setShapModalData] = useState({ isOpen: false, filePath: '', riskScore: 84 });
+  const [showBusFactorDrawer, setShowBusFactorDrawer] = useState(false);
 
   // Profile Management State for Settings Tab
   const [profileData, setProfileData] = useState({
@@ -1267,9 +1273,13 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       <p className="text-xs font-mono text-[#c3c9b2]">Single-developer module dependencies & review workload balance</p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono font-bold uppercase w-fit">
-                    Manager Telemetry Active
-                  </span>
+                  <button
+                    onClick={() => setShowBusFactorDrawer(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 text-amber-400" />
+                    <span>Inspect Bus Factor Matrix</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2292,16 +2302,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
                           SHAP Diagnostic: &quot;{item.reason}&quot;
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <span className="text-[10px] font-mono text-[#8d937e] uppercase">Affected Paths:</span>
-                          {(item.modules || []).map((mod, mIdx) => (
-                            <span
-                              key={mIdx}
-                              className="px-2.5 py-0.5 rounded-lg bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#dfe4de]"
-                            >
-                              {mod}
-                            </span>
-                          ))}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-mono text-[#8d937e] uppercase">Affected Paths:</span>
+                            {(item.modules || []).map((mod, mIdx) => (
+                              <span
+                                key={mIdx}
+                                className="px-2.5 py-0.5 rounded-lg bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#dfe4de]"
+                              >
+                                {mod}
+                              </span>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => setShapModalData({ isOpen: true, filePath: (item.modules && item.modules[0]) || 'src/sentinel/core-engine/mainEngine.js', riskScore: item.score || 84 })}
+                            className="px-3 py-1 rounded-lg bg-[#b7f15b]/10 hover:bg-[#b7f15b]/20 border border-[#b7f15b]/30 text-[#b7f15b] text-[11px] font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Cpu className="w-3.5 h-3.5 text-[#b7f15b]" />
+                            <span>Explain SHAP Vector</span>
+                          </button>
                         </div>
                       </div>
                     ))
@@ -3027,6 +3047,20 @@ const Dashboard = ({ onNavigateToLanding }) => {
           onClose={() => setRefactorModalData({ ...refactorModalData, isOpen: false })}
           filePath={refactorModalData.filePath}
           complexityScore={refactorModalData.complexityScore}
+        />
+
+        {/* PHASE 3 EXTENSION MODALS & DRAWERS */}
+        <ShapExplainerModal
+          isOpen={shapModalData.isOpen}
+          onClose={() => setShapModalData({ ...shapModalData, isOpen: false })}
+          filePath={shapModalData.filePath}
+          riskScore={shapModalData.riskScore}
+        />
+
+        <BusFactorDrawer
+          isOpen={showBusFactorDrawer}
+          onClose={() => setShowBusFactorDrawer(false)}
+          selectedRepo={selectedRepo}
         />
       </main>
     </div>
