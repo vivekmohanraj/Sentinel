@@ -35,6 +35,7 @@ import {
   HardDrive,
   Server,
   FolderKanban,
+  Building2,
   Info,
   GitCommit,
   CheckCheck,
@@ -3115,7 +3116,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
         {/* 8. KNOWLEDGE GRAPH TOPOLOGY TAB */}
         {activeTab === 'Knowledge Graph' && (
-          <KnowledgeGraphView selectedRepo={selectedRepo} />
+          <KnowledgeGraphView
+            selectedRepo={selectedRepo}
+            onSelectRefactor={(filePath, complexity) => setRefactorModalData({ isOpen: true, filePath, complexityScore: complexity })}
+          />
         )}
 
         {/* PHASE 2 EXTENSION MODALS */}

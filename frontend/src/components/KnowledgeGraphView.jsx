@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Network, ShieldAlert, Cpu, RefreshCw, Info, Database } from 'lucide-react';
 import { fetchKnowledgeGraphApi } from '../lib/api';
 
-const KnowledgeGraphView = ({ selectedRepo = 'sentinel/core-engine' }) => {
+const KnowledgeGraphView = ({ selectedRepo = 'sentinel/core-engine', onSelectRefactor }) => {
   const [graphData, setGraphData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -210,6 +210,16 @@ const KnowledgeGraphView = ({ selectedRepo = 'sentinel/core-engine' }) => {
                   84% of commit volume authored by single contributor. High knowledge concentration risk.
                 </div>
               </div>
+
+              {onSelectRefactor && (
+                <button
+                  onClick={() => onSelectRefactor(selectedNode.fullPath, selectedNode.complexityScore)}
+                  className="w-full h-10 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#b7f15b]/20"
+                >
+                  <Cpu className="w-4 h-4" />
+                  <span>Refactor AST Module</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="text-xs font-mono text-[#8d937e]">Select a node on the canvas to inspect topology details.</div>
