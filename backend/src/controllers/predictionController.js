@@ -28,7 +28,7 @@ export const scanPullRequest = async (req, res, next) => {
   }
 };
 
-export const explainShapVector = async (req, res, next) => {
+export const explainAstFactors = async (req, res, next) => {
   try {
     const { filePath = 'src/sentinel/core-engine/mainEngine.js', riskScore = 84 } = req.body;
 
@@ -57,7 +57,7 @@ export const explainShapVector = async (req, res, next) => {
     const churnDelta = `+${(churn * 0.001).toFixed(2)}`;
     const bugDelta = `+${(bugs * 0.01).toFixed(2)}`;
 
-    const shapFeatures = [
+    const riskFactors = [
       { name: 'Cyclomatic Complexity Index', value: `${complexity.toFixed(1)} CPL`, delta: compDelta, direction: 'positive', description: `Calculated AST decision count from PostgreSQL metric logs.` },
       { name: 'Co-Change Coupling Density', value: '7.4 CPL', delta: '+0.18', direction: 'positive', description: 'Frequent co-edits with auxiliary module files in commit records.' },
       { name: 'Recent Code Churn Volume', value: `${churn} edits`, delta: churnDelta, direction: 'positive', description: 'Aggregated line additions and deletions from database records.' },
@@ -73,9 +73,9 @@ export const explainShapVector = async (req, res, next) => {
         baseValue: baseProb,
         outputValue: outputProb,
         riskScore: numericScore,
-        modelName: 'XGBoost + SHAP Tree Explainer v4.2',
-        summary: `SHAP tree explainer calculated feature contributions for ${baseName} directly from PostgreSQL metrics. Cyclomatic complexity (${complexity.toFixed(1)}) and bug frequency (${bugs}) drive predicted risk.`,
-        features: shapFeatures,
+        modelName: 'Deterministic AST Cyclomatic Analyzer v4.2',
+        summary: `Static AST analyzer calculated metric factors for ${baseName} directly from PostgreSQL metrics. Cyclomatic complexity (${complexity.toFixed(1)}) and bug frequency (${bugs}) drive calculated risk.`,
+        features: riskFactors,
         explainedAt: new Date().toISOString()
       }
     });

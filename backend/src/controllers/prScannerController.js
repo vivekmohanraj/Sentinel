@@ -69,8 +69,8 @@ export const simulatePullRequestScan = async (req, res, next) => {
       advisoryMessage = 'ELEVATED RISK: Minor complexity increase. Ensure unit test coverage before deployment.';
     }
 
-    // 4. Compute SHAP Feature Importance Breakdown
-    const shapBreakdown = [
+    // 4. Compute Factor Contribution Breakdown
+    const factorBreakdown = [
       { feature: 'Module Cyclomatic Complexity', impact: `+${Math.round(complexityImpact)}%`, weight: parseFloat((complexityImpact / riskScore).toFixed(2)) },
       { feature: 'Line Churn & Delta Volume', impact: `+${Math.round(churnImpact)}%`, weight: parseFloat((churnImpact / riskScore).toFixed(2)) },
       { feature: 'Co-Change Temporal Coupling', impact: `+${Math.round(fileCountImpact)}%`, weight: parseFloat((fileCountImpact / riskScore).toFixed(2)) }
@@ -101,7 +101,8 @@ export const simulatePullRequestScan = async (req, res, next) => {
         riskLevel,
         mergeStatus,
         advisoryMessage,
-        shapBreakdown,
+        shapBreakdown: factorBreakdown,
+        factorBreakdown,
         fileAnalysis,
         scannedAt: new Date().toISOString()
       }

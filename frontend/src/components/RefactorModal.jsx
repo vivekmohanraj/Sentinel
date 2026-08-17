@@ -42,7 +42,7 @@ const RefactorModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-engine/m
               <Sparkles className="w-6 h-6 text-[#b7f15b]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#dfe4de]">AI Refactoring Advisory & Snippet Generator</h2>
+              <h2 className="text-lg font-bold text-[#dfe4de]">AST Refactoring Advisory & Snippet Generator</h2>
               <p className="text-xs font-mono text-[#c3c9b2]">Automated architectural pattern synthesis for high-complexity codebases</p>
             </div>
           </div>

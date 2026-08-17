@@ -50,7 +50,7 @@ async function handle${baseName.replace(/\.[^/.]+$/, '').toUpperCase()}(req, res
   }
 }`;
 
-    let afterCode = `// AFTER SENTINEL AI REFACTORING (${baseName})
+    let afterCode = `// AFTER SENTINEL AST REFACTORING (${baseName})
 // Target Cyclomatic Score: ${targetScore.toFixed(1)} (-${riskReductionPct}% Risk Reduction Vector)
 // Pattern Strategy: ${patternName}
 

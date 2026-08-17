@@ -542,9 +542,9 @@ export const generateRefactoringSnippetApi = async (filePath, complexityScore) =
   }
 };
 
-export const fetchShapExplanationApi = async (filePath, riskScore) => {
+export const fetchAstExplanationApi = async (filePath, riskScore) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/predictions/shap-explain`, {
+    const res = await fetch(`${API_BASE_URL}/predictions/ast-explain`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -554,10 +554,12 @@ export const fetchShapExplanationApi = async (filePath, riskScore) => {
     const result = await res.json();
     return result.data;
   } catch (err) {
-    console.error('Failed to fetch SHAP explanation:', err);
+    console.error('Failed to fetch AST explanation:', err);
     throw err;
   }
 };
+
+export const fetchShapExplanationApi = fetchAstExplanationApi;
 
 export const fetchBusFactorMetricsApi = async (repoName = '') => {
   try {

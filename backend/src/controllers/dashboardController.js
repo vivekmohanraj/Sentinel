@@ -88,16 +88,16 @@ export const getSystemTelemetry = async (req, res, next) => {
         users: parseInt(usersCountRes.rows[0].count, 10)
       },
       modelsStatus: {
-        xgboostPredictor: 'OPERATIONAL (CPU bound)',
-        shapExplainer: 'ACTIVE (TreeExplainer)',
-        ollamaLLM: 'STANDBY (Qwen2.5 3B Instruct quantized)',
+        astAnalyzer: 'OPERATIONAL (Rule-based AST)',
+        cyclomaticCalculator: 'ACTIVE (Static Cyclomatic Engine)',
+        coChangeMatrix: 'COMPUTED (Coupling Vectors)',
         networkxGraph: 'INDEXED (0 error count)'
       },
       recentLogs: [
         { id: 1, timestamp: new Date().toISOString(), level: 'INFO', message: '[Database] Connection pool initialized successfully.' },
         { id: 2, timestamp: new Date(Date.now() - 45000).toISOString(), level: 'INFO', message: '[Migrations] Schema check complete. vivekmohanraj5@gmail.com role set to Admin.' },
-        { id: 3, timestamp: new Date(Date.now() - 120000).toISOString(), level: 'INFO', message: '[Mining Engine] Air-gapped local node listening on port 5000.' },
-        { id: 4, timestamp: new Date(Date.now() - 300000).toISOString(), level: 'WARN', message: '[SHAP Engine] Context switching churn exceeded 30% threshold for auth session module.' }
+        { id: 3, timestamp: new Date(Date.now() - 120000).toISOString(), level: 'INFO', message: '[Mining Engine] Static analysis node listening on port 5000.' },
+        { id: 4, timestamp: new Date(Date.now() - 300000).toISOString(), level: 'WARN', message: '[AST Engine] Context switching churn exceeded 30% threshold for auth session module.' }
       ]
     };
 
@@ -165,7 +165,7 @@ export const exportReportData = async (req, res, next) => {
       <h1>Sentinel Executive Engineering Sprint Report</h1>
       <div class="meta">Repository: ${summary.repoName} • Generated: ${new Date().toLocaleString()}</div>
     </div>
-    <div style="font-family: monospace; font-weight: bold; color: #b7f15b;">AIR-GAPPED PREDICTIVE NODE</div>
+    <div style="font-family: monospace; font-weight: bold; color: #b7f15b;">DETERMINISTIC CODE ANALYTICS NODE</div>
   </div>
 
   <div class="grid">

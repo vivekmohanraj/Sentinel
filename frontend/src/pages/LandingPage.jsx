@@ -369,7 +369,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                 <div className="font-label-caps text-label-caps text-on-surface uppercase">Prioritized Refactoring</div>
               </div>
               <div className="font-data-point text-data-point text-on-surface-variant text-sm mt-2">
-                AI suggests focusing on auth.ts to prevent critical delay.
+                Static AST analysis suggests focusing on auth.ts to prevent critical delay.
               </div>
             </div>
 
@@ -465,13 +465,13 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                 <div className="w-12 h-12 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mb-6 text-primary-container group-hover:bg-primary-container/20 transition-colors">
                   <span className="material-symbols-outlined">auto_awesome</span>
                 </div>
-                <h3 className="font-headline-md text-headline-md font-semibold text-on-surface mb-3">Explainable AI (SHAP)</h3>
+                <h3 className="font-headline-md text-headline-md font-semibold text-on-surface mb-3">AST Cyclomatic Analysis</h3>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Generates mathematically grounded, natural-language justifications for every prediction using local LLMs for absolute clarity.
+                  Generates mathematically grounded, natural-language justifications for every risk score using static AST metrics for absolute clarity.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-white/5 flex items-center gap-2 text-primary-container font-label-caps text-label-caps uppercase">
-                <span>Test SHAP Explanations</span>
+                <span>Test AST Factor Analysis</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </div>
             </div>
@@ -514,7 +514,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                 <div className="py-8 space-y-4 font-data-point text-data-point">
                   <div className="flex justify-between text-xs text-on-surface-variant">
                     <span>MODEL ENGINE</span>
-                    <span className="text-primary-container">LOCAL SHAP TRANSFORMER</span>
+                    <span className="text-primary-container">LOCAL AST ANALYZER</span>
                   </div>
                   <div className="flex justify-between text-xs text-on-surface-variant">
                     <span>TELEMETRY OUTBOUND</span>
@@ -602,7 +602,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
               <span className="material-symbols-outlined">close</span>
             </button>
 
-            {/* DEMO / SHAP EXPLAINABLE AI SIMULATOR */}
+            {/* DEMO SIMULATOR */}
             {activeModal === 'demo' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
@@ -611,7 +611,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                   </div>
                   <div>
                     <h3 className="font-headline-md text-xl font-semibold text-on-surface">Live Risk Predictor Demo</h3>
-                    <p className="font-body-md text-xs text-on-surface-variant">Select a Pull Request to view Sentinel's SHAP risk forecast</p>
+                    <p className="font-body-md text-xs text-on-surface-variant">Select a Pull Request to view Sentinel's AST risk forecast</p>
                   </div>
                 </div>
 
@@ -638,10 +638,10 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                   ))}
                 </div>
 
-                {/* SHAP Explanation View */}
+                {/* AST Explanation View */}
                 <div className="p-4 rounded-2xl bg-surface-container-lowest border border-white/10 space-y-3">
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="font-label-caps text-xs text-primary-container uppercase tracking-wider">SHAP AI Explanation</span>
+                    <span className="font-label-caps text-xs text-primary-container uppercase tracking-wider">AST Factor Explanation</span>
                     <span className="font-data-point text-xs text-on-surface-variant">Confidence: 96.4%</span>
                   </div>
                   <p className="font-data-point text-sm text-on-surface/90 leading-relaxed">
@@ -706,7 +706,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                   <div className="py-8 text-center space-y-4">
                     <div className="w-12 h-12 border-4 border-primary-container border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <div className="font-semibold text-on-surface">Scanning repository commit graphs...</div>
-                    <p className="font-data-point text-xs text-on-surface-variant">Evaluating 4,281 historical pull requests with local SHAP models</p>
+                    <p className="font-data-point text-xs text-on-surface-variant">Evaluating historical pull requests with local AST static metric engine</p>
                   </div>
                 )}
 

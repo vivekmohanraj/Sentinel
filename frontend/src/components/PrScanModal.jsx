@@ -44,7 +44,7 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' })
             </div>
             <div>
               <h2 className="text-lg font-bold text-[#dfe4de]">PR Pre-Merge Risk Scanner</h2>
-              <p className="text-xs font-mono text-[#c3c9b2]">Automated pre-merge AI risk simulation & co-change vulnerability audit</p>
+              <p className="text-xs font-mono text-[#c3c9b2]">Automated pre-merge AST risk simulation & co-change vulnerability audit</p>
             </div>
           </div>
           <button
@@ -113,7 +113,7 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' })
                 className="h-10 px-6 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-[#b7f15b]/20 disabled:opacity-50"
               >
                 {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                <span>{isScanning ? 'Simulating AI Analysis...' : 'Simulate Pre-Merge Scan'}</span>
+                <span>{isScanning ? 'Simulating Static Analysis...' : 'Simulate Pre-Merge Scan'}</span>
               </button>
             </div>
           </form>
@@ -157,11 +157,11 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' })
                 </div>
               </div>
 
-              {/* SHAP Feature Contribution Radar Grid */}
+              {/* Risk Factor Contribution Grid */}
               <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#dfe4de]">
                   <Cpu className="w-4 h-4 text-[#b7f15b]" />
-                  <span>SHAP Risk Contribution Breakdown</span>
+                  <span>Risk Factor Contribution Breakdown</span>
                 </div>
 
                 <div className="space-y-2">

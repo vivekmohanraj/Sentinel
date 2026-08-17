@@ -653,7 +653,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 Sentinel
               </div>
               <div className="text-[10px] font-mono text-[#c3c9b2] tracking-widest uppercase">
-                Predictive AI Node
+                Code Analytics Node
               </div>
             </div>
           </div>
@@ -691,7 +691,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
             <span className="uppercase tracking-wider">Air-Gapped Node</span>
           </div>
           <p className="text-[11px] text-[#c3c9b2] leading-relaxed">
-            Local SHAP inference active. 0 external network requests emitted.
+            Local static AST analysis active. 0 external network requests emitted.
           </p>
           <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-[#8d937e] border-t border-white/5">
             <span>MODEL 4.2-LOCAL</span>
@@ -837,7 +837,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         </header>
 
-        {/* 1. DASHBOARD VIEW (MAIN BENTO GRID - REAL NON-AI ANALYTICS & INTERACTIVE GRAPH ENGINE) */}
+        {/* 1. DASHBOARD VIEW (MAIN BENTO GRID - DETERMINISTIC CODE QUALITY ANALYTICS & INTERACTIVE GRAPH ENGINE) */}
         {activeTab === 'Dashboard' && (
           <div className="space-y-6 animate-fadeIn">
             {/* ROLE-SPECIFIC GOVERNANCE SCOPE BANNER */}
@@ -1511,7 +1511,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-[#dfe4de]">Receive Weekly Risk Reports</div>
-                      <div className="text-xs text-[#c3c9b2]/70">Automated SHAP AI summary delivered every Monday at 08:00 UTC.</div>
+                      <div className="text-xs text-[#c3c9b2]/70">Automated static code quality summary delivered every Monday at 08:00 UTC.</div>
                     </div>
                   </div>
                   <button
@@ -2311,7 +2311,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         </div>
 
                         <p className="text-xs text-[#c3c9b2]/70 leading-relaxed font-mono">
-                          SHAP Diagnostic: &quot;{item.reason}&quot;
+                          Diagnostic Summary: &quot;{item.reason}&quot;
                         </p>
 
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
@@ -2332,7 +2332,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                             className="px-3 py-1 rounded-lg bg-[#b7f15b]/10 hover:bg-[#b7f15b]/20 border border-[#b7f15b]/30 text-[#b7f15b] text-[11px] font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Cpu className="w-3.5 h-3.5 text-[#b7f15b]" />
-                            <span>Explain SHAP Vector</span>
+                            <span>Explain Risk Factors</span>
                           </button>
                         </div>
                       </div>
@@ -2629,7 +2629,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
               <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]/70">
-                  <span>ML & Ollama Models</span>
+                  <span>Static AST Engines</span>
                   <Cpu className="w-4 h-4 text-[#b7f15b]" />
                 </div>
                 <div className="text-3xl font-bold text-[#dfe4de] font-mono">
@@ -2644,23 +2644,23 @@ const Dashboard = ({ onNavigateToLanding }) => {
             {/* Model Health Badges */}
             <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
               <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
-                Air-Gapped Machine Learning Pipeline Health
+                Deterministic Static Code Quality Pipeline Health
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
-                  <div className="text-[#dfe4de] font-bold">XGBoost Risk Predictor</div>
-                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.xgboostPredictor || 'OPERATIONAL'}</div>
+                  <div className="text-[#dfe4de] font-bold">AST Cyclomatic Analyzer</div>
+                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.astAnalyzer || 'OPERATIONAL (Rule-based AST)'}</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
-                  <div className="text-[#dfe4de] font-bold">SHAP Feature Explainer</div>
-                  <div className="text-[#b7f15b]">{telemetryData?.modelsStatus?.shapExplainer || 'ACTIVE'}</div>
+                  <div className="text-[#dfe4de] font-bold">Co-Change Coupling Evaluator</div>
+                  <div className="text-[#b7f15b]">{telemetryData?.modelsStatus?.cyclomaticCalculator || 'ACTIVE (Coupling Vectors)'}</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">
-                  <div className="text-[#dfe4de] font-bold">Ollama Qwen2.5 3B LLM</div>
-                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.ollamaLLM || 'STANDBY'}</div>
+                  <div className="text-[#dfe4de] font-bold">Static Rule Refactoring Engine</div>
+                  <div className="text-[#92d957]">{telemetryData?.modelsStatus?.coChangeMatrix || 'COMPUTED'}</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1.5 font-mono text-xs">

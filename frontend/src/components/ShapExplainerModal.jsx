@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Cpu, ArrowRight, TrendingUp, TrendingDown, Info, Loader2, ShieldAlert } from 'lucide-react';
-import { fetchShapExplanationApi } from '../lib/api';
+import { fetchAstExplanationApi } from '../lib/api';
 
 const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-engine/mainEngine.js', riskScore = 84 }) => {
   const [data, setData] = useState(null);
@@ -9,13 +9,13 @@ const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-eng
   useEffect(() => {
     if (isOpen && filePath) {
       setIsLoading(true);
-      fetchShapExplanationApi(filePath, riskScore)
+      fetchAstExplanationApi(filePath, riskScore)
         .then((res) => {
           setData(res);
           setIsLoading(false);
         })
         .catch((err) => {
-          console.error('Failed to load SHAP explanation:', err);
+          console.error('Failed to load AST factor explanation:', err);
           setIsLoading(false);
         });
     }
@@ -33,8 +33,8 @@ const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-eng
               <Cpu className="w-6 h-6 text-[#b7f15b]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#dfe4de]">SHAP Feature Contribution Explainer</h2>
-              <p className="text-xs font-mono text-[#c3c9b2]">TreeExplainer feature attribution & decision probability waterfall vector</p>
+              <h2 className="text-lg font-bold text-[#dfe4de]">AST Cyclomatic Factor Explainer</h2>
+              <p className="text-xs font-mono text-[#c3c9b2]">Static AST feature attribution & calculated risk factor breakdown</p>
             </div>
           </div>
           <button
@@ -50,13 +50,13 @@ const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-eng
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center gap-3 text-xs font-mono text-[#b7f15b]">
               <Loader2 className="w-8 h-8 animate-spin text-[#b7f15b]" />
-              <span>Extracting XGBoost SHAP attribution vectors...</span>
+              <span>Analyzing static AST cyclomatic complexity factors...</span>
             </div>
           ) : !data ? (
-            <div className="text-xs font-mono text-[#8d937e]">Could not compute SHAP explanation.</div>
+            <div className="text-xs font-mono text-[#8d937e]">Could not compute AST factor breakdown.</div>
           ) : (
             <div className="space-y-6">
-              {/* SHAP Decision Probability Gauge Header */}
+              {/* Decision Probability Header */}
               <div className="p-5 rounded-xl bg-[#181d1a] border border-[#b7f15b]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="text-xs font-mono text-[#8d937e]">TARGET MODULE</div>
@@ -77,10 +77,10 @@ const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-eng
                 </div>
               </div>
 
-              {/* Waterfall Feature Impact Bars */}
+              {/* Feature Impact Bars */}
               <div className="p-5 rounded-xl bg-[#181d1a] border border-white/5 space-y-4 font-mono text-xs">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span className="font-bold text-[#dfe4de]">SHAP Feature Contribution Force Waterfall</span>
+                  <span className="font-bold text-[#dfe4de]">AST Metric Contribution Factors</span>
                   <span className="text-[11px] text-[#8d937e]">{data.modelName}</span>
                 </div>
 
