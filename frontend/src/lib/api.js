@@ -490,7 +490,7 @@ export const fetchRiskRadarApi = async (repoName = '') => {
 
 export const scanPullRequestApi = async (prData) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/predictions/scan-pr`, {
+    const res = await fetch(`${API_BASE_URL}/pr/scan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -501,6 +501,43 @@ export const scanPullRequestApi = async (prData) => {
     return result.data;
   } catch (err) {
     console.error('Failed to scan pull request:', err);
+    throw err;
+  }
+};
+
+export const fetchKnowledgeGraphApi = async (repoName = '') => {
+  try {
+    const url = repoName
+      ? `${API_BASE_URL}/graph/topology?repoName=${encodeURIComponent(repoName)}`
+      : `${API_BASE_URL}/graph/topology`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch Knowledge Graph topology:', err);
+    throw err;
+  }
+};
+
+export const generateRefactoringSnippetApi = async (filePath, complexityScore) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/refactor/suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ filePath, complexityScore })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to generate refactoring snippet:', err);
     throw err;
   }
 };

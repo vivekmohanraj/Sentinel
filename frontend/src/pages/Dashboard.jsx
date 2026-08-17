@@ -43,9 +43,15 @@ import {
   Lock,
   ChevronLeft,
   Minus,
-  BarChart3
+  BarChart3,
+  Network,
+  GitPullRequest
 } from 'lucide-react';
 import { useSession } from '../lib/auth-client.js';
+import PrScanModal from '../components/PrScanModal.jsx';
+import KnowledgeGraphView from '../components/KnowledgeGraphView.jsx';
+import RefactorModal from '../components/RefactorModal.jsx';
+
 import {
   fetchUserProfile,
   fetchUserDetailsApi,
@@ -80,6 +86,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('sentinel/core-engine');
+
+  // Modal States for Phase 2 Extension Modules
+  const [showPrScanModal, setShowPrScanModal] = useState(false);
+  const [refactorModalData, setRefactorModalData] = useState({ isOpen: false, filePath: '', complexityScore: 18.5 });
 
   // Profile Management State for Settings Tab
   const [profileData, setProfileData] = useState({
@@ -172,6 +182,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     { id: 'Commits', label: 'Commits Log', icon: GitCommit },
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
+    { id: 'Knowledge Graph', label: 'Knowledge Graph', icon: Network },
     ...((isAdmin || isManager)
       ? [
           { id: 'Users', label: 'User Directory', icon: Users }
@@ -754,6 +765,16 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </button>
               </>
             )}
+
+            {/* PR Pre-Merge Risk Scanner Button */}
+            <button
+              onClick={() => setShowPrScanModal(true)}
+              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase shrink-0"
+              title="Run Automated Pull Request Pre-Merge Risk Scan"
+            >
+              <GitPullRequest className="w-4 h-4 text-[#b7f15b]" />
+              <span className="inline">PR Scan</span>
+            </button>
 
             {/* Export CSV Report Button */}
             <a
@@ -2989,6 +3010,24 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         )}
 
+        {/* 8. KNOWLEDGE GRAPH TOPOLOGY TAB */}
+        {activeTab === 'Knowledge Graph' && (
+          <KnowledgeGraphView selectedRepo={selectedRepo} />
+        )}
+
+        {/* PHASE 2 EXTENSION MODALS */}
+        <PrScanModal
+          isOpen={showPrScanModal}
+          onClose={() => setShowPrScanModal(false)}
+          selectedRepo={selectedRepo}
+        />
+
+        <RefactorModal
+          isOpen={refactorModalData.isOpen}
+          onClose={() => setRefactorModalData({ ...refactorModalData, isOpen: false })}
+          filePath={refactorModalData.filePath}
+          complexityScore={refactorModalData.complexityScore}
+        />
       </main>
     </div>
   );
