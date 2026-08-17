@@ -578,3 +578,53 @@ export const fetchBusFactorMetricsApi = async (repoName = '') => {
     throw err;
   }
 };
+
+export const fetchAlertPoliciesApi = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/policies`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch alert policies:', err);
+    throw err;
+  }
+};
+
+export const updateAlertPolicyApi = async (policies) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/policies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ policies })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to update alert policies:', err);
+    throw err;
+  }
+};
+
+export const runBranchDiagnosticsApi = async (branchData) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/branch-diagnostics/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(branchData)
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to run branch diagnostics:', err);
+    throw err;
+  }
+};

@@ -53,6 +53,9 @@ import KnowledgeGraphView from '../components/KnowledgeGraphView.jsx';
 import RefactorModal from '../components/RefactorModal.jsx';
 import ShapExplainerModal from '../components/ShapExplainerModal.jsx';
 import BusFactorDrawer from '../components/BusFactorDrawer.jsx';
+import BranchDiagnosticsModal from '../components/BranchDiagnosticsModal.jsx';
+import AlertPolicyModal from '../components/AlertPolicyModal.jsx';
+import TechDebtQuadrantMatrix from '../components/TechDebtQuadrantMatrix.jsx';
 
 import {
   fetchUserProfile,
@@ -82,7 +85,10 @@ import {
   fetchRiskRadarApi,
   scanPullRequestApi,
   fetchShapExplanationApi,
-  fetchBusFactorMetricsApi
+  fetchBusFactorMetricsApi,
+  fetchAlertPoliciesApi,
+  updateAlertPolicyApi,
+  runBranchDiagnosticsApi
 } from '../lib/api.js';
 
 const Dashboard = ({ onNavigateToLanding }) => {
@@ -91,11 +97,13 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('sentinel/core-engine');
 
-  // Modal States for Phase 2 & 3 Extension Modules
+  // Modal States for Phase 2, 3 & 4 Extension Modules
   const [showPrScanModal, setShowPrScanModal] = useState(false);
   const [refactorModalData, setRefactorModalData] = useState({ isOpen: false, filePath: '', complexityScore: 18.5 });
   const [shapModalData, setShapModalData] = useState({ isOpen: false, filePath: '', riskScore: 84 });
   const [showBusFactorDrawer, setShowBusFactorDrawer] = useState(false);
+  const [showBranchDiagModal, setShowBranchDiagModal] = useState(false);
+  const [showAlertPolicyModal, setShowAlertPolicyModal] = useState(false);
 
   // Profile Management State for Settings Tab
   const [profileData, setProfileData] = useState({
@@ -1204,9 +1212,13 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       <p className="text-xs font-mono text-[#c3c9b2]">Localized code quality telemetry & low-friction co-change insights</p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-[#92d957]/15 text-[#92d957] border border-[#92d957]/30 text-xs font-mono font-bold uppercase w-fit">
-                    Developer Workspace Active
-                  </span>
+                  <button
+                    onClick={() => setShowBranchDiagModal(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#b7f15b]/15 hover:bg-[#b7f15b]/25 border border-[#b7f15b]/30 text-[#b7f15b] text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <GitBranch className="w-4 h-4 text-[#b7f15b]" />
+                    <span>Run Branch Pre-Check</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2355,6 +2367,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
               </div>
             </div>
 
+            {/* Refactoring Priority Quadrant Matrix */}
+            <TechDebtQuadrantMatrix
+              onSelectRefactor={(filePath, complexity) => setRefactorModalData({ isOpen: true, filePath, complexityScore: complexity })}
+            />
+
             {/* Architectural Dependency Node Diagram & Radial Gauge Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Architectural Module Coupling & Dependency Node Diagram */}
@@ -2828,12 +2845,21 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowNotificationDrawer(false)}
-                    className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowAlertPolicyModal(true)}
+                      className="px-2.5 py-1 rounded-lg bg-[#b7f15b]/10 hover:bg-[#b7f15b]/20 border border-[#b7f15b]/30 text-[#b7f15b] text-[10px] font-mono font-bold uppercase transition-all"
+                      title="Configure Alert Threshold Rules"
+                    >
+                      Configure Policies
+                    </button>
+                    <button
+                      onClick={() => setShowNotificationDrawer(false)}
+                      className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
                 {/* Notification List */}
@@ -3061,6 +3087,18 @@ const Dashboard = ({ onNavigateToLanding }) => {
           isOpen={showBusFactorDrawer}
           onClose={() => setShowBusFactorDrawer(false)}
           selectedRepo={selectedRepo}
+        />
+
+        {/* PHASE 4 EXTENSION MODALS */}
+        <BranchDiagnosticsModal
+          isOpen={showBranchDiagModal}
+          onClose={() => setShowBranchDiagModal(false)}
+          selectedRepo={selectedRepo}
+        />
+
+        <AlertPolicyModal
+          isOpen={showAlertPolicyModal}
+          onClose={() => setShowAlertPolicyModal(false)}
         />
       </main>
     </div>

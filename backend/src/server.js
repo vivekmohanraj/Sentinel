@@ -15,6 +15,8 @@ import prScannerRoutes from "./routes/prScannerRoutes.js";
 import knowledgeGraphRoutes from "./routes/knowledgeGraphRoutes.js";
 import refactorGeneratorRoutes from "./routes/refactorGeneratorRoutes.js";
 import busFactorRoutes from "./routes/busFactorRoutes.js";
+import alertPolicyRoutes from "./routes/alertPolicyRoutes.js";
+import branchDiagnosticsRoutes from "./routes/branchDiagnosticsRoutes.js";
 
 dotenv.config();
 
@@ -43,6 +45,8 @@ app.use("/api/pr", prScannerRoutes);
 app.use("/api/graph", knowledgeGraphRoutes);
 app.use("/api/refactor", refactorGeneratorRoutes);
 app.use("/api/bus-factor", busFactorRoutes);
+app.use("/api/policies", alertPolicyRoutes);
+app.use("/api/branch-diagnostics", branchDiagnosticsRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });
