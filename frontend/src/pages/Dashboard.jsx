@@ -151,6 +151,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [showAddRepoModal, setShowAddRepoModal] = useState(false);
 
   // Project & Organization State
+  const [orgsList, setOrgsList] = useState([]);
+  const [selectedOrg, setSelectedOrg] = useState('');
   const [projectsList, setProjectsList] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
@@ -163,8 +165,9 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
   const unreadCount = notificationsList.filter((n) => !n.is_read).length;
 
-  // Risk Filter State for Risk Radar Tab
+  // Risk & Pattern Filter State
   const [riskFilter, setRiskFilter] = useState('ALL'); // 'ALL' | 'CRITICAL' | 'WARNING'
+  const [patternFilter, setPatternFilter] = useState('ALL'); // 'ALL' | 'FACADE' | 'REPOSITORY' | 'MIDDLEWARE'
 
   // Telemetry & Logs State for Admin
   const [telemetryData, setTelemetryData] = useState(null);
@@ -319,12 +322,30 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab, selectedProject]);
 
-  // Fetch Projects from database on mount & tab changes
+  // Fetch Organizations from PostgreSQL on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadOrgs = async () => {
+      try {
+        const list = await fetchOrganizations();
+        if (isMounted && list) {
+          setOrgsList(list || []);
+          if (list.length > 0 && !selectedOrg) setSelectedOrg(list[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load organizations:', err);
+      }
+    };
+    loadOrgs();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch Projects from database on org change & tab changes
   useEffect(() => {
     let isMounted = true;
     const loadProjects = async () => {
       try {
-        const list = await fetchProjects();
+        const list = await fetchProjects(selectedOrg);
         if (isMounted && list) {
           setProjectsList(list || []);
           if (list.length > 0 && !selectedProject) setSelectedProject(list[0].id);
@@ -335,7 +356,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, selectedOrg]);
 
   // Sync Project Dropdown selection when Repository selection changes
   useEffect(() => {
@@ -726,6 +747,21 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+            {/* Organization Selector */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedOrg}
+                onChange={(e) => setSelectedOrg(e.target.value)}
+                className="h-10 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+              >
+                {orgsList.length === 0 && <option value="">org: Sentinel Engineering</option>}
+                {orgsList.map((o) => (
+                  <option key={o.id} value={o.id}>org: {o.name}</option>
+                ))}
+              </select>
+              <Building2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
             {/* Project Selector */}
             <div className="relative shrink-0">
               <select
@@ -2466,14 +2502,27 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
             {/* Ingested Module Hotspots Table */}
             <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <h3 className="text-base font-semibold text-[#dfe4de]">Inferred Architectural Hotspots</h3>
-                {isLoadingHotspots && (
-                  <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing Modules...</span>
-                  </div>
-                )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                <div>
+                  <h3 className="text-base font-semibold text-[#dfe4de]">Inferred Architectural Hotspots</h3>
+                  <p className="text-xs font-mono text-[#c3c9b2]/70">Modules exceeding AST cyclomatic complexity thresholds requiring refactoring.</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+                  {['ALL', 'FACADE', 'REPOSITORY', 'MIDDLEWARE'].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPatternFilter(p)}
+                      className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
+                        patternFilter === p
+                          ? 'bg-[#b7f15b]/20 border-[#b7f15b] text-[#b7f15b] font-bold'
+                          : 'bg-[#181d1a] border-white/10 text-[#8d937e] hover:text-[#dfe4de]'
+                      }`}
+                    >
+                      {p === 'ALL' ? 'All Patterns' : p === 'FACADE' ? 'Service Facade' : p === 'REPOSITORY' ? 'Repository Pattern' : 'Middleware Decoupling'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -2495,7 +2544,15 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         </td>
                       </tr>
                     ) : (
-                      hotspotsList.map((h) => {
+                      hotspotsList
+                        .filter((h) => {
+                          const path = (h.file_path || h.filePath || '').toLowerCase();
+                          if (patternFilter === 'FACADE') return path.includes('engine') || path.includes('main');
+                          if (patternFilter === 'REPOSITORY') return path.includes('pool') || path.includes('db');
+                          if (patternFilter === 'MIDDLEWARE') return path.includes('router') || path.includes('api');
+                          return true;
+                        })
+                        .map((h) => {
                         const complexity = parseFloat(h.complexity_score || h.complexityScore || 0);
                         const isCritical = complexity >= 15;
                         const isElevated = complexity >= 10 && complexity < 15;
