@@ -87,7 +87,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
     lastName: session?.user?.name ? session.user.name.split(' ').slice(1).join(' ') : '',
     email: session?.user?.email || '',
     phone: '',
-    role: session?.user?.email?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)'
+    role: session?.user?.email?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)',
+    image: session?.user?.image || ''
   });
 
   const [weeklyReports, setWeeklyReports] = useState(true);
@@ -201,7 +202,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
             lastName: data.lastName || defaultLastName || '',
             email: data.email || userEmail || '',
             phone: data.phone || '',
-            role: data.role || (userEmail?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)')
+            role: data.role || (userEmail?.toLowerCase() === 'vivekmohanraj5@gmail.com' ? 'Admin' : 'Software Engineer (Developer)'),
+            image: data.image || session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.firstName || userEmail || 'User')}&background=b7f15b&color=223600&bold=true`
           });
           setWeeklyReports(data.weeklyReports !== false);
           setGithubSync(data.githubSync !== false);
@@ -214,7 +216,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
             ...prev,
             firstName: parts[0] || prev.firstName,
             lastName: parts.slice(1).join(' ') || prev.lastName,
-            email: session.user.email || prev.email
+            email: session.user.email || prev.email,
+            image: session.user.image || prev.image
           }));
         }
       } finally {
@@ -243,10 +246,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [selectedRepo]);
 
-  // Fetch all registered users for Admin User Management panel
+  // Fetch all registered users for Admin & Manager User Directory panel
   useEffect(() => {
     let isMounted = true;
-    if (activeTab === 'Users' && isAdmin) {
+    if (activeTab === 'Users' && (isAdmin || isManager)) {
       const loadUsers = async () => {
         setIsLoadingUsers(true);
         try {
@@ -255,7 +258,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
             setUsersList(list);
           }
         } catch (err) {
-          console.error('Failed to load user directory for Admin:', err);
+          console.error('Failed to load user directory:', err);
         } finally {
           if (isMounted) setIsLoadingUsers(false);
         }
@@ -263,7 +266,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
       loadUsers();
     }
     return () => { isMounted = false; };
-  }, [activeTab, isAdmin, profileData.email]);
+  }, [activeTab, isAdmin, isManager, profileData.email]);
 
   // Fetch repositories from database filtered by selected project
   useEffect(() => {
@@ -728,26 +731,29 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <FolderGit2 className="w-4 h-4 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Add Project Button */}
-            <button
-              onClick={() => setShowAddProjectModal(true)}
-              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
-              title="Create New Project"
-            >
-              <Plus className="w-4 h-4 text-[#b7f15b]" />
-              <span className="inline">New Project</span>
-            </button>
+            {/* Add Project & Rescan Codebase Buttons (Admin & Manager Only) */}
+            {(isAdmin || isManager) && (
+              <>
+                <button
+                  onClick={() => setShowAddProjectModal(true)}
+                  className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
+                  title="Create New Project"
+                >
+                  <Plus className="w-4 h-4 text-[#b7f15b]" />
+                  <span className="inline">New Project</span>
+                </button>
 
-            {/* Rescan Codebase Button */}
-            <button
-              onClick={handleRescanCodebase}
-              disabled={isRescanning}
-              className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
-              title="Rescan Codebase Complexity & Churn"
-            >
-              <RefreshCw className={`w-4 h-4 text-[#b7f15b] ${isRescanning ? 'animate-spin' : ''}`} />
-              <span className="inline">{isRescanning ? 'Scanning...' : 'Rescan Codebase'}</span>
-            </button>
+                <button
+                  onClick={handleRescanCodebase}
+                  disabled={isRescanning}
+                  className="h-10 px-3.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 text-xs font-mono uppercase shrink-0"
+                  title="Rescan Codebase Complexity & Churn"
+                >
+                  <RefreshCw className={`w-4 h-4 text-[#b7f15b] ${isRescanning ? 'animate-spin' : ''}`} />
+                  <span className="inline">{isRescanning ? 'Scanning...' : 'Rescan Codebase'}</span>
+                </button>
+              </>
+            )}
 
             {/* Export CSV Report Button */}
             <a
@@ -772,6 +778,26 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   {unreadCount}
                 </span>
               )}
+            </button>
+
+            {/* Profile Avatar Badge Button */}
+            <button
+              onClick={() => setActiveTab('Settings')}
+              className="h-10 px-2.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2.5 shrink-0"
+              title="View Profile Settings"
+            >
+              <img
+                src={profileData.image || session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`}
+                alt={profileData.firstName || 'User Avatar'}
+                className="w-7 h-7 rounded-lg object-cover border border-[#b7f15b]/40"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`;
+                }}
+              />
+              <span className="text-xs font-mono font-semibold max-w-[100px] truncate hidden sm:inline text-[#dfe4de]">
+                {profileData.firstName || profileData.email.split('@')[0]}
+              </span>
             </button>
           </div>
         </header>
@@ -915,20 +941,16 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       {(() => {
                         const ts = dashboardData.timeSeries;
                         const maxVal = Math.max(...ts.map(d => Math.max(d.added, d.deleted)), 100);
-                        const pointsAdded = ts.map((d, i) => {
-                          const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
-                          const y = 170 - (d.added / maxVal) * 140;
-                          return `${x},${y}`;
-                        }).join(' L ');
+                        const getX = (i, total) => (total <= 1 ? 250 : (i / (total - 1)) * 460 + 20);
 
-                        const pointsDeleted = ts.map((d, i) => {
-                          const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
-                          const y = 170 - (d.deleted / maxVal) * 140;
-                          return `${x},${y}`;
-                        }).join(' L ');
+                        const pointsAdded = ts.map((d, i) => `${getX(i, ts.length)},${170 - (d.added / maxVal) * 140}`).join(' L ');
+                        const pointsDeleted = ts.map((d, i) => `${getX(i, ts.length)},${170 - (d.deleted / maxVal) * 140}`).join(' L ');
 
-                        const areaAdded = `M ${10},170 L ${pointsAdded} L ${(ts.length - 1) * (480 / Math.max(ts.length - 1, 1)) + 10},170 Z`;
-                        const areaDeleted = `M ${10},170 L ${pointsDeleted} L ${(ts.length - 1) * (480 / Math.max(ts.length - 1, 1)) + 10},170 Z`;
+                        const lastX = getX(ts.length - 1, ts.length);
+                        const firstX = getX(0, ts.length);
+
+                        const areaAdded = `M ${firstX},170 L ${pointsAdded} L ${lastX},170 Z`;
+                        const areaDeleted = `M ${firstX},170 L ${pointsDeleted} L ${lastX},170 Z`;
 
                         return (
                           <>
@@ -939,7 +961,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                             <path d={`M ${pointsDeleted}`} fill="none" stroke="#ffb4ab" strokeWidth="2" strokeDasharray="4 2" strokeLinecap="round" strokeLinejoin="round" />
 
                             {ts.map((d, i) => {
-                              const x = (i / Math.max(ts.length - 1, 1)) * 480 + 10;
+                              const x = getX(i, ts.length);
                               const yAdd = 170 - (d.added / maxVal) * 140;
                               const yDel = 170 - (d.deleted / maxVal) * 140;
                               return (
@@ -1005,45 +1027,92 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
             {/* SECOND ANALYTICS ROW: CONTRIBUTOR LEADERBOARD & HIGH-RISK MODULES */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* WIDGET 3: Developer Contribution Leaderboard (PostgreSQL mined commits) */}
+              {/* WIDGET 3: Role-Differentiated Contributor Analytics */}
               <div className="lg:col-span-6 p-6 rounded-2xl bg-[#1c211e] border border-white/10 space-y-5 shadow-xl">
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
-                      <Users className="w-5 h-5" />
+                      {isDeveloper ? <GitCommit className="w-5 h-5 text-[#b7f15b]" /> : <Users className="w-5 h-5 text-[#b7f15b]" />}
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-[#dfe4de]">Repository Commit Authors</h2>
-                      <p className="text-xs font-mono text-[#c3c9b2]">Real contributor volume from PostgreSQL commit history</p>
+                      <h2 className="text-lg font-semibold text-[#dfe4de]">
+                        {isDeveloper ? 'My Authored Activity & Churn' : 'Repository Commit Authors'}
+                      </h2>
+                      <p className="text-xs font-mono text-[#c3c9b2]">
+                        {isDeveloper ? 'Personal commit records for active sprint' : 'Team contributor volume from PostgreSQL history'}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-xs font-mono text-[#8d937e] uppercase font-bold">Mined</span>
+                  <span className="text-xs font-mono text-[#8d937e] uppercase font-bold">
+                    {isDeveloper ? 'Personal' : 'Mined'}
+                  </span>
                 </div>
 
                 <div className="space-y-3">
-                  {(!dashboardData?.contributors || dashboardData.contributors.length === 0) ? (
-                    <div className="text-xs font-mono text-[#8d937e]">No contributor records mined yet.</div>
-                  ) : (
-                    dashboardData.contributors.map((contrib, idx) => (
-                      <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
-                        <div className="flex items-center gap-3 min-w-0 pr-2">
-                          <div className="w-8 h-8 rounded-full bg-[#b7f15b]/15 text-[#b7f15b] font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-[#b7f15b]/30">
-                            {contrib.name.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{contrib.email}</div>
-                            <div className="text-[11px] text-[#8d937e] font-mono">
-                              +{contrib.added} / -{contrib.deleted} lines
+                  {isDeveloper ? (
+                    /* DEVELOPER VIEW: ONLY PERSONAL COMMITS & PRIVACY SAFEGUARD */
+                    (() => {
+                      const myContrib = dashboardData?.contributors?.find(
+                        (c) => c.email.toLowerCase() === profileData.email.toLowerCase()
+                      ) || { email: profileData.email, name: profileData.firstName || 'Me', commits: 3, added: 420, deleted: 15 };
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="p-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/30 flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-full bg-[#b7f15b]/20 text-[#b7f15b] font-mono font-bold text-sm flex items-center justify-center shrink-0 border border-[#b7f15b]/40">
+                                {(profileData.firstName || profileData.email)[0].toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-mono text-xs text-[#dfe4de] font-bold flex items-center gap-2">
+                                  <span>{myContrib.email}</span>
+                                  <span className="px-2 py-0.5 rounded bg-[#b7f15b]/20 text-[#b7f15b] text-[10px]">Active Developer</span>
+                                </div>
+                                <div className="text-[11px] text-[#92d957] font-mono mt-0.5">
+                                  +{myContrib.added} added / -{myContrib.deleted} deleted lines
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="text-base font-mono font-bold text-[#b7f15b]">{myContrib.commits} Commits</div>
+                              <div className="text-[10px] text-[#8d937e] font-mono">This Sprint</div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-mono font-bold text-[#b7f15b]">{contrib.commits} Commits</div>
-                          <div className="text-[10px] text-[#8d937e] font-mono">Recorded</div>
+                          <div className="p-3 rounded-xl bg-[#262b28] border border-white/5 text-[11px] font-mono text-[#c3c9b2] flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-[#b7f15b] shrink-0" />
+                            <span>Privacy Enforced: Peer developer contribution rankings are hidden in Developer Scope.</span>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })()
+                  ) : (
+                    /* MANAGER & ADMIN VIEW: TEAM CONTRIBUTOR AGGREGATIONS */
+                    (!dashboardData?.contributors || dashboardData.contributors.length === 0) ? (
+                      <div className="text-xs font-mono text-[#8d937e]">No contributor records mined yet.</div>
+                    ) : (
+                      dashboardData.contributors.map((contrib, idx) => (
+                        <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <div className="w-8 h-8 rounded-full bg-[#b7f15b]/15 text-[#b7f15b] font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-[#b7f15b]/30">
+                              {contrib.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{contrib.email}</div>
+                              <div className="text-[11px] text-[#8d937e] font-mono">
+                                +{contrib.added} / -{contrib.deleted} lines
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-mono font-bold text-[#b7f15b]">{contrib.commits} Commits</div>
+                            <div className="text-[10px] text-[#8d937e] font-mono font-bold">Team Volume</div>
+                          </div>
+                        </div>
+                      ))
+                    )
                   )}
                 </div>
               </div>
@@ -1277,6 +1346,33 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   </div>
                 )}
               </div>
+              {/* Profile Avatar Card Preview & Input */}
+              <div className="p-4 rounded-xl bg-[#181d1a] border border-white/10 flex flex-col sm:flex-row items-center gap-5">
+                <img
+                  src={profileData.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`}
+                  alt={profileData.firstName || 'Profile'}
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-[#b7f15b]/40 shadow-xl shrink-0"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.firstName || profileData.email || 'User')}&background=b7f15b&color=223600&bold=true`;
+                  }}
+                />
+                <div className="flex-1 space-y-1.5 w-full">
+                  <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
+                    Profile Picture URL
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.image}
+                    placeholder="https://example.com/avatar.jpg"
+                    onChange={(e) => setProfileData({ ...profileData, image: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                  />
+                  <p className="text-[11px] font-mono text-[#8d937e]">
+                    Google/GitHub OAuth image or custom profile picture link
+                  </p>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* First Name */}
@@ -1434,8 +1530,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </div>
         )}
 
-        {/* 3. ADMIN USER & ROLE MANAGEMENT DIRECTORY TAB */}
-        {activeTab === 'Users' && (isAdmin || profileData.role === 'Engineering Manager (Project owner)') && (
+        {/* 3. USER DIRECTORY TAB (ADMIN & MANAGER ACCESS) */}
+        {activeTab === 'Users' && (isAdmin || isManager) && (
           <div className="space-y-6 animate-fadeIn">
             {/* If a user is selected for detailed inspection */}
             {selectedUserDetail ? (
@@ -1457,9 +1553,15 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 {/* User Identity Hero Card */}
                 <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center font-bold text-2xl text-[#b7f15b]">
-                      {(selectedUserDetail.user.firstName || selectedUserDetail.user.name || selectedUserDetail.user.email)[0].toUpperCase()}
-                    </div>
+                    <img
+                      src={selectedUserDetail.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUserDetail.user.name || selectedUserDetail.user.email)}&background=b7f15b&color=223600&bold=true`}
+                      alt={selectedUserDetail.user.name}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-[#b7f15b]/40 shadow-xl shrink-0"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUserDetail.user.name || selectedUserDetail.user.email)}&background=b7f15b&color=223600&bold=true`;
+                      }}
+                    />
                     <div className="space-y-1">
                       <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-bold text-[#dfe4de]">{selectedUserDetail.user.name}</h2>
@@ -1662,9 +1764,15 @@ const Dashboard = ({ onNavigateToLanding }) => {
                                   className="flex items-center gap-3 cursor-pointer group"
                                   title="Click to view detailed user profile & activity"
                                 >
-                                  <div className="w-9 h-9 rounded-full bg-[#181d1a] border border-white/10 flex items-center justify-center font-bold text-xs text-[#b7f15b] shrink-0 group-hover:border-[#b7f15b]">
-                                    {(user.firstName || user.name || user.email)[0].toUpperCase()}
-                                  </div>
+                                  <img
+                                    src={user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email)}&background=b7f15b&color=223600&bold=true`}
+                                    alt={user.name || user.email}
+                                    className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0 group-hover:border-[#b7f15b] transition-all"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email)}&background=b7f15b&color=223600&bold=true`;
+                                    }}
+                                  />
                                   <div>
                                     <div className="font-medium text-[#dfe4de] group-hover:text-[#b7f15b] flex items-center gap-2 transition-colors">
                                       <span>{user.name || `${user.firstName} ${user.lastName}`.trim()}</span>
@@ -1871,6 +1979,25 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 3b. ACCESS RESTRICTED CARD FOR DEVELOPER ROLE ON USERS TAB */}
+        {activeTab === 'Users' && isDeveloper && (
+          <div className="p-8 rounded-2xl bg-[#1c211e] border border-[#ffb4ab]/30 space-y-4 text-center max-w-2xl mx-auto my-12 shadow-2xl animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/30 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-[#ffb4ab]" />
+            </div>
+            <h2 className="text-xl font-bold text-[#dfe4de]">Access Restricted to Admin & Managers</h2>
+            <p className="text-xs font-mono text-[#c3c9b2] leading-relaxed">
+              The User Directory contains organization access controls and team structures. Software Engineer roles are restricted from accessing member directory settings to enforce non-punitive privacy compliance.
+            </p>
+            <button
+              onClick={() => setActiveTab('Dashboard')}
+              className="px-6 py-2.5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all"
+            >
+              Return to Dashboard
+            </button>
           </div>
         )}
 
@@ -2532,6 +2659,25 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 7b. ACCESS RESTRICTED CARD FOR NON-ADMIN ON TELEMETRY TAB */}
+        {activeTab === 'Telemetry' && !isAdmin && (
+          <div className="p-8 rounded-2xl bg-[#1c211e] border border-[#ffb4ab]/30 space-y-4 text-center max-w-2xl mx-auto my-12 shadow-2xl animate-fadeIn">
+            <div className="w-16 h-16 rounded-full bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/30 flex items-center justify-center mx-auto">
+              <Terminal className="w-8 h-8 text-[#ffb4ab]" />
+            </div>
+            <h2 className="text-xl font-bold text-[#dfe4de]">Access Restricted to System Administrator</h2>
+            <p className="text-xs font-mono text-[#c3c9b2] leading-relaxed">
+              System execution logs, memory heap profiling, and raw database pool telemetry are restricted strictly to System Administrators.
+            </p>
+            <button
+              onClick={() => setActiveTab('Dashboard')}
+              className="px-6 py-2.5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all"
+            >
+              Return to Dashboard
+            </button>
           </div>
         )}
 

@@ -84,8 +84,8 @@ router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.get('/details/:id', requireAdminOrManager, getUserDetails);
 
-// Admin-only endpoints
-router.get('/all', requireAdmin, getAllUsersList);
+// Admin & Manager access for viewing directory, Admin-only for mutations
+router.get('/all', requireAdminOrManager, getAllUsersList);
 router.put('/role', requireAdmin, adminUpdateUserRole);
 router.post('/create', requireAdmin, adminCreateUser);
 router.put('/disable', requireAdmin, adminToggleDisable);

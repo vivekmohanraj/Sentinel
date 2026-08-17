@@ -13,6 +13,7 @@ const formatUserRow = (user) => {
     lastName = parts.slice(1).join(' ') || '';
   }
 
+  const displayName = user.name || `${firstName || ''} ${lastName || ''}`.trim() || user.email || 'User';
   const isSuperAdmin = user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
   const effectiveRole = isSuperAdmin ? 'Admin' : (user.role || 'Software Engineer (Developer)');
 
@@ -21,14 +22,17 @@ const formatUserRow = (user) => {
     phone = '';
   }
 
+  const avatarUrl = user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=b7f15b&color=223600&bold=true`;
+
   return {
     id: user.id,
     firstName: firstName || '',
     lastName: lastName || '',
-    name: user.name || `${firstName || ''} ${lastName || ''}`.trim(),
+    name: displayName,
     email: user.email,
     phone: phone,
     role: effectiveRole,
+    image: avatarUrl,
     organizationId: user.organization_id || null,
     weeklyReports: user.weekly_reports !== false,
     githubSync: user.github_sync !== false,
@@ -39,7 +43,7 @@ const formatUserRow = (user) => {
 
 export const getUserById = async (userId) => {
   const result = await pool.query(
-    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
+    `SELECT id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
      FROM tbl_user
      WHERE id = $1`,
     [userId]
@@ -50,7 +54,7 @@ export const getUserById = async (userId) => {
 
 export const getUserByEmail = async (email) => {
   const result = await pool.query(
-    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
+    `SELECT id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
      FROM tbl_user
      WHERE LOWER(email) = LOWER($1)`,
     [email]
@@ -61,7 +65,7 @@ export const getUserByEmail = async (email) => {
 
 export const getLatestUser = async () => {
   const result = await pool.query(
-    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
+    `SELECT id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
      FROM tbl_user
      ORDER BY "createdAt" DESC
      LIMIT 1`
@@ -72,7 +76,7 @@ export const getLatestUser = async () => {
 
 export const getAllUsers = async () => {
   const result = await pool.query(
-    `SELECT id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
+    `SELECT id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"
      FROM tbl_user
      ORDER BY "createdAt" DESC`
   );
@@ -145,7 +149,7 @@ export const updateUserRoleByAdmin = async (userId, newRole) => {
      SET role = $1,
          "updatedAt" = CURRENT_TIMESTAMP
      WHERE id = $2
-     RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
+     RETURNING id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
     [newRole, userId]
   );
   if (result.rows.length === 0) return null;
@@ -186,7 +190,7 @@ export const createUserByAdmin = async ({ name, email, password, role }) => {
   const insertRes = await pool.query(
     `INSERT INTO tbl_user (id, name, email, role, first_name, last_name, is_disabled, "createdAt", "updatedAt")
      VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-     RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
+     RETURNING id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
     [name, email, assignedRole, firstName, lastName]
   );
   return formatUserRow(insertRes.rows[0]);
@@ -205,7 +209,7 @@ export const toggleUserDisableByAdmin = async (userId, isDisabled) => {
      SET is_disabled = $1,
          "updatedAt" = CURRENT_TIMESTAMP
      WHERE id = $2
-     RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
+     RETURNING id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
     [isDisabled === true, userId]
   );
   return formatUserRow(result.rows[0]);
@@ -224,7 +228,7 @@ export const deleteUserByAdmin = async (userId) => {
 };
 
 export const updateUserProfile = async (identifier, data) => {
-  const { firstName, lastName, email, phone, role, weeklyReports, githubSync } = data;
+  const { firstName, lastName, email, phone, role, image, weeklyReports, githubSync } = data;
   const fullName = `${firstName || ''} ${lastName || ''}`.trim();
   const targetEmail = email || identifier;
   const isSuperAdmin = targetEmail && targetEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
@@ -243,12 +247,13 @@ export const updateUserProfile = async (identifier, data) => {
 
   if (!existing) {
     const insertRes = await pool.query(
-      `INSERT INTO tbl_user (id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, "createdAt", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
+      `INSERT INTO tbl_user (id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, "createdAt", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       RETURNING id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
       [
         fullName || targetEmail,
         targetEmail,
+        image || null,
         assignedRole,
         firstName,
         lastName,
@@ -268,11 +273,12 @@ export const updateUserProfile = async (identifier, data) => {
          email = $4,
          phone = $5,
          role = $6,
-         weekly_reports = $7,
-         github_sync = $8,
+         image = COALESCE($7, image),
+         weekly_reports = $8,
+         github_sync = $9,
          "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $9 OR LOWER(email) = LOWER($4)
-     RETURNING id, name, email, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
+     WHERE id = $10 OR LOWER(email) = LOWER($4)
+     RETURNING id, name, email, image, role, first_name, last_name, phone, weekly_reports, github_sync, is_disabled, organization_id, "createdAt"`,
     [
       firstName,
       lastName,
@@ -280,6 +286,7 @@ export const updateUserProfile = async (identifier, data) => {
       targetEmail,
       phone,
       assignedRole,
+      image || null,
       weeklyReports !== false,
       githubSync !== false,
       existing.id
