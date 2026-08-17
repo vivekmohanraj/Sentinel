@@ -1132,30 +1132,36 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   {isDeveloper ? (
                     /* DEVELOPER VIEW: ONLY PERSONAL COMMITS & PRIVACY SAFEGUARD */
                     (() => {
+                      const userEmail = (profileData?.email || '').toLowerCase();
                       const myContrib = dashboardData?.contributors?.find(
-                        (c) => c.email.toLowerCase() === profileData.email.toLowerCase()
-                      ) || { email: profileData.email, name: profileData.firstName || 'Me', commits: 3, added: 420, deleted: 15 };
+                        (c) => (c.email || c.author_email || '').toLowerCase() === userEmail
+                      ) || { email: profileData.email || 'developer@sentinel.engineering', name: profileData.firstName || 'Me', commits: dashboardData?.totalCommits || 1, added: dashboardData?.totalLinesAdded || 0, deleted: dashboardData?.totalLinesDeleted || 0 };
+
+                      const myAdded = myContrib.added ?? myContrib.lines_added ?? 0;
+                      const myDeleted = myContrib.deleted ?? myContrib.lines_deleted ?? 0;
+                      const myCommits = myContrib.commits ?? myContrib.total_commits ?? 0;
+                      const myEmail = myContrib.email || myContrib.author_email || profileData.email;
 
                       return (
                         <div className="space-y-3">
                           <div className="p-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/30 flex items-center justify-between">
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-10 h-10 rounded-full bg-[#b7f15b]/20 text-[#b7f15b] font-mono font-bold text-sm flex items-center justify-center shrink-0 border border-[#b7f15b]/40">
-                                {(profileData.firstName || profileData.email)[0].toUpperCase()}
+                                {(profileData.firstName || profileData.email || 'D')[0].toUpperCase()}
                               </div>
                               <div className="min-w-0">
                                 <div className="font-mono text-xs text-[#dfe4de] font-bold flex items-center gap-2">
-                                  <span>{myContrib.email}</span>
+                                  <span>{myEmail}</span>
                                   <span className="px-2 py-0.5 rounded bg-[#b7f15b]/20 text-[#b7f15b] text-[10px]">Active Developer</span>
                                 </div>
                                 <div className="text-[11px] text-[#92d957] font-mono mt-0.5">
-                                  +{myContrib.added} added / -{myContrib.deleted} deleted lines
+                                  +{myAdded} added / -{myDeleted} deleted lines
                                 </div>
                               </div>
                             </div>
 
                             <div className="text-right shrink-0">
-                              <div className="text-base font-mono font-bold text-[#b7f15b]">{myContrib.commits} Commits</div>
+                              <div className="text-base font-mono font-bold text-[#b7f15b]">{myCommits} Commits</div>
                               <div className="text-[10px] text-[#8d937e] font-mono">This Sprint</div>
                             </div>
                           </div>
@@ -1172,26 +1178,34 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     (!dashboardData?.contributors || dashboardData.contributors.length === 0) ? (
                       <div className="text-xs font-mono text-[#8d937e]">No contributor records mined yet.</div>
                     ) : (
-                      dashboardData.contributors.map((contrib, idx) => (
-                        <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="w-8 h-8 rounded-full bg-[#b7f15b]/15 text-[#b7f15b] font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-[#b7f15b]/30">
-                              {contrib.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{contrib.email}</div>
-                              <div className="text-[11px] text-[#8d937e] font-mono">
-                                +{contrib.added} / -{contrib.deleted} lines
+                      dashboardData.contributors.map((contrib, idx) => {
+                        const email = contrib.email || contrib.author_email || 'developer@sentinel.engineering';
+                        const name = contrib.name || email.split('@')[0] || 'Dev';
+                        const added = contrib.added ?? contrib.lines_added ?? 0;
+                        const deleted = contrib.deleted ?? contrib.lines_deleted ?? 0;
+                        const commits = contrib.commits ?? contrib.total_commits ?? 0;
+
+                        return (
+                          <div key={idx} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between hover:border-white/20 transition-all">
+                            <div className="flex items-center gap-3 min-w-0 pr-2">
+                              <div className="w-8 h-8 rounded-full bg-[#b7f15b]/15 text-[#b7f15b] font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-[#b7f15b]/30">
+                                {name.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-mono text-xs text-[#dfe4de] font-semibold truncate">{email}</div>
+                                <div className="text-[11px] text-[#8d937e] font-mono">
+                                  +{added} / -{deleted} lines
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="text-right shrink-0">
-                            <div className="text-sm font-mono font-bold text-[#b7f15b]">{contrib.commits} Commits</div>
-                            <div className="text-[10px] text-[#8d937e] font-mono font-bold">Team Volume</div>
+                            <div className="text-right shrink-0">
+                              <div className="text-sm font-mono font-bold text-[#b7f15b]">{commits} Commits</div>
+                              <div className="text-[10px] text-[#8d937e] font-mono font-bold">Team Volume</div>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )
                   )}
                 </div>

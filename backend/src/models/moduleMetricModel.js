@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { initializeDefaultRepository, extractRealModuleMetrics } from './dashboardModel.js';
 
 export const getHotspots = async (repoFilter = null) => {
   let query = `
@@ -17,7 +18,7 @@ export const getHotspots = async (repoFilter = null) => {
 
   const result = await pool.query(query, params);
 
-  // If table is empty, auto-seed initial static module complexity metrics
+  // If table is empty, seed real workspace module complexity metrics
   if (result.rows.length === 0) {
     await seedOrRescanMetrics(repoFilter);
     const retryRes = await pool.query(query, params);
@@ -29,7 +30,6 @@ export const getHotspots = async (repoFilter = null) => {
 
 export const seedOrRescanMetrics = async (repoFilter = null) => {
   let targetRepoId = null;
-  let targetRepoName = 'sentinel/core-engine';
 
   if (repoFilter) {
     const repoRes = await pool.query(
@@ -38,7 +38,6 @@ export const seedOrRescanMetrics = async (repoFilter = null) => {
     );
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
-      targetRepoName = repoRes.rows[0].name;
     }
   }
 
@@ -46,28 +45,22 @@ export const seedOrRescanMetrics = async (repoFilter = null) => {
     const repoRes = await pool.query(`SELECT id, name FROM tbl_repository LIMIT 1`);
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
-      targetRepoName = repoRes.rows[0].name;
+    } else {
+      targetRepoId = await initializeDefaultRepository();
     }
   }
 
   if (targetRepoId) {
     await pool.query(`DELETE FROM tbl_module_metric WHERE repository_id = $1`, [targetRepoId]);
-  }
+    const realMetrics = extractRealModuleMetrics();
 
-  const sampleModules = [
-    { filePath: `src/${targetRepoName}/mainEngine.js`, complexity: 18.5, churn: 142, bugs: 12 },
-    { filePath: `src/${targetRepoName}/connectionPool.js`, complexity: 16.2, churn: 98, bugs: 8 },
-    { filePath: `src/${targetRepoName}/apiRouter.js`, complexity: 14.8, churn: 85, bugs: 5 },
-    { filePath: `src/${targetRepoName}/plannerEngine.js`, complexity: 12.4, churn: 64, bugs: 4 },
-    { filePath: `src/${targetRepoName}/cryptoUtil.js`, complexity: 8.2, churn: 22, bugs: 1 }
-  ];
-
-  for (const mod of sampleModules) {
-    await pool.query(
-      `INSERT INTO tbl_module_metric (repository_id, file_path, complexity_score, churn_rate, bug_frequency, recorded_at)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
-      [targetRepoId, mod.filePath, mod.complexity, mod.churn, mod.bugs]
-    );
+    for (const mod of realMetrics) {
+      await pool.query(
+        `INSERT INTO tbl_module_metric (repository_id, file_path, complexity_score, churn_rate, bug_frequency, recorded_at)
+         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
+        [targetRepoId, mod.file_path, mod.complexity_score, mod.churn_rate, mod.bug_frequency]
+      );
+    }
   }
 
   return true;

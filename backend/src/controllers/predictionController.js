@@ -83,3 +83,6 @@ export const explainAstFactors = async (req, res, next) => {
     next(err);
   }
 };
+
+export const explainShapVector = explainAstFactors;
+
