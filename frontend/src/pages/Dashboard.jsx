@@ -156,6 +156,12 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [repoMsg, setRepoMsg] = useState(null);
   const [showAddRepoModal, setShowAddRepoModal] = useState(false);
 
+  // Add Repository Modal Extended State (Target Organization & Project + Quick Org creation)
+  const [addRepoOrgId, setAddRepoOrgId] = useState('');
+  const [addRepoProjectId, setAddRepoProjectId] = useState('');
+  const [addRepoNewOrgName, setAddRepoNewOrgName] = useState('');
+  const [isCreatingNewOrgInModal, setIsCreatingNewOrgInModal] = useState(false);
+
   // Project & Organization State
   const [orgsList, setOrgsList] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState('');
@@ -600,6 +606,22 @@ const Dashboard = ({ onNavigateToLanding }) => {
     refreshAllDashboardData(repoName);
   };
 
+  const handleOpenAddRepoModal = () => {
+    setAddRepoError(null);
+    setNewRepoName('');
+    setNewRepoUrl('');
+    setAddRepoNewOrgName('');
+    if (orgsList.length === 0) {
+      setIsCreatingNewOrgInModal(true);
+      setAddRepoOrgId('__new__');
+    } else {
+      setIsCreatingNewOrgInModal(false);
+      setAddRepoOrgId(selectedOrg || orgsList[0]?.id || '');
+    }
+    setAddRepoProjectId(selectedProject || '');
+    setShowAddRepoModal(true);
+  };
+
   const handleAddRepo = async (e) => {
     e.preventDefault();
     setAddRepoError(null);
@@ -619,18 +641,50 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
     setIsAddingRepo(true);
     try {
+      let targetOrgId = addRepoOrgId;
+      if (isCreatingNewOrgInModal || addRepoOrgId === '__new__') {
+        const trimmedOrgName = addRepoNewOrgName.trim();
+        if (!trimmedOrgName) {
+          setAddRepoError('Please specify a name for the new organization.');
+          setIsAddingRepo(false);
+          return;
+        }
+        const createdOrg = await createOrganizationApi(trimmedOrgName, profileData?.email);
+        if (createdOrg) {
+          targetOrgId = createdOrg.id;
+          const updatedOrgs = await fetchOrganizations();
+          setOrgsList(updatedOrgs || [createdOrg]);
+        }
+      }
+
       const targetName = trimmedName || `${parsed.owner}/${parsed.repo}`;
-      const created = await addRepositoryApi(targetName, trimmedUrl, selectedProject || null, profileData?.email);
+      const targetProj = addRepoProjectId && addRepoProjectId !== '__auto__' ? addRepoProjectId : (selectedProject || null);
+      const created = await addRepositoryApi(targetName, trimmedUrl, targetProj, profileData?.email, targetOrgId || selectedOrg || null);
       if (created) {
         const updatedList = await fetchRepositories();
         setDbRepos(updatedList || [created]);
         setSelectedRepo(created.name);
+
+        if (created.organization_id) {
+          setSelectedOrg(created.organization_id);
+        } else if (targetOrgId) {
+          setSelectedOrg(targetOrgId);
+        }
+
         if (created.project_id) {
           setSelectedProject(created.project_id);
         }
-        setRepoMsg(`Repository "${created.name}" connected and selected! Loading metrics...`);
+
+        const updatedProjects = await fetchProjects();
+        setProjectsList(updatedProjects || []);
+        const updatedOrgs = await fetchOrganizations();
+        setOrgsList(updatedOrgs || []);
+
+        setRepoMsg(`Repository "${created.name}" connected to organization and selected! Loading metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
+        setAddRepoNewOrgName('');
+        setIsCreatingNewOrgInModal(false);
         setAddRepoError(null);
         setShowAddRepoModal(false);
 
@@ -2606,7 +2660,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
               <div className="flex items-center gap-3">
                 {isAdmin || isManager ? (
                   <button
-                    onClick={() => setShowAddRepoModal(true)}
+                    onClick={handleOpenAddRepoModal}
                     className="min-h-[44px] px-5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -2645,7 +2699,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   <FolderGit2 className="w-12 h-12 text-[#8d937e] mx-auto" />
                   <p className="text-sm font-mono text-[#c3c9b2]/70">No custom repositories connected yet.</p>
                   <button
-                    onClick={() => setShowAddRepoModal(true)}
+                    onClick={handleOpenAddRepoModal}
                     className="px-4 py-2 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b] hover:border-[#b7f15b] transition-colors"
                   >
                     + Add Your First Repository
@@ -2695,7 +2749,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
             {/* ADD REPOSITORY MODAL */}
             {showAddRepoModal && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="w-full max-w-md p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6 animate-fadeIn">
+                <div className="w-full max-w-lg p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6 animate-fadeIn">
                   <div className="flex items-center justify-between border-b border-white/10 pb-4">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
@@ -2703,7 +2757,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-[#dfe4de]">Connect GitHub Repository</h3>
-                        <p className="text-xs font-mono text-[#8d937e] mt-0.5">Validates & mines AST complexity metrics</p>
+                        <p className="text-xs font-mono text-[#8d937e] mt-0.5">Validates repository, assigns organization & mines AST metrics</p>
                       </div>
                     </div>
                     <button
@@ -2756,6 +2810,103 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         required
                       />
                     </div>
+
+                    {/* TARGET ORGANIZATION SELECTION & CREATION */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
+                          Target Organization
+                        </label>
+                        {orgsList.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreatingNewOrgInModal(!isCreatingNewOrgInModal);
+                              setAddRepoError(null);
+                            }}
+                            className="text-[11px] font-mono text-[#b7f15b] hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            {isCreatingNewOrgInModal ? (
+                              <span>Choose Existing Org</span>
+                            ) : (
+                              <>
+                                <Plus className="w-3 h-3" />
+                                <span>+ New Organization</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {isCreatingNewOrgInModal || orgsList.length === 0 ? (
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={addRepoNewOrgName}
+                            onChange={(e) => {
+                              setAddRepoNewOrgName(e.target.value);
+                              setAddRepoError(null);
+                            }}
+                            placeholder="Enter new organization name (e.g. Acme Engineering)"
+                            className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/40 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                            required={isCreatingNewOrgInModal || orgsList.length === 0}
+                          />
+                          <p className="text-[10px] font-mono text-[#8d937e]">
+                            Creates a new organization and assigns ownership to your profile.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select
+                            value={addRepoOrgId}
+                            onChange={(e) => {
+                              if (e.target.value === '__new__') {
+                                setIsCreatingNewOrgInModal(true);
+                              } else {
+                                setAddRepoOrgId(e.target.value);
+                                const orgProjects = projectsList.filter(p => p.organization_id === e.target.value);
+                                setAddRepoProjectId(orgProjects.length > 0 ? orgProjects[0].id : '');
+                              }
+                            }}
+                            className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
+                          >
+                            {orgsList.map((org) => (
+                              <option key={org.id} value={org.id}>
+                                {org.name}
+                              </option>
+                            ))}
+                            <option value="__new__">+ Create New Organization...</option>
+                          </select>
+                          <Building2 className="w-4 h-4 text-[#8d937e] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* TARGET PROJECT SELECTION (OPTIONAL) */}
+                    {!isCreatingNewOrgInModal && (
+                      <div className="space-y-1.5">
+                        <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
+                          Target Project (Optional)
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={addRepoProjectId}
+                            onChange={(e) => setAddRepoProjectId(e.target.value)}
+                            className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
+                          >
+                            <option value="">Auto-Assign / Default Project</option>
+                            {projectsList
+                              .filter((p) => !addRepoOrgId || p.organization_id === addRepoOrgId)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                          </select>
+                          <FolderKanban className="w-4 h-4 text-[#8d937e] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-3 flex justify-end gap-3">
                       <button

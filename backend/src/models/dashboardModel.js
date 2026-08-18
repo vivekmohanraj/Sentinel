@@ -423,24 +423,22 @@ export const getAllRepositories = async (projectId = null) => {
   return result.rows;
 };
 
-export const createRepository = async ({ name, gitUrl, projectId, createdByUserId = null, createdByEmail = null }) => {
-  const trimmedName = (name || '').trim();
-  const trimmedUrl = (gitUrl || '').trim();
-
-  // Validate GitHub repository link / identifier
-  const valResult = await validateGitHubRepository(trimmedUrl || trimmedName);
+export const createRepository = async ({ name, gitUrl, projectId, organizationId, createdByUserId, createdByEmail }) => {
+  // Validate GitHub URL format and public API reachability
+  const valResult = await validateGitHubRepository(gitUrl || name);
   if (!valResult.isValid) {
-    const error = new Error(valResult.error);
-    error.statusCode = 400;
-    throw error;
+    const err = new Error(valResult.error || 'Invalid GitHub repository.');
+    err.statusCode = 400;
+    throw err;
   }
 
-  const finalName = trimmedName || valResult.fullName || `${valResult.owner}/${valResult.repo}`;
-  const finalUrl = valResult.canonicalUrl || trimmedUrl || `https://github.com/${valResult.owner}/${valResult.repo}`;
+  const finalName = name && name.trim() ? name.trim() : (valResult.fullName || `${valResult.owner}/${valResult.repo}`);
+  const finalUrl = valResult.canonicalUrl || `https://github.com/${valResult.owner}/${valResult.repo}`;
+  const trimmedUrl = gitUrl ? gitUrl.trim() : '';
 
   // Deduplication check: check if repository already exists by name or git URL
   const existingRes = await pool.query(
-    `SELECT id, project_id, name, git_url, created_by_user_id, created_by_email, created_at 
+    `SELECT id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at 
      FROM tbl_repository 
      WHERE LOWER(name) = LOWER($1) 
         OR LOWER(name) = LOWER($2)
@@ -450,24 +448,50 @@ export const createRepository = async ({ name, gitUrl, projectId, createdByUserI
     [finalName, `${valResult.owner}/${valResult.repo}`, finalUrl, trimmedUrl]
   );
 
-  let targetProjId = projectId;
-  if (!targetProjId) {
-    const projRes = await pool.query(`SELECT id FROM tbl_project ORDER BY created_at ASC LIMIT 1`);
+  let targetOrgId = organizationId || null;
+  let targetProjId = projectId || null;
+
+  if (targetProjId) {
+    if (!targetOrgId) {
+      const pRes = await pool.query(`SELECT organization_id FROM tbl_project WHERE id = $1`, [targetProjId]);
+      if (pRes.rows.length > 0 && pRes.rows[0].organization_id) {
+        targetOrgId = pRes.rows[0].organization_id;
+      }
+    }
+  } else if (targetOrgId) {
+    const projRes = await pool.query(
+      `SELECT id FROM tbl_project WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1`,
+      [targetOrgId]
+    );
     if (projRes.rows.length > 0) {
       targetProjId = projRes.rows[0].id;
     } else {
+      const newProj = await pool.query(
+        `INSERT INTO tbl_project (organization_id, name, description, created_by_user_id, created_by_email) 
+         VALUES ($1, 'Main Engineering', 'Default Engineering Workspace', $2, $3) 
+         RETURNING id`,
+        [targetOrgId, createdByUserId, createdByEmail]
+      );
+      targetProjId = newProj.rows[0].id;
+    }
+  } else {
+    const projRes = await pool.query(`SELECT id, organization_id FROM tbl_project ORDER BY created_at ASC LIMIT 1`);
+    if (projRes.rows.length > 0) {
+      targetProjId = projRes.rows[0].id;
+      targetOrgId = projRes.rows[0].organization_id;
+    } else {
       let orgRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
-      let orgId = orgRes.rows[0]?.id;
-      if (!orgId) {
+      targetOrgId = orgRes.rows[0]?.id;
+      if (!targetOrgId) {
         const newOrg = await pool.query(
           `INSERT INTO tbl_organization (name, created_by_user_id, created_by_email) VALUES ('Engineering Workspace', $1, $2) RETURNING id`,
           [createdByUserId, createdByEmail]
         );
-        orgId = newOrg.rows[0].id;
+        targetOrgId = newOrg.rows[0].id;
       }
       const newProj = await pool.query(
         `INSERT INTO tbl_project (organization_id, name, description, created_by_user_id, created_by_email) VALUES ($1, 'Main Engineering', 'Default Engineering Workspace', $2, $3) RETURNING id`,
-        [orgId, createdByUserId, createdByEmail]
+        [targetOrgId, createdByUserId, createdByEmail]
       );
       targetProjId = newProj.rows[0].id;
     }
@@ -477,14 +501,15 @@ export const createRepository = async ({ name, gitUrl, projectId, createdByUserI
     const existing = existingRes.rows[0];
     const updateRes = await pool.query(
       `UPDATE tbl_repository 
-       SET project_id = COALESCE($1, project_id), 
-           name = $2, 
-           git_url = COALESCE(NULLIF($3, ''), git_url),
-           created_by_user_id = COALESCE(created_by_user_id, $4),
-           created_by_email = COALESCE(created_by_email, $5)
-       WHERE id = $6 
-       RETURNING id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
-      [targetProjId, finalName, finalUrl, createdByUserId, createdByEmail, existing.id]
+       SET organization_id = COALESCE($1, organization_id),
+           project_id = COALESCE($2, project_id), 
+           name = $3, 
+           git_url = COALESCE(NULLIF($4, ''), git_url),
+           created_by_user_id = COALESCE(created_by_user_id, $5),
+           created_by_email = COALESCE(created_by_email, $6)
+       WHERE id = $7 
+       RETURNING id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
+      [targetOrgId, targetProjId, finalName, finalUrl, createdByUserId, createdByEmail, existing.id]
     );
     const updatedRepo = updateRes.rows[0];
     await mineRepositoryData(updatedRepo.id, updatedRepo.name, updatedRepo.git_url);
@@ -492,10 +517,10 @@ export const createRepository = async ({ name, gitUrl, projectId, createdByUserI
   }
 
   const result = await pool.query(
-    `INSERT INTO tbl_repository (project_id, name, git_url, created_by_user_id, created_by_email)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
-    [targetProjId, finalName, finalUrl, createdByUserId, createdByEmail]
+    `INSERT INTO tbl_repository (organization_id, project_id, name, git_url, created_by_user_id, created_by_email)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
+    [targetOrgId, targetProjId, finalName, finalUrl, createdByUserId, createdByEmail]
   );
   const newRepo = result.rows[0];
   if (newRepo) {
