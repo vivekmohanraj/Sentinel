@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthModal from '../components/AuthModal.jsx';
 import { useSession, authClient } from '../lib/auth-client.js';
 
 const LandingPage = ({ onNavigateToDashboard }) => {
+  const navigate = useNavigate();
+  const goToDashboard = onNavigateToDashboard || (() => navigate('/dashboard'));
   const { data: session } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('features');
@@ -14,10 +17,10 @@ const LandingPage = ({ onNavigateToDashboard }) => {
 
   // Auto-redirect to dashboard if already authenticated
   useEffect(() => {
-    if (session?.user && onNavigateToDashboard) {
-      onNavigateToDashboard();
+    if (session?.user) {
+      goToDashboard();
     }
-  }, [session, onNavigateToDashboard]);
+  }, [session]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -163,8 +166,8 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                 </span>
               </div>
               <button
-                onClick={onNavigateToDashboard}
-                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-primary-container text-on-primary-container hover:opacity-90 transition-all btn-primary"
+                onClick={goToDashboard}
+                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-primary-container text-on-primary-container hover:opacity-90 transition-all btn-primary cursor-pointer"
               >
                 Dashboard
               </button>
@@ -739,7 +742,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
                       onClick={() => {
                         setAnalyzeState('idle');
                         setActiveModal(null);
-                        if (onNavigateToDashboard) onNavigateToDashboard();
+                        goToDashboard();
                       }}
                       className="w-full h-[48px] rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps font-bold uppercase btn-primary"
                     >
@@ -760,7 +763,7 @@ const LandingPage = ({ onNavigateToDashboard }) => {
         onClose={() => setActiveModal(null)}
         onSuccess={() => {
           setActiveModal(null);
-          if (onNavigateToDashboard) onNavigateToDashboard();
+          goToDashboard();
         }}
       />
     </div>

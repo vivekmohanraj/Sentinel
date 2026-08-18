@@ -94,10 +94,60 @@ import {
   updateAlertPolicyApi,
   runBranchDiagnosticsApi
 } from '../lib/api.js';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const Dashboard = ({ onNavigateToLanding }) => {
+const TAB_ROUTES = {
+  'Dashboard': '/dashboard',
+  'Repositories': '/repositories',
+  'Commits': '/commits',
+  'Risk Radar': '/risk-radar',
+  'Tech Debt': '/tech-debt',
+  'Knowledge Graph': '/knowledge-graph',
+  'Users': '/users',
+  'Telemetry': '/telemetry',
+  'Settings': '/settings'
+};
+
+const ROUTE_TABS = {
+  '/dashboard': 'Dashboard',
+  '/repositories': 'Repositories',
+  '/commits': 'Commits',
+  '/risk-radar': 'Risk Radar',
+  '/tech-debt': 'Tech Debt',
+  '/knowledge-graph': 'Knowledge Graph',
+  '/users': 'Users',
+  '/telemetry': 'Telemetry',
+  '/settings': 'Settings'
+};
+
+const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Resolve active tab from URL pathname or props
+  const getTabFromLocation = () => {
+    return ROUTE_TABS[location.pathname] || defaultTab || 'Dashboard';
+  };
+
+  const [activeTab, setActiveTabState] = useState(getTabFromLocation);
+
+  // Synchronize state when browser navigation happens (back/forward/URL change)
+  useEffect(() => {
+    const tab = ROUTE_TABS[location.pathname];
+    if (tab && tab !== activeTab) {
+      setActiveTabState(tab);
+    }
+  }, [location.pathname]);
+
+  const setActiveTab = (tabId) => {
+    setActiveTabState(tabId);
+    const targetPath = TAB_ROUTES[tabId] || '/dashboard';
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  };
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('');
 
@@ -236,7 +286,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     if (onNavigateToLanding) {
       onNavigateToLanding();
     } else {
-      window.location.href = '/';
+      navigate('/');
     }
   };
 
@@ -875,7 +925,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     <div className="min-h-screen bg-[#0a0d0b] text-[#dfe4de] font-sans antialiased flex flex-col md:flex-row selection:bg-[#b7f15b]/30 selection:text-[#b7f15b]">
       {/* MOBILE HEADER */}
       <div className="md:hidden flex items-center justify-between px-6 py-4 bg-[#181d1a] border-b border-white/10 sticky top-0 z-40">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={onNavigateToLanding}>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { if (onNavigateToLanding) onNavigateToLanding(); else navigate('/'); }}>
           <div className="w-9 h-9 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
             <Radar className="w-5 h-5 animate-pulse" />
           </div>
@@ -902,6 +952,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => {
               if (onNavigateToLanding) onNavigateToLanding();
+              else navigate('/');
             }}
           >
             <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/15 border border-[#b7f15b]/40 flex items-center justify-center text-[#b7f15b] group-hover:scale-105 transition-transform">
