@@ -893,33 +893,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     }
   };
 
-  // High-Risk Modules Data
-  const highRiskModules = dashboardData?.highRiskModules || [
-    {
-      path: 'src/auth/session.ts',
-      riskScore: 84,
-      churnLevel: 'High Churn (+420 lines)',
-      status: 'Critical'
-    },
-    {
-      path: 'src/api/payment_gateway.go',
-      riskScore: 72,
-      churnLevel: 'Unresolved State Retry',
-      status: 'Warning'
-    },
-    {
-      path: 'src/engine/planner.rs',
-      riskScore: 61,
-      churnLevel: 'Complex Cyclomatic Growth',
-      status: 'Elevated'
-    },
-    {
-      path: 'src/db/migrations/v4.sql',
-      riskScore: 48,
-      churnLevel: 'Schema Coupling Impact',
-      status: 'Moderate'
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-[#0a0d0b] text-[#dfe4de] font-sans antialiased flex flex-col md:flex-row selection:bg-[#b7f15b]/30 selection:text-[#b7f15b]">

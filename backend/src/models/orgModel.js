@@ -58,8 +58,9 @@ export const createProject = async ({ orgId, name, description, createdByUserId 
     if (orgs.length > 0) {
       targetOrgId = orgs[0].id;
     } else {
-      const defaultOrg = await createOrganization({ name: 'Engineering Workspace', createdByUserId, createdByEmail });
-      targetOrgId = defaultOrg.id;
+      const err = new Error('An existing organization is required to create a project.');
+      err.statusCode = 400;
+      throw err;
     }
   }
 

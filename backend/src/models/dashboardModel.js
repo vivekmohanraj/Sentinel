@@ -465,35 +465,6 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
     );
     if (projRes.rows.length > 0) {
       targetProjId = projRes.rows[0].id;
-    } else {
-      const newProj = await pool.query(
-        `INSERT INTO tbl_project (organization_id, name, description, created_by_user_id, created_by_email) 
-         VALUES ($1, 'Main Engineering', 'Default Engineering Workspace', $2, $3) 
-         RETURNING id`,
-        [targetOrgId, createdByUserId, createdByEmail]
-      );
-      targetProjId = newProj.rows[0].id;
-    }
-  } else {
-    const projRes = await pool.query(`SELECT id, organization_id FROM tbl_project ORDER BY created_at ASC LIMIT 1`);
-    if (projRes.rows.length > 0) {
-      targetProjId = projRes.rows[0].id;
-      targetOrgId = projRes.rows[0].organization_id;
-    } else {
-      let orgRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
-      targetOrgId = orgRes.rows[0]?.id;
-      if (!targetOrgId) {
-        const newOrg = await pool.query(
-          `INSERT INTO tbl_organization (name, created_by_user_id, created_by_email) VALUES ('Engineering Workspace', $1, $2) RETURNING id`,
-          [createdByUserId, createdByEmail]
-        );
-        targetOrgId = newOrg.rows[0].id;
-      }
-      const newProj = await pool.query(
-        `INSERT INTO tbl_project (organization_id, name, description, created_by_user_id, created_by_email) VALUES ($1, 'Main Engineering', 'Default Engineering Workspace', $2, $3) RETURNING id`,
-        [targetOrgId, createdByUserId, createdByEmail]
-      );
-      targetProjId = newProj.rows[0].id;
     }
   }
 
