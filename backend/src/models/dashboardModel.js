@@ -7,18 +7,125 @@ const WORKSPACE_ROOT = '/media/vivekmohanraj/storage/Projects/sentinel';
 
 export const parseGitHubUrl = (urlOrName) => {
   if (!urlOrName) return null;
-  const clean = urlOrName.trim().replace(/\.git$/, '');
-  const match = clean.match(/github\.com\/([^/]+)\/([^/]+)/i);
-  if (match) {
-    return { owner: match[1], repo: match[2] };
+  const clean = urlOrName.trim().replace(/\.git$/i, '').replace(/\/+$/, '');
+
+  // Match https://github.com/owner/repo or http://github.com/owner/repo or github.com/owner/repo
+  const webMatch = clean.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)\/([a-zA-Z0-9_.-]+)/i);
+  if (webMatch) {
+    return { owner: webMatch[1], repo: webMatch[2] };
   }
-  if (clean.includes('/')) {
+
+  // Match git@github.com:owner/repo
+  const sshMatch = clean.match(/git@github\.com:([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)\/([a-zA-Z0-9_.-]+)/i);
+  if (sshMatch) {
+    return { owner: sshMatch[1], repo: sshMatch[2] };
+  }
+
+  // Match owner/repo (e.g. facebook/react)
+  if (/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\/[a-zA-Z0-9_.-]+$/.test(clean)) {
     const parts = clean.split('/');
     if (parts.length === 2 && parts[0] && parts[1]) {
       return { owner: parts[0], repo: parts[1] };
     }
   }
+
   return null;
+};
+
+// Validate GitHub repository format and remote existence
+export const validateGitHubRepository = async (urlOrName) => {
+  if (!urlOrName || typeof urlOrName !== 'string' || !urlOrName.trim()) {
+    return { isValid: false, error: 'Repository URL or identifier is required.' };
+  }
+
+  const parsed = parseGitHubUrl(urlOrName);
+  if (!parsed) {
+    return {
+      isValid: false,
+      error: 'Invalid GitHub repository link. Format must be https://github.com/owner/repo, git@github.com:owner/repo.git, or owner/repo.'
+    };
+  }
+
+  const { owner, repo } = parsed;
+
+  // Strict character check
+  const validOwnerRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
+  const validRepoRegex = /^[a-zA-Z0-9_.-]+$/;
+
+  if (!validOwnerRegex.test(owner) || !validRepoRegex.test(repo)) {
+    return {
+      isValid: false,
+      error: `Invalid GitHub owner "${owner}" or repository name "${repo}".`
+    };
+  }
+
+  // Verify existence against GitHub Public API
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: {
+        'User-Agent': 'Sentinel-Analytics-Node',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.status === 404) {
+      return {
+        isValid: false,
+        error: `GitHub repository "${owner}/${repo}" was not found. Please verify the URL and ensure the repository is public.`
+      };
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        isValid: true,
+        owner,
+        repo,
+        fullName: data.full_name || `${owner}/${repo}`,
+        canonicalUrl: data.html_url || `https://github.com/${owner}/${repo}`,
+        description: data.description || '',
+        defaultBranch: data.default_branch || 'main'
+      };
+    }
+
+    // Rate limited (403) or other non-404 status from GitHub
+    if (res.status === 403) {
+      console.warn(`[GitHub Validation] GitHub API rate limit reached for ${owner}/${repo}. Accepting validated URL format.`);
+      return {
+        isValid: true,
+        owner,
+        repo,
+        fullName: `${owner}/${repo}`,
+        canonicalUrl: `https://github.com/${owner}/${repo}`,
+        description: ''
+      };
+    }
+  } catch (err) {
+    console.warn(`[GitHub Validation] Reachability check warning for ${owner}/${repo}:`, err.message);
+    // If request timed out or network offline, allow syntactically valid URL
+    return {
+      isValid: true,
+      owner,
+      repo,
+      fullName: `${owner}/${repo}`,
+      canonicalUrl: `https://github.com/${owner}/${repo}`,
+      description: ''
+    };
+  }
+
+  return {
+    isValid: true,
+    owner,
+    repo,
+    fullName: `${owner}/${repo}`,
+    canonicalUrl: `https://github.com/${owner}/${repo}`,
+    description: ''
+  };
 };
 
 // Mine real Git commits from GitHub API or local repository
@@ -317,16 +424,30 @@ export const getAllRepositories = async (projectId = null) => {
 };
 
 export const createRepository = async ({ name, gitUrl, projectId }) => {
-  const trimmedName = name.trim();
+  const trimmedName = (name || '').trim();
   const trimmedUrl = (gitUrl || '').trim();
+
+  // Validate GitHub repository link / identifier
+  const valResult = await validateGitHubRepository(trimmedUrl || trimmedName);
+  if (!valResult.isValid) {
+    const error = new Error(valResult.error);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const finalName = trimmedName || valResult.fullName || `${valResult.owner}/${valResult.repo}`;
+  const finalUrl = valResult.canonicalUrl || trimmedUrl || `https://github.com/${valResult.owner}/${valResult.repo}`;
 
   // Deduplication check: check if repository already exists by name or git URL
   const existingRes = await pool.query(
     `SELECT id, project_id, name, git_url, created_at 
      FROM tbl_repository 
-     WHERE LOWER(name) = LOWER($1) OR (git_url = $2 AND git_url != '') 
+     WHERE LOWER(name) = LOWER($1) 
+        OR LOWER(name) = LOWER($2)
+        OR (git_url = $3 AND git_url != '')
+        OR (git_url = $4 AND git_url != '')
      LIMIT 1`,
-    [trimmedName, trimmedUrl]
+    [finalName, `${valResult.owner}/${valResult.repo}`, finalUrl, trimmedUrl]
   );
 
   let targetProjId = projectId;
@@ -358,7 +479,7 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
            git_url = COALESCE(NULLIF($3, ''), git_url) 
        WHERE id = $4 
        RETURNING id, project_id, name, git_url, created_at`,
-      [targetProjId, trimmedName, trimmedUrl, existing.id]
+      [targetProjId, finalName, finalUrl, existing.id]
     );
     const updatedRepo = updateRes.rows[0];
     await mineRepositoryData(updatedRepo.id, updatedRepo.name, updatedRepo.git_url);
@@ -369,7 +490,7 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
     `INSERT INTO tbl_repository (project_id, name, git_url)
      VALUES ($1, $2, $3)
      RETURNING id, project_id, name, git_url, created_at`,
-    [targetProjId, trimmedName, trimmedUrl]
+    [targetProjId, finalName, finalUrl]
   );
   const newRepo = result.rows[0];
   if (newRepo) {
@@ -390,9 +511,22 @@ export const getDashboardSummary = async (repoFilter = null) => {
     let repoObj = null;
 
     if (repoFilter && repoFilter.trim()) {
+      const trimmed = repoFilter.trim();
+      const parsed = parseGitHubUrl(trimmed);
       const repoRes = await pool.query(
-        `SELECT id, name, git_url FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
-        [repoFilter.trim()]
+        `SELECT id, name, git_url FROM tbl_repository 
+         WHERE id::text = $1 
+            OR LOWER(name) = LOWER($1)
+            OR LOWER(git_url) = LOWER($1)
+            OR LOWER(git_url) LIKE LOWER($2)
+            OR ($3::text IS NOT NULL AND (LOWER(name) = LOWER($3) OR LOWER(git_url) LIKE LOWER($4)))
+         LIMIT 1`,
+        [
+          trimmed,
+          `%${trimmed}%`,
+          parsed ? `${parsed.owner}/${parsed.repo}` : null,
+          parsed ? `%github.com/${parsed.owner}/${parsed.repo}%` : null
+        ]
       );
       if (repoRes.rows.length > 0) {
         repoObj = repoRes.rows[0];

@@ -224,7 +224,15 @@ export const addRepositoryApi = async (name, gitUrl, projectId = null) => {
       credentials: 'include',
       body: JSON.stringify({ name, gitUrl, projectId })
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    if (!res.ok) {
+      let errorMsg = `HTTP error! status: ${res.status}`;
+      try {
+        const errRes = await res.json();
+        if (errRes.error) errorMsg = errRes.error;
+        else if (errRes.message) errorMsg = errRes.message;
+      } catch (e) {}
+      throw new Error(errorMsg);
+    }
     const result = await res.json();
     return result.data;
   } catch (err) {
@@ -240,7 +248,14 @@ export const deleteRepositoryApi = async (id) => {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    if (!res.ok) {
+      let errorMsg = `HTTP error! status: ${res.status}`;
+      try {
+        const errRes = await res.json();
+        if (errRes.error) errorMsg = errRes.error;
+      } catch (e) {}
+      throw new Error(errorMsg);
+    }
     const result = await res.json();
     return result;
   } catch (err) {
@@ -491,7 +506,14 @@ export const rescanCodebaseApi = async (repoId = '') => {
       credentials: 'include',
       body: JSON.stringify({ repoId })
     });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    if (!res.ok) {
+      let errorMsg = `HTTP error! status: ${res.status}`;
+      try {
+        const errRes = await res.json();
+        if (errRes.error) errorMsg = errRes.error;
+      } catch (e) {}
+      throw new Error(errorMsg);
+    }
     const result = await res.json();
     return result;
   } catch (err) {

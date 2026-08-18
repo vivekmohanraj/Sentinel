@@ -150,6 +150,8 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const [newRepoName, setNewRepoName] = useState('');
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [isAddingRepo, setIsAddingRepo] = useState(false);
+  const [addRepoError, setAddRepoError] = useState(null);
+  const [isSyncingData, setIsSyncingData] = useState(false);
   const [repoMsg, setRepoMsg] = useState(null);
   const [showAddRepoModal, setShowAddRepoModal] = useState(false);
 
@@ -527,13 +529,84 @@ const Dashboard = ({ onNavigateToLanding }) => {
     }
   };
 
+  const parseGitHubInput = (urlOrName) => {
+    if (!urlOrName || typeof urlOrName !== 'string') return null;
+    const clean = urlOrName.trim().replace(/\.git$/i, '').replace(/\/+$/, '');
+    const webMatch = clean.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)\/([a-zA-Z0-9_.-]+)/i);
+    if (webMatch) return { owner: webMatch[1], repo: webMatch[2] };
+    const sshMatch = clean.match(/git@github\.com:([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)\/([a-zA-Z0-9_.-]+)/i);
+    if (sshMatch) return { owner: sshMatch[1], repo: sshMatch[2] };
+    if (/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\/[a-zA-Z0-9_.-]+$/.test(clean)) {
+      const parts = clean.split('/');
+      return { owner: parts[0], repo: parts[1] };
+    }
+    return null;
+  };
+
+  const handleUrlChange = (val) => {
+    setNewRepoUrl(val);
+    setAddRepoError(null);
+    const parsed = parseGitHubInput(val);
+    if (parsed && (!newRepoName || newRepoName === '')) {
+      setNewRepoName(`${parsed.owner}/${parsed.repo}`);
+    }
+  };
+
+  const refreshAllDashboardData = async (targetRepo = selectedRepo) => {
+    if (!targetRepo) return;
+    setIsSyncingData(true);
+    try {
+      const [summary, hotspots, risk, commits] = await Promise.allSettled([
+        fetchDashboardSummary(targetRepo),
+        fetchHotspotsApi(targetRepo),
+        fetchRiskRadarApi(targetRepo),
+        fetchCommitsApi('', targetRepo)
+      ]);
+      if (summary.status === 'fulfilled' && summary.value) {
+        setDashboardData(summary.value);
+      }
+      if (hotspots.status === 'fulfilled' && hotspots.value) {
+        setHotspotsList(hotspots.value);
+      }
+      if (risk.status === 'fulfilled' && risk.value) {
+        setRiskPredictions(risk.value);
+      }
+      if (commits.status === 'fulfilled' && commits.value) {
+        setCommitsList(commits.value);
+      }
+    } catch (err) {
+      console.warn('Dashboard data refresh error:', err);
+    } finally {
+      setIsSyncingData(false);
+    }
+  };
+
+  const handleSelectRepo = (repoName) => {
+    setSelectedRepo(repoName);
+    refreshAllDashboardData(repoName);
+  };
+
   const handleAddRepo = async (e) => {
     e.preventDefault();
-    if (!newRepoName || !newRepoUrl) return;
+    setAddRepoError(null);
+    const trimmedUrl = newRepoUrl.trim();
+    const trimmedName = newRepoName.trim();
+
+    if (!trimmedUrl) {
+      setAddRepoError('Please provide a GitHub repository URL or path.');
+      return;
+    }
+
+    const parsed = parseGitHubInput(trimmedUrl);
+    if (!parsed) {
+      setAddRepoError('Invalid GitHub repository format. Supported formats: https://github.com/owner/repo or owner/repo.');
+      return;
+    }
+
     setIsAddingRepo(true);
-    setRepoMsg(null);
     try {
-      const created = await addRepositoryApi(newRepoName.trim(), newRepoUrl.trim(), selectedProject || null);
+      const targetName = trimmedName || `${parsed.owner}/${parsed.repo}`;
+      const created = await addRepositoryApi(targetName, trimmedUrl, selectedProject || null);
       if (created) {
         const updatedList = await fetchRepositories();
         setDbRepos(updatedList || [created]);
@@ -541,19 +614,19 @@ const Dashboard = ({ onNavigateToLanding }) => {
         if (created.project_id) {
           setSelectedProject(created.project_id);
         }
-        setRepoMsg(`Repository ${created.name} linked and selected! Rescanning metrics...`);
+        setRepoMsg(`Repository "${created.name}" connected and selected! Loading metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
+        setAddRepoError(null);
         setShowAddRepoModal(false);
-        await rescanCodebaseApi(created.name);
-        const updatedHotspots = await fetchHotspotsApi(created.name);
-        if (updatedHotspots) setHotspotsList(updatedHotspots);
-        const summary = await fetchDashboardSummary(created.name);
-        if (summary) setDashboardData(summary);
+
+        // Auto-refresh all tabs and summary data immediately for the new repo
+        await refreshAllDashboardData(created.name);
         setTimeout(() => setRepoMsg(null), 5000);
       }
     } catch (err) {
       console.error('Failed to add repository:', err);
+      setAddRepoError(err.message || 'Failed to connect repository. Please verify the URL and ensure the repository is public.');
     } finally {
       setIsAddingRepo(false);
     }
@@ -564,8 +637,17 @@ const Dashboard = ({ onNavigateToLanding }) => {
       await deleteRepositoryApi(repoId);
       const remaining = dbRepos.filter((r) => r.id !== repoId);
       setDbRepos(remaining);
+      const nextRepo = remaining.length > 0 ? remaining[0].name : '';
       if (selectedRepo === repoName) {
-        setSelectedRepo(remaining.length > 0 ? remaining[0].name : '');
+        setSelectedRepo(nextRepo);
+        if (nextRepo) {
+          refreshAllDashboardData(nextRepo);
+        } else {
+          setDashboardData(null);
+          setHotspotsList([]);
+          setRiskPredictions([]);
+          setCommitsList([]);
+        }
       }
       setRepoMsg(`Repository ${repoName} unlinked.`);
       setTimeout(() => setRepoMsg(null), 3000);
@@ -951,19 +1033,31 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 )}
               </div>
 
-              {/* Repository Selector */}
-              <div className="relative">
-                <select
-                  value={selectedRepo}
-                  onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+              {/* Repository Selector & Sync Button */}
+              <div className="flex items-center gap-1.5">
+                <div className="relative">
+                  <select
+                    value={selectedRepo}
+                    onChange={(e) => handleSelectRepo(e.target.value)}
+                    className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                  >
+                    {dbRepos.length === 0 && <option value="">repo: (No Connected Repositories)</option>}
+                    {dbRepos.map((r) => (
+                      <option key={r.id} value={r.name}>repo: {r.name}</option>
+                    ))}
+                  </select>
+                  <FolderGit2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                <button
+                  onClick={() => refreshAllDashboardData(selectedRepo)}
+                  disabled={isSyncingData || !selectedRepo}
+                  className="h-9 px-2.5 rounded-xl bg-[#1c211e] border border-white/10 text-[#8d937e] hover:text-[#b7f15b] hover:border-[#b7f15b]/30 transition-all flex items-center gap-1.5 text-xs font-mono disabled:opacity-50 cursor-pointer"
+                  title="Synchronize and Refresh Codebase Metrics"
                 >
-                  {dbRepos.length === 0 && <option value="">repo: (No Connected Repositories)</option>}
-                  {dbRepos.map((r) => (
-                    <option key={r.id} value={r.name}>repo: {r.name}</option>
-                  ))}
-                </select>
-                <FolderGit2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingData ? 'animate-spin text-[#b7f15b]' : ''}`} />
+                  <span className="hidden sm:inline text-[11px]">Sync</span>
+                </button>
               </div>
             </div>
 
@@ -2371,40 +2465,57 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       <div className="p-2 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b]">
                         <FolderGit2 className="w-5 h-5" />
                       </div>
-                      <h3 className="text-lg font-semibold text-[#dfe4de]">Connect Repository</h3>
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#dfe4de]">Connect GitHub Repository</h3>
+                        <p className="text-xs font-mono text-[#8d937e] mt-0.5">Validates & mines AST complexity metrics</p>
+                      </div>
                     </div>
                     <button
-                      onClick={() => setShowAddRepoModal(false)}
-                      className="p-1 rounded-lg text-[#8d937e] hover:text-[#dfe4de] hover:bg-white/10"
+                      onClick={() => { setShowAddRepoModal(false); setAddRepoError(null); }}
+                      className="p-1 rounded-lg text-[#8d937e] hover:text-[#dfe4de] hover:bg-white/10 cursor-pointer"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
+                  {addRepoError && (
+                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs font-mono text-red-300 animate-fadeIn">
+                      <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 leading-relaxed">{addRepoError}</div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleAddRepo} className="space-y-4">
                     <div>
                       <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">
-                        Repository Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newRepoName}
-                        onChange={(e) => setNewRepoName(e.target.value)}
-                        placeholder="e.g. sentinel/auth-service"
-                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">
-                        Git Remote URL / Path
+                        GitHub Remote URL / Repository
                       </label>
                       <input
                         type="text"
                         value={newRepoUrl}
-                        onChange={(e) => setNewRepoUrl(e.target.value)}
-                        placeholder="https://github.com/org/repo.git or /local/path"
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        placeholder="https://github.com/expressjs/express or expressjs/express"
+                        className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                        required
+                        autoFocus
+                      />
+                      {newRepoUrl && parseGitHubInput(newRepoUrl) && (
+                        <p className="text-[11px] font-mono text-[#b7f15b] mt-1.5 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Detected: <strong>{parseGitHubInput(newRepoUrl).owner}/{parseGitHubInput(newRepoUrl).repo}</strong></span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-1.5">
+                        Repository Display Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newRepoName}
+                        onChange={(e) => { setNewRepoName(e.target.value); setAddRepoError(null); }}
+                        placeholder="e.g. expressjs/express"
                         className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
                         required
                       />
@@ -2413,18 +2524,18 @@ const Dashboard = ({ onNavigateToLanding }) => {
                     <div className="pt-3 flex justify-end gap-3">
                       <button
                         type="button"
-                        onClick={() => setShowAddRepoModal(false)}
-                        className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-mono text-[#c3c9b2] hover:bg-white/5"
+                        onClick={() => { setShowAddRepoModal(false); setAddRepoError(null); }}
+                        className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-mono text-[#c3c9b2] hover:bg-white/5 cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={isAddingRepo}
-                        className="px-5 py-2.5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs font-bold uppercase hover:opacity-90 flex items-center gap-2"
+                        className="px-5 py-2.5 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs font-bold uppercase hover:opacity-90 flex items-center gap-2 cursor-pointer disabled:opacity-50"
                       >
                         {isAddingRepo && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>{isAddingRepo ? 'Saving...' : 'Add Repository'}</span>
+                        <span>{isAddingRepo ? 'Verifying & Mining...' : 'Connect Repository'}</span>
                       </button>
                     </div>
                   </form>

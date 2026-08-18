@@ -33,34 +33,42 @@ export const getHotspots = async (repoFilter = null) => {
 
 export const seedOrRescanMetrics = async (repoFilter = null) => {
   let targetRepoId = null;
+  let targetRepoName = '';
+  let targetGitUrl = null;
 
   if (repoFilter && repoFilter.trim()) {
     const repoRes = await pool.query(
-      `SELECT id, name FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
+      `SELECT id, name, git_url FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) OR LOWER(git_url) = LOWER($1) LIMIT 1`,
       [repoFilter.trim()]
     );
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
+      targetRepoName = repoRes.rows[0].name;
+      targetGitUrl = repoRes.rows[0].git_url;
     }
   }
 
   if (!targetRepoId) {
-    const repoRes = await pool.query(`SELECT id, name FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
+    const repoRes = await pool.query(`SELECT id, name, git_url FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
+      targetRepoName = repoRes.rows[0].name;
+      targetGitUrl = repoRes.rows[0].git_url;
     }
   }
 
   if (targetRepoId) {
     await pool.query(`DELETE FROM tbl_module_metric WHERE repository_id = $1`, [targetRepoId]);
-    const realMetrics = extractRealModuleMetrics();
+    const realMetrics = await extractRealModuleMetrics(targetRepoName, targetGitUrl);
 
-    for (const mod of realMetrics) {
-      await pool.query(
-        `INSERT INTO tbl_module_metric (repository_id, file_path, complexity_score, churn_rate, bug_frequency, recorded_at)
-         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
-        [targetRepoId, mod.file_path, mod.complexity_score, mod.churn_rate, mod.bug_frequency]
-      );
+    if (Array.isArray(realMetrics) && realMetrics.length > 0) {
+      for (const mod of realMetrics) {
+        await pool.query(
+          `INSERT INTO tbl_module_metric (repository_id, file_path, complexity_score, churn_rate, bug_frequency, recorded_at)
+           VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
+          [targetRepoId, mod.file_path, mod.complexity_score, mod.churn_rate, mod.bug_frequency]
+        );
+      }
     }
     return true;
   }

@@ -35,15 +35,18 @@ export const getRepos = async (req, res, next) => {
 export const addRepo = async (req, res, next) => {
   try {
     const { name, gitUrl, projectId } = req.body;
-    if (!name || !gitUrl) {
-      return res.status(400).json({ success: false, error: 'Repository name and Git URL are required.' });
+    if (!gitUrl && !name) {
+      return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
-    const newRepo = await createRepository({ name, gitUrl, projectId });
+    const newRepo = await createRepository({ name: name || gitUrl, gitUrl: gitUrl || name, projectId });
     return res.status(201).json({
       success: true,
       data: newRepo
     });
   } catch (err) {
+    if (err.statusCode === 400 || (err.message && (err.message.includes('GitHub') || err.message.includes('Invalid')))) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
     next(err);
   }
 };
