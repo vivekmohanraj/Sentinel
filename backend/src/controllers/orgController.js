@@ -1,8 +1,10 @@
 import {
   getAllOrganizations,
   createOrganization,
+  deleteOrganization,
   getAllProjects,
-  createProject
+  createProject,
+  deleteProject
 } from '../models/orgModel.js';
 
 export const getOrgs = async (req, res, next) => {
@@ -33,6 +35,22 @@ export const addOrg = async (req, res, next) => {
   }
 };
 
+export const removeOrg = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteOrganization(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Organization not found.' });
+    }
+    return res.status(200).json({
+      success: true,
+      message: 'Organization deleted successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getProjects = async (req, res, next) => {
   try {
     const projects = await getAllProjects();
@@ -55,6 +73,22 @@ export const addProject = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       data: newProject
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const removeProject = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteProject(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Project not found.' });
+    }
+    return res.status(200).json({
+      success: true,
+      message: 'Project deleted successfully.'
     });
   } catch (err) {
     next(err);

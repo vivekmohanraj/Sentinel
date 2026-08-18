@@ -306,6 +306,22 @@ export const createOrganizationApi = async (name) => {
   }
 };
 
+export const deleteOrganizationApi = async (id) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/orgs/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to delete organization:', err);
+    throw err;
+  }
+};
+
 export const fetchProjects = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/projects`, {
@@ -335,6 +351,22 @@ export const createProjectApi = async (orgId, name, description) => {
     return result.data;
   } catch (err) {
     console.error('Failed to create project:', err);
+    throw err;
+  }
+};
+
+export const deleteProjectApi = async (id) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to delete project:', err);
     throw err;
   }
 };

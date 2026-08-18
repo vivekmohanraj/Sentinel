@@ -75,8 +75,10 @@ import {
   getExportReportUrl,
   fetchOrganizations,
   createOrganizationApi,
+  deleteOrganizationApi,
   fetchProjects,
   createProjectApi,
+  deleteProjectApi,
   fetchNotificationsApi,
   markNotificationReadApi,
   markAllNotificationsReadApi,
@@ -154,6 +156,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
   // Project & Organization State
   const [orgsList, setOrgsList] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState('');
+  const [showAddOrgModal, setShowAddOrgModal] = useState(false);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+
   const [projectsList, setProjectsList] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
@@ -331,7 +337,12 @@ const Dashboard = ({ onNavigateToLanding }) => {
         const list = await fetchOrganizations();
         if (isMounted && list) {
           setOrgsList(list || []);
-          if (list.length > 0 && !selectedOrg) setSelectedOrg(list[0].id);
+          if (list.length > 0) {
+            const hasSelected = list.some(o => o.id === selectedOrg);
+            if (!hasSelected) setSelectedOrg(list[0].id);
+          } else {
+            setSelectedOrg('');
+          }
         }
       } catch (err) {
         console.error('Failed to load organizations:', err);
@@ -339,17 +350,22 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadOrgs();
     return () => { isMounted = false; };
-  }, []);
+  }, [activeTab]);
 
   // Fetch Projects from database on org change & tab changes
   useEffect(() => {
     let isMounted = true;
     const loadProjects = async () => {
       try {
-        const list = await fetchProjects(selectedOrg);
+        const list = await fetchProjects();
         if (isMounted && list) {
           setProjectsList(list || []);
-          if (list.length > 0 && !selectedProject) setSelectedProject(list[0].id);
+          if (list.length > 0) {
+            const hasSelected = list.some(p => p.id === selectedProject);
+            if (!hasSelected) setSelectedProject(list[0].id);
+          } else {
+            setSelectedProject('');
+          }
         }
       } catch (err) {
         console.error('Failed to load projects:', err);
@@ -358,6 +374,68 @@ const Dashboard = ({ onNavigateToLanding }) => {
     loadProjects();
     return () => { isMounted = false; };
   }, [activeTab, selectedOrg]);
+
+  const handleCreateOrg = async (e) => {
+    e.preventDefault();
+    if (!newOrgName) return;
+    setIsCreatingOrg(true);
+    try {
+      const created = await createOrganizationApi(newOrgName);
+      if (created) {
+        const updatedOrgs = await fetchOrganizations();
+        setOrgsList(updatedOrgs || [created]);
+        setSelectedOrg(created.id);
+        setNewOrgName('');
+        setShowAddOrgModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to create organization:', err);
+    } finally {
+      setIsCreatingOrg(false);
+    }
+  };
+
+  const handleDeleteOrg = async (orgId) => {
+    if (!orgId) return;
+    try {
+      await deleteOrganizationApi(orgId);
+      const remainingOrgs = orgsList.filter(o => o.id !== orgId);
+      setOrgsList(remainingOrgs);
+      setSelectedOrg(remainingOrgs.length > 0 ? remainingOrgs[0].id : '');
+      const updatedProjects = await fetchProjects();
+      setProjectsList(updatedProjects || []);
+      setSelectedProject(updatedProjects && updatedProjects.length > 0 ? updatedProjects[0].id : '');
+      const updatedRepos = await fetchRepositories();
+      setDbRepos(updatedRepos || []);
+      if (updatedRepos && updatedRepos.length > 0) {
+        setSelectedRepo(updatedRepos[0].name);
+      } else {
+        setSelectedRepo('');
+      }
+    } catch (err) {
+      console.error('Failed to delete organization:', err);
+    }
+  };
+
+  const handleDeleteProject = async (projId) => {
+    if (!projId) return;
+    try {
+      await deleteProjectApi(projId);
+      const remainingProjects = projectsList.filter(p => p.id !== projId);
+      setProjectsList(remainingProjects);
+      setSelectedProject(remainingProjects.length > 0 ? remainingProjects[0].id : '');
+      const updatedRepos = await fetchRepositories();
+      setDbRepos(updatedRepos || []);
+      if (updatedRepos && updatedRepos.length > 0) {
+        const hasSelected = updatedRepos.some(r => r.name === selectedRepo);
+        if (!hasSelected) setSelectedRepo(updatedRepos[0].name);
+      } else {
+        setSelectedRepo('');
+      }
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+    }
+  };
 
   // Sync Project Dropdown selection when Repository selection changes
   useEffect(() => {
@@ -822,33 +900,55 @@ const Dashboard = ({ onNavigateToLanding }) => {
           <div className="p-2.5 rounded-2xl bg-[#181d1a] border border-white/10 flex flex-wrap items-center justify-between gap-3 shadow-lg">
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Organization Selector */}
-              <div className="relative">
-                <select
-                  value={selectedOrg}
-                  onChange={(e) => setSelectedOrg(e.target.value)}
-                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
-                >
-                  {orgsList.length === 0 && <option value="">org: Sentinel Core Org</option>}
-                  {orgsList.map((o) => (
-                    <option key={o.id} value={o.id}>org: {o.name}</option>
-                  ))}
-                </select>
-                <Building2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="flex items-center gap-1">
+                <div className="relative">
+                  <select
+                    value={selectedOrg}
+                    onChange={(e) => setSelectedOrg(e.target.value)}
+                    className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                  >
+                    {orgsList.length === 0 && <option value="">org: (No Organizations)</option>}
+                    {orgsList.map((o) => (
+                      <option key={o.id} value={o.id}>org: {o.name}</option>
+                    ))}
+                  </select>
+                  <Building2 className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                {(isAdmin || isManager) && selectedOrg && (
+                  <button
+                    onClick={() => handleDeleteOrg(selectedOrg)}
+                    className="p-2 rounded-xl text-[#8d937e] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Delete Selected Organization"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Project Selector */}
-              <div className="relative">
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
-                >
-                  {projectsList.length === 0 && <option value="">proj: Main Engineering</option>}
-                  {projectsList.map((p) => (
-                    <option key={p.id} value={p.id}>proj: {p.name}</option>
-                  ))}
-                </select>
-                <FolderKanban className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="flex items-center gap-1">
+                <div className="relative">
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => setSelectedProject(e.target.value)}
+                    className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
+                  >
+                    {projectsList.length === 0 && <option value="">proj: (No Projects)</option>}
+                    {projectsList.map((p) => (
+                      <option key={p.id} value={p.id}>proj: {p.name}</option>
+                    ))}
+                  </select>
+                  <FolderKanban className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                {(isAdmin || isManager) && selectedProject && (
+                  <button
+                    onClick={() => handleDeleteProject(selectedProject)}
+                    className="p-2 rounded-xl text-[#8d937e] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Delete Selected Project"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Repository Selector */}
@@ -870,6 +970,15 @@ const Dashboard = ({ onNavigateToLanding }) => {
             {/* Admin/Manager Codebase Controls */}
             {(isAdmin || isManager) && (
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAddOrgModal(true)}
+                  className="h-9 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-1.5 text-xs font-mono uppercase cursor-pointer"
+                  title="Create New Organization"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#b7f15b]" />
+                  <span>New Org</span>
+                </button>
+
                 <button
                   onClick={() => setShowAddProjectModal(true)}
                   className="h-9 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-1.5 text-xs font-mono uppercase cursor-pointer"
@@ -1146,7 +1255,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                       const userEmail = (profileData?.email || '').toLowerCase();
                       const myContrib = dashboardData?.contributors?.find(
                         (c) => (c.email || c.author_email || '').toLowerCase() === userEmail
-                      ) || { email: profileData.email || 'developer@sentinel.engineering', name: profileData.firstName || 'Me', commits: dashboardData?.totalCommits || 1, added: dashboardData?.totalLinesAdded || 0, deleted: dashboardData?.totalLinesDeleted || 0 };
+                      ) || { email: profileData.email || 'developer@sentinel.engineering', name: profileData.firstName || 'Me', commits: 0, added: 0, deleted: 0 };
 
                       const myAdded = myContrib.added ?? myContrib.lines_added ?? 0;
                       const myDeleted = myContrib.deleted ?? myContrib.lines_deleted ?? 0;
@@ -2916,9 +3025,10 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   if (!newProjectName) return;
                   setIsCreatingProject(true);
                   try {
-                    const created = await createProjectApi(null, newProjectName, newProjectDesc);
+                    const created = await createProjectApi(selectedOrg || null, newProjectName, newProjectDesc);
                     if (created) {
-                      setProjectsList([created, ...projectsList]);
+                      const updated = await fetchProjects();
+                      setProjectsList(updated || [created, ...projectsList]);
                       setSelectedProject(created.id);
                       setNewProjectName('');
                       setNewProjectDesc('');
@@ -2969,6 +3079,63 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   >
                     {isCreatingProject ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     <span>{isCreatingProject ? 'Creating...' : 'Create Project'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* CREATE ORGANIZATION MODAL */}
+        {showAddOrgModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-md p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                    <Building2 className="w-5 h-5 text-[#b7f15b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#dfe4de]">Create New Organization</h3>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70">Add a top-level engineering organization workspace.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAddOrgModal(false)}
+                  className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateOrg} className="space-y-4">
+                <div>
+                  <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-2">Organization Name</label>
+                  <input
+                    type="text"
+                    value={newOrgName}
+                    onChange={(e) => setNewOrgName(e.target.value)}
+                    placeholder="e.g. DeepSeek AI Core"
+                    className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-sm text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors font-mono"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOrgModal(false)}
+                    className="h-10 px-4 rounded-xl bg-white/5 text-[#c3c9b2] hover:bg-white/10 transition-all font-mono text-xs uppercase"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingOrg}
+                    className="h-10 px-6 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isCreatingOrg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    <span>{isCreatingOrg ? 'Creating...' : 'Create Org'}</span>
                   </button>
                 </div>
               </form>

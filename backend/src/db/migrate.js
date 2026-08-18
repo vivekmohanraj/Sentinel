@@ -129,7 +129,21 @@ export const runMigrations = async () => {
       );
     `);
 
-    console.log('[Database] Migrations and repository cleanup applied successfully.');
+    // Cleanup legacy dummy projects
+    await pool.query(`
+      DELETE FROM tbl_project 
+      WHERE LOWER(name) IN ('sentinel core', 'sentinel/core-engine', 'diagram-design', 'sentinel core engine v2')
+        AND id NOT IN (SELECT DISTINCT project_id FROM tbl_repository WHERE project_id IS NOT NULL);
+    `);
+
+    // Cleanup legacy dummy organizations
+    await pool.query(`
+      DELETE FROM tbl_organization 
+      WHERE LOWER(name) = 'sentinel core org'
+        AND id NOT IN (SELECT DISTINCT organization_id FROM tbl_project WHERE organization_id IS NOT NULL);
+    `);
+
+    console.log('[Database] Migrations and repository/project/org cleanup applied successfully.');
   } catch (err) {
     console.error('[Database] Migration error:', err.message);
   }

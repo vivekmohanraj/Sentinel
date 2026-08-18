@@ -12,7 +12,15 @@ export const createOrganization = async ({ name }) => {
     `INSERT INTO tbl_organization (name)
      VALUES ($1)
      RETURNING id, name, created_at`,
-    [name]
+    [name.trim()]
+  );
+  return result.rows[0];
+};
+
+export const deleteOrganization = async (orgId) => {
+  const result = await pool.query(
+    `DELETE FROM tbl_organization WHERE id = $1 RETURNING id`,
+    [orgId]
   );
   return result.rows[0];
 };
@@ -28,14 +36,13 @@ export const getAllProjects = async () => {
 };
 
 export const createProject = async ({ orgId, name, description }) => {
-  // If orgId is not provided, fetch or create a default organization
   let targetOrgId = orgId;
   if (!targetOrgId) {
     const orgs = await getAllOrganizations();
     if (orgs.length > 0) {
       targetOrgId = orgs[0].id;
     } else {
-      const defaultOrg = await createOrganization({ name: 'Sentinel Core Org' });
+      const defaultOrg = await createOrganization({ name: 'Engineering Workspace' });
       targetOrgId = defaultOrg.id;
     }
   }
@@ -44,7 +51,15 @@ export const createProject = async ({ orgId, name, description }) => {
     `INSERT INTO tbl_project (organization_id, name, description)
      VALUES ($1, $2, $3)
      RETURNING id, organization_id, name, description, created_at`,
-    [targetOrgId, name, description || '']
+    [targetOrgId, name.trim(), description || '']
+  );
+  return result.rows[0];
+};
+
+export const deleteProject = async (projectId) => {
+  const result = await pool.query(
+    `DELETE FROM tbl_project WHERE id = $1 RETURNING id`,
+    [projectId]
   );
   return result.rows[0];
 };
