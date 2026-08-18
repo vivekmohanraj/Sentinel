@@ -46,9 +46,10 @@ import {
   Minus,
   BarChart3,
   Network,
-  GitPullRequest
+  GitPullRequest,
+  LogOut
 } from 'lucide-react';
-import { useSession } from '../lib/auth-client.js';
+import { useSession, authClient } from '../lib/auth-client.js';
 import PrScanModal from '../components/PrScanModal.jsx';
 import KnowledgeGraphView from '../components/KnowledgeGraphView.jsx';
 import RefactorModal from '../components/RefactorModal.jsx';
@@ -219,6 +220,19 @@ const Dashboard = ({ onNavigateToLanding }) => {
       : []),
     { id: 'Settings', label: 'Settings', icon: Settings }
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await authClient.signOut();
+    } catch (err) {
+      console.warn('Sign out notice:', err?.message);
+    }
+    if (onNavigateToLanding) {
+      onNavigateToLanding();
+    } else {
+      window.location.href = '/';
+    }
+  };
 
   // Fetch real profile data from database on mount & session change
   useEffect(() => {
@@ -875,19 +889,31 @@ const Dashboard = ({ onNavigateToLanding }) => {
           </nav>
         </div>
 
-        {/* Air-Gapped Security Badge */}
-        <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
-            <ShieldCheck className="w-4 h-4 text-[#b7f15b]" />
-            <span className="uppercase tracking-wider">Air-Gapped Node</span>
+        <div className="space-y-3">
+          {/* Air-Gapped Security Badge */}
+          <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-mono text-[#b7f15b]">
+              <ShieldCheck className="w-4 h-4 text-[#b7f15b]" />
+              <span className="uppercase tracking-wider">Air-Gapped Node</span>
+            </div>
+            <p className="text-[11px] text-[#c3c9b2] leading-relaxed">
+              Local static AST analysis active. 0 external network requests emitted.
+            </p>
+            <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-[#8d937e] border-t border-white/5">
+              <span>MODEL 4.2-LOCAL</span>
+              <span className="text-[#92d957]">99.8% READY</span>
+            </div>
           </div>
-          <p className="text-[11px] text-[#c3c9b2] leading-relaxed">
-            Local static AST analysis active. 0 external network requests emitted.
-          </p>
-          <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-[#8d937e] border-t border-white/5">
-            <span>MODEL 4.2-LOCAL</span>
-            <span className="text-[#92d957]">99.8% READY</span>
-          </div>
+
+          {/* Sidebar Sign Out Button */}
+          <button
+            onClick={handleSignOut}
+            className="w-full h-10 px-4 rounded-xl bg-[#1c211e] border border-white/10 text-[#8d937e] hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all flex items-center justify-center gap-2 text-xs font-mono uppercase tracking-wider cursor-pointer"
+            title="Sign Out of Sentinel Session"
+          >
+            <LogOut className="w-4 h-4 text-red-400" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
 
@@ -974,6 +1000,16 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <span className="text-xs font-mono font-semibold max-w-[90px] truncate hidden md:inline text-[#dfe4de]">
                   {profileData.firstName || profileData.email.split('@')[0]}
                 </span>
+              </button>
+
+              {/* Sign Out Header Button */}
+              <button
+                onClick={handleSignOut}
+                className="h-9 px-3 rounded-xl bg-[#1c211e] border border-white/10 text-[#8d937e] hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all flex items-center gap-1.5 text-xs font-mono cursor-pointer shrink-0"
+                title="Sign Out of Sentinel Session"
+              >
+                <LogOut className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           </div>

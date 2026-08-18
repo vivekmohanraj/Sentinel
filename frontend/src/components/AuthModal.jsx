@@ -74,7 +74,7 @@ const phoneSchema = z
     }
   );
 
-const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
+const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
   const [isSignUp, setIsSignUp] = useState(initialSignUp);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -143,36 +143,35 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
   };
 
   const handleChange = (field, rawValue) => {
-    let value = rawValue;
+    let processedValue = rawValue || '';
 
     if (field === 'firstName' || field === 'lastName') {
-      value = value.replace(/^\s+/, '');
+      processedValue = processedValue.replace(/^\s+/, '');
     } else if (field === 'username') {
-      value = value.replace(/\s+/g, '');
+      processedValue = processedValue.replace(/\s+/g, '');
     } else if (field === 'phone') {
-      value = value.replace(/\D/g, '').slice(0, 10);
+      processedValue = processedValue.replace(/\D/g, '').slice(0, 10);
     }
 
-    const nextData = { ...formData, [field]: value };
+    const nextData = { ...formData, [field]: processedValue };
     setFormData(nextData);
 
-    const errorMsg = validateSingleField(field, value, nextData, isSignUp);
+    const errorMsg = validateSingleField(field, processedValue, nextData, isSignUp);
     setErrors((prev) => {
-      const next = { ...prev };
+      const updated = { ...prev };
       if (errorMsg) {
-        next[field] = errorMsg;
+        updated[field] = errorMsg;
       } else {
-        delete next[field];
+        delete updated[field];
       }
-
-      if (isSignUp && field === 'password' && nextData.confirmPassword) {
-        if (nextData.confirmPassword !== value) {
-          next.confirmPassword = 'Passwords do not match.';
+      if (field === 'password' && nextData.confirmPassword && isSignUp) {
+        if (nextData.confirmPassword !== processedValue) {
+          updated.confirmPassword = 'Passwords do not match.';
         } else {
-          delete next.confirmPassword;
+          delete updated.confirmPassword;
         }
       }
-      return next;
+      return updated;
     });
   };
 
@@ -180,7 +179,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     if (typeof formData[field] === 'string') {
       const trimmed = formData[field].trim();
       if (trimmed !== formData[field]) {
-        handleChange(field, trimmed);
+        handleFieldChange(field, trimmed);
       }
     }
   };
@@ -189,11 +188,12 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     const newErrors = {};
 
     if (!isSignUp) {
-      const idRes = z.string().trim().min(1, { message: 'Username or work email is required.' }).safeParse(formData.loginIdentifier);
-      if (!idRes.success) newErrors.loginIdentifier = idRes.error.issues[0].message;
-
-      const pwdRes = z.string().min(1, { message: 'Password is required.' }).safeParse(formData.password);
-      if (!pwdRes.success) newErrors.password = pwdRes.error.issues[0].message;
+      if (!formData.loginIdentifier.trim()) {
+        newErrors.loginIdentifier = 'Email address or username is required.';
+      }
+      if (!formData.password) {
+        newErrors.password = 'Password is required.';
+      }
     } else {
       const fnRes = firstNameSchema.safeParse(formData.firstName);
       if (!fnRes.success) newErrors.firstName = fnRes.error.issues[0].message;
@@ -231,7 +231,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
     try {
       await signIn.social({
         provider: provider,
-        callbackURL: window.location.origin,
+        callbackURL: `${window.location.origin}/?view=dashboard`,
       });
     } catch (err) {
       console.error(`${provider} OAuth authentication error:`, err);
@@ -255,7 +255,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
           password: formData.password,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           username: formData.username,
-          callbackURL: window.location.origin,
+          callbackURL: `${window.location.origin}/?view=dashboard`,
         });
 
         if (error) {
@@ -265,16 +265,17 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
         }
 
         setIsLoading(false);
-        setAuthSuccess('Account created successfully! Establishing workspace...');
+        setAuthSuccess('Account created successfully! Redirecting to command center...');
         setTimeout(() => {
           setAuthSuccess(null);
           onClose();
-        }, 1200);
+          if (onSuccess) onSuccess();
+        }, 800);
       } else {
         const { data, error } = await signIn.email({
           email: formData.loginIdentifier,
           password: formData.password,
-          callbackURL: window.location.origin,
+          callbackURL: `${window.location.origin}/?view=dashboard`,
         });
 
         if (error) {
@@ -288,7 +289,8 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false }) => {
         setTimeout(() => {
           setAuthSuccess(null);
           onClose();
-        }, 1200);
+          if (onSuccess) onSuccess();
+        }, 800);
       }
     } catch (err) {
       console.error('Authentication error:', err);

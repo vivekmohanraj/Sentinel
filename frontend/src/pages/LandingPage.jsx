@@ -12,6 +12,13 @@ const LandingPage = ({ onNavigateToDashboard }) => {
   const [analyzeState, setAnalyzeState] = useState('idle'); // 'idle', 'scanning', 'complete'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Auto-redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (session?.user && onNavigateToDashboard) {
+      onNavigateToDashboard();
+    }
+  }, [session, onNavigateToDashboard]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 20) {
@@ -171,12 +178,20 @@ const LandingPage = ({ onNavigateToDashboard }) => {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setActiveModal('signup')}
-              className="hidden md:flex bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-caps text-label-caps uppercase font-bold hover:opacity-90 transition-opacity btn-primary"
-            >
-              Get Started
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveModal('signin')}
+                className="hidden md:flex text-on-surface/80 hover:text-on-surface px-4 py-2 font-label-caps text-label-caps uppercase font-bold text-xs hover:bg-white/5 rounded-full transition-all cursor-pointer"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setActiveModal('signup')}
+                className="hidden md:flex bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-caps text-label-caps uppercase font-bold hover:opacity-90 transition-opacity btn-primary text-xs cursor-pointer"
+              >
+                Get Started
+              </button>
+            </div>
           )}
 
           <button
@@ -743,6 +758,10 @@ const LandingPage = ({ onNavigateToDashboard }) => {
         isOpen={activeModal === 'signin' || activeModal === 'signup'}
         initialSignUp={activeModal === 'signup'}
         onClose={() => setActiveModal(null)}
+        onSuccess={() => {
+          setActiveModal(null);
+          if (onNavigateToDashboard) onNavigateToDashboard();
+        }}
       />
     </div>
   );
