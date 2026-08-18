@@ -382,7 +382,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     if (!newOrgName) return;
     setIsCreatingOrg(true);
     try {
-      const created = await createOrganizationApi(newOrgName);
+      const created = await createOrganizationApi(newOrgName, profileData?.email);
       if (created) {
         const updatedOrgs = await fetchOrganizations();
         setOrgsList(updatedOrgs || [created]);
@@ -606,7 +606,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     setIsAddingRepo(true);
     try {
       const targetName = trimmedName || `${parsed.owner}/${parsed.repo}`;
-      const created = await addRepositoryApi(targetName, trimmedUrl, selectedProject || null);
+      const created = await addRepositoryApi(targetName, trimmedUrl, selectedProject || null, profileData?.email);
       if (created) {
         const updatedList = await fetchRepositories();
         setDbRepos(updatedList || [created]);
@@ -1856,13 +1856,14 @@ const Dashboard = ({ onNavigateToLanding }) => {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setSelectedUserDetail(null)}
-                    className="h-10 px-4 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-mono uppercase"
+                    className="h-10 px-4 rounded-xl bg-[#1c211e] border border-white/10 text-[#dfe4de] hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-mono uppercase cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4 text-[#b7f15b]" />
                     <span>Back to Directory</span>
                   </button>
-                  <span className="text-xs font-mono text-[#8d937e]">
-                    User Inspection Mode (RBAC Authorized)
+                  <span className="text-xs font-mono text-[#8d937e] flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#b7f15b]" />
+                    <span>User Inspection Mode (RBAC Authorized)</span>
                   </span>
                 </div>
 
@@ -1892,57 +1893,251 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         </span>
                       </div>
                       <p className="text-xs font-mono text-[#c3c9b2]">{selectedUserDetail.user.email}</p>
-                      <div className="flex items-center gap-2 pt-1 text-xs font-mono text-[#8d937e]">
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-mono text-[#8d937e]">
                         <ShieldCheck className="w-4 h-4 text-[#b7f15b]" />
-                        <span>Role: {selectedUserDetail.user.role}</span>
+                        <span>Role: <strong className="text-[#dfe4de]">{selectedUserDetail.user.role}</strong></span>
                         <span>•</span>
-                        <span>Org: {selectedUserDetail.organizationName}</span>
+                        <span>Primary Org: <strong className="text-[#b7f15b]">{selectedUserDetail.organizationName}</strong></span>
+                        <span>•</span>
+                        <span>Project: <strong className="text-[#dfe4de]">{selectedUserDetail.projectName}</strong></span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right space-y-1 font-mono text-xs text-[#8d937e]">
-                    <div>User ID: {selectedUserDetail.user.id}</div>
-                    <div>Joined: {new Date(selectedUserDetail.user.createdAt).toLocaleDateString()}</div>
+                  <div className="text-left md:text-right space-y-1 font-mono text-xs text-[#8d937e]">
+                    <div>User ID: <span className="text-[#dfe4de]">{selectedUserDetail.user.id}</span></div>
+                    <div>Joined: <span className="text-[#dfe4de]">{new Date(selectedUserDetail.user.createdAt).toLocaleDateString()}</span></div>
                   </div>
                 </div>
 
                 {/* Developer Metric Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
-                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Mined Commits</div>
-                    <div className="text-3xl font-bold text-[#dfe4de] font-mono">{selectedUserDetail.metrics.totalCommits}</div>
-                    <div className="text-[11px] font-mono text-[#8d937e]">Authored in Git Repos</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-[#b7f15b]" />
+                      <span>Orgs Owned</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#b7f15b] font-mono">
+                      {selectedUserDetail.metrics?.orgsCount ?? selectedUserDetail.organizations?.length ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Created / Managed</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
-                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Added</div>
-                    <div className="text-3xl font-bold text-[#b7f15b] font-mono">+{selectedUserDetail.metrics.totalLinesAdded}</div>
-                    <div className="text-[11px] font-mono text-[#8d937e]">Code volume added</div>
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase flex items-center gap-1">
+                      <FolderKanban className="w-3.5 h-3.5 text-[#b7f15b]" />
+                      <span>Projects</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#dfe4de] font-mono">
+                      {selectedUserDetail.metrics?.projectsCount ?? selectedUserDetail.projects?.length ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Managed Projects</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
-                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Lines Deleted</div>
-                    <div className="text-3xl font-bold text-amber-400 font-mono">-{selectedUserDetail.metrics.totalLinesDeleted}</div>
-                    <div className="text-[11px] font-mono text-[#8d937e]">Refactored / removed</div>
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase flex items-center gap-1">
+                      <FolderGit2 className="w-3.5 h-3.5 text-[#b7f15b]" />
+                      <span>Connected Repos</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#dfe4de] font-mono">
+                      {selectedUserDetail.metrics?.reposCount ?? selectedUserDetail.repositories?.length ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Linked Repositories</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-2">
-                    <div className="text-xs font-mono text-[#c3c9b2]/70 uppercase">Net Code Churn</div>
-                    <div className="text-3xl font-bold text-[#92d957] font-mono">{selectedUserDetail.metrics.netChurn}</div>
-                    <div className="text-[11px] font-mono text-[#8d937e]">Net line differential</div>
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase flex items-center gap-1">
+                      <GitCommit className="w-3.5 h-3.5 text-[#b7f15b]" />
+                      <span>Mined Commits</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#dfe4de] font-mono">
+                      {selectedUserDetail.metrics?.totalCommits ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Git author history</div>
                   </div>
+
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase">Lines Added</div>
+                    <div className="text-2xl font-bold text-[#b7f15b] font-mono">
+                      +{selectedUserDetail.metrics?.totalLinesAdded ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Code volume added</div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase">Lines Deleted</div>
+                    <div className="text-2xl font-bold text-amber-400 font-mono">
+                      -{selectedUserDetail.metrics?.totalLinesDeleted ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Refactored / removed</div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-1">
+                    <div className="text-[11px] font-mono text-[#c3c9b2]/70 uppercase">Net Code Churn</div>
+                    <div className="text-2xl font-bold text-[#92d957] font-mono">
+                      {selectedUserDetail.metrics?.netChurn ?? 0}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#8d937e]">Net differential</div>
+                  </div>
+                </div>
+
+                {/* Organizations & Projects Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Created Organizations */}
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-[#b7f15b]" />
+                        <h3 className="text-base font-semibold text-[#dfe4de]">Created Organizations</h3>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#b7f15b]/10 text-[#b7f15b] text-[11px] font-bold">
+                        {selectedUserDetail.organizations?.length || 0} Total
+                      </span>
+                    </div>
+
+                    {(!selectedUserDetail.organizations || selectedUserDetail.organizations.length === 0) ? (
+                      <div className="py-6 text-center text-[#8d937e] text-xs">
+                        No custom organizations created by this member yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {selectedUserDetail.organizations.map((org) => (
+                          <div key={org.id} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-[#dfe4de] text-sm">{org.name}</div>
+                              <div className="text-[11px] text-[#8d937e]">
+                                Created {org.created_at ? new Date(org.created_at).toLocaleDateString() : 'Recently'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className="px-2 py-1 rounded bg-white/5 text-[#c3c9b2]">
+                                {org.projects_count || 0} Projects
+                              </span>
+                              <span className="px-2 py-1 rounded bg-[#b7f15b]/10 text-[#b7f15b]">
+                                {org.repos_count || 0} Repos
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Created / Managed Projects */}
+                  <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-[#b7f15b]" />
+                        <h3 className="text-base font-semibold text-[#dfe4de]">Managed Projects</h3>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#b7f15b]/10 text-[#b7f15b] text-[11px] font-bold">
+                        {selectedUserDetail.projects?.length || 0} Total
+                      </span>
+                    </div>
+
+                    {(!selectedUserDetail.projects || selectedUserDetail.projects.length === 0) ? (
+                      <div className="py-6 text-center text-[#8d937e] text-xs">
+                        No custom projects created by this member yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {selectedUserDetail.projects.map((proj) => (
+                          <div key={proj.id} className="p-3.5 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-[#dfe4de] text-sm">{proj.name}</div>
+                              <div className="text-[11px] text-[#8d937e] truncate max-w-xs">
+                                Org: <span className="text-[#b7f15b]">{proj.org_name || 'Main Organization'}</span> • {proj.description || 'No description'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className="px-2 py-1 rounded bg-[#b7f15b]/10 text-[#b7f15b]">
+                                {proj.repos_count || 0} Repos
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Connected Repositories Section */}
+                <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4 font-mono text-xs">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <FolderGit2 className="w-4 h-4 text-[#b7f15b]" />
+                      <h3 className="text-base font-semibold text-[#dfe4de]">Connected Repositories</h3>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#b7f15b]/10 text-[#b7f15b] text-[11px] font-bold">
+                      {selectedUserDetail.repositories?.length || 0} Connected
+                    </span>
+                  </div>
+
+                  {(!selectedUserDetail.repositories || selectedUserDetail.repositories.length === 0) ? (
+                    <div className="py-6 text-center text-[#8d937e] text-xs">
+                      No repositories connected by this member yet.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/10 text-[#8d937e] uppercase text-[11px]">
+                            <th className="py-2.5 px-4">Repository</th>
+                            <th className="py-2.5 px-4">Project / Org</th>
+                            <th className="py-2.5 px-4">Git URL</th>
+                            <th className="py-2.5 px-4">Mined Commits</th>
+                            <th className="py-2.5 px-4">Last Mined</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
+                          {selectedUserDetail.repositories.map((repo) => (
+                            <tr key={repo.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="py-3 px-4 font-bold text-[#dfe4de]">
+                                <div className="flex items-center gap-2">
+                                  <FolderGit2 className="w-3.5 h-3.5 text-[#b7f15b]" />
+                                  <span>{repo.name}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="text-[#dfe4de]">{repo.project_name || 'Main Engineering'}</span>
+                                {repo.org_name && <span className="text-[#8d937e]"> ({repo.org_name})</span>}
+                              </td>
+                              <td className="py-3 px-4 text-[#8d937e] max-w-xs truncate">
+                                <a
+                                  href={repo.git_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#b7f15b] hover:underline flex items-center gap-1"
+                                >
+                                  <span>{repo.git_url}</span>
+                                  <ExternalLink className="w-3 h-3 shrink-0" />
+                                </a>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 rounded bg-[#b7f15b]/10 text-[#b7f15b] font-bold">
+                                  {repo.commits_count || 0} commits
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-[#8d937e] whitespace-nowrap">
+                                {repo.last_mined_at ? new Date(repo.last_mined_at).toLocaleDateString() : 'Active'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
 
                 {/* Profile Details & Account Settings */}
                 <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-                  <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
+                  <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3 font-mono">
                     Account Profile & Preferences
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs">
                     <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
                       <div className="text-[#8d937e] uppercase">Assigned Project</div>
-                      <div className="text-[#b7f15b] font-bold truncate">{selectedUserDetail.projectName || 'Sentinel Engine Infrastructure'}</div>
+                      <div className="text-[#b7f15b] font-bold truncate">{selectedUserDetail.projectName || 'Main Engineering'}</div>
                     </div>
                     <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-1">
                       <div className="text-[#8d937e] uppercase">Phone Number</div>
@@ -1961,9 +2156,14 @@ const Dashboard = ({ onNavigateToLanding }) => {
 
                 {/* Recent Developer Commits Table */}
                 <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-                  <h3 className="text-base font-semibold text-[#dfe4de] border-b border-white/10 pb-3">
-                    Recent Developer Commit Activity
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <h3 className="text-base font-semibold text-[#dfe4de] font-mono">
+                      Recent Developer Commit Activity
+                    </h3>
+                    <span className="text-xs font-mono text-[#8d937e]">
+                      {selectedUserDetail.recentCommits?.length || 0} commits recorded
+                    </span>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse font-mono text-xs">
                       <thead>
@@ -1976,7 +2176,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5 text-[#c3c9b2]">
-                        {selectedUserDetail.recentCommits.length === 0 ? (
+                        {(!selectedUserDetail.recentCommits || selectedUserDetail.recentCommits.length === 0) ? (
                           <tr>
                             <td colSpan="5" className="py-8 text-center text-[#8d937e]">
                               No commit activity records found for this developer.
@@ -3136,7 +3336,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   if (!newProjectName) return;
                   setIsCreatingProject(true);
                   try {
-                    const created = await createProjectApi(selectedOrg || null, newProjectName, newProjectDesc);
+                    const created = await createProjectApi(selectedOrg || null, newProjectName, newProjectDesc, profileData?.email);
                     if (created) {
                       const updated = await fetchProjects();
                       setProjectsList(updated || [created, ...projectsList]);

@@ -50,6 +50,16 @@ export const runMigrations = async () => {
       ALTER TABLE tbl_repository ALTER COLUMN organization_id DROP NOT NULL;
       ALTER TABLE tbl_repository ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES tbl_project(id) ON DELETE CASCADE;
 
+      -- Add creator attribution columns across organizations, projects, and repositories
+      ALTER TABLE tbl_organization ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
+      ALTER TABLE tbl_organization ADD COLUMN IF NOT EXISTS created_by_email VARCHAR(255);
+
+      ALTER TABLE tbl_project ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
+      ALTER TABLE tbl_project ADD COLUMN IF NOT EXISTS created_by_email VARCHAR(255);
+
+      ALTER TABLE tbl_repository ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
+      ALTER TABLE tbl_repository ADD COLUMN IF NOT EXISTS created_by_email VARCHAR(255);
+
       -- 4. Commits
       CREATE TABLE IF NOT EXISTS tbl_commit_record (
           hash VARCHAR(40) PRIMARY KEY,

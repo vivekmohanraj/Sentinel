@@ -216,13 +216,13 @@ export const fetchRepositories = async (projectId = '') => {
   }
 };
 
-export const addRepositoryApi = async (name, gitUrl, projectId = null) => {
+export const addRepositoryApi = async (name, gitUrl, projectId = null, creatorEmail = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ name, gitUrl, projectId })
+      body: JSON.stringify({ name, gitUrl, projectId, creatorEmail })
     });
     if (!res.ok) {
       let errorMsg = `HTTP error! status: ${res.status}`;
@@ -304,13 +304,13 @@ export const fetchOrganizations = async () => {
   }
 };
 
-export const createOrganizationApi = async (name) => {
+export const createOrganizationApi = async (name, creatorEmail = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/orgs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, creatorEmail })
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const result = await res.json();
@@ -353,13 +353,13 @@ export const fetchProjects = async () => {
   }
 };
 
-export const createProjectApi = async (orgId, name, description) => {
+export const createProjectApi = async (orgId, name, description, creatorEmail = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ orgId, name, description })
+      body: JSON.stringify({ orgId, name, description, creatorEmail })
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const result = await res.json();

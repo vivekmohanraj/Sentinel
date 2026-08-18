@@ -17,12 +17,14 @@ export const getProfile = async (req, res, next) => {
   try {
     let email = req.query.email;
     let userId = req.query.userId;
+    let sessionImage = null;
 
     try {
       const session = await auth.api.getSession({ headers: req.headers });
       if (session?.user) {
         email = session.user.email || email;
         userId = session.user.id || userId;
+        sessionImage = session.user.image || null;
       }
     } catch (err) {
       // Non-fatal if session evaluation is bypassed
@@ -45,8 +47,27 @@ export const getProfile = async (req, res, next) => {
       user = await updateUserProfile(targetEmail, {
         firstName: namePart,
         lastName: '',
-        email: targetEmail
+        email: targetEmail,
+        image: sessionImage
       });
+    }
+
+    // If user has no custom image in DB but session provides one, sync it
+    if (user && sessionImage && (!user.image || user.image.includes('ui-avatars.com'))) {
+      try {
+        user = await updateUserProfile(user.email, {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          image: sessionImage,
+          weeklyReports: user.weeklyReports,
+          githubSync: user.githubSync
+        });
+      } catch (syncErr) {
+        console.warn('[User Profile] Non-fatal image sync notice:', syncErr.message);
+      }
     }
 
     if (!user) {
@@ -85,7 +106,7 @@ export const getUserDetails = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, role, weeklyReports, githubSync } = req.body;
+    const { firstName, lastName, email, phone, role, image, weeklyReports, githubSync } = req.body;
     let targetEmail = email || req.query.email;
 
     try {
@@ -107,6 +128,7 @@ export const updateProfile = async (req, res, next) => {
       email: targetEmail,
       phone,
       role,
+      image,
       weeklyReports,
       githubSync
     });

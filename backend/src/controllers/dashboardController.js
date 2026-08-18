@@ -5,6 +5,7 @@ import {
   deleteRepository
 } from '../models/dashboardModel.js';
 import pool from '../config/db.js';
+import { auth } from '../auth.js';
 
 export const getSummary = async (req, res, next) => {
   try {
@@ -34,11 +35,29 @@ export const getRepos = async (req, res, next) => {
 
 export const addRepo = async (req, res, next) => {
   try {
-    const { name, gitUrl, projectId } = req.body;
+    const { name, gitUrl, projectId, creatorEmail } = req.body;
     if (!gitUrl && !name) {
       return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
-    const newRepo = await createRepository({ name: name || gitUrl, gitUrl: gitUrl || name, projectId });
+
+    let email = creatorEmail || req.query.email || null;
+    let userId = null;
+    try {
+      const session = await auth.api.getSession({ headers: req.headers });
+      if (session?.user) {
+        email = session.user.email || email;
+        userId = session.user.id || userId;
+      }
+    } catch (e) {}
+
+    const newRepo = await createRepository({
+      name: name || gitUrl,
+      gitUrl: gitUrl || name,
+      projectId,
+      createdByUserId: userId,
+      createdByEmail: email
+    });
+
     return res.status(201).json({
       success: true,
       data: newRepo

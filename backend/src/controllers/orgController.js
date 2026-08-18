@@ -6,6 +6,7 @@ import {
   createProject,
   deleteProject
 } from '../models/orgModel.js';
+import { auth } from '../auth.js';
 
 export const getOrgs = async (req, res, next) => {
   try {
@@ -21,11 +22,22 @@ export const getOrgs = async (req, res, next) => {
 
 export const addOrg = async (req, res, next) => {
   try {
-    const { name } = req.body;
+    const { name, creatorEmail } = req.body;
     if (!name) {
       return res.status(400).json({ success: false, error: 'Organization name is required.' });
     }
-    const newOrg = await createOrganization({ name });
+
+    let email = creatorEmail || req.query.email || null;
+    let userId = null;
+    try {
+      const session = await auth.api.getSession({ headers: req.headers });
+      if (session?.user) {
+        email = session.user.email || email;
+        userId = session.user.id || userId;
+      }
+    } catch (e) {}
+
+    const newOrg = await createOrganization({ name, createdByUserId: userId, createdByEmail: email });
     return res.status(201).json({
       success: true,
       data: newOrg
@@ -65,11 +77,28 @@ export const getProjects = async (req, res, next) => {
 
 export const addProject = async (req, res, next) => {
   try {
-    const { orgId, name, description } = req.body;
+    const { orgId, name, description, creatorEmail } = req.body;
     if (!name) {
       return res.status(400).json({ success: false, error: 'Project name is required.' });
     }
-    const newProject = await createProject({ orgId, name, description });
+
+    let email = creatorEmail || req.query.email || null;
+    let userId = null;
+    try {
+      const session = await auth.api.getSession({ headers: req.headers });
+      if (session?.user) {
+        email = session.user.email || email;
+        userId = session.user.id || userId;
+      }
+    } catch (e) {}
+
+    const newProject = await createProject({
+      orgId,
+      name,
+      description,
+      createdByUserId: userId,
+      createdByEmail: email
+    });
     return res.status(201).json({
       success: true,
       data: newProject

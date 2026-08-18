@@ -87,35 +87,70 @@ export const getUserDetailedProfile = async (targetUserId) => {
   const user = await getUserById(targetUserId);
   if (!user) return null;
 
-  // 1. Organization Name (Strictly from DB)
-  let orgName = 'Unassigned Organization';
-  if (user.organizationId) {
-    const orgRes = await pool.query(`SELECT name FROM tbl_organization WHERE id = $1`, [user.organizationId]);
-    if (orgRes.rows.length > 0) {
-      orgName = orgRes.rows[0].name;
-    }
-  }
+  // 1. Query Organizations Created By or Associated With this User
+  const orgsRes = await pool.query(
+    `SELECT o.id, o.name, o.created_by_user_id, o.created_by_email, o.created_at,
+            COUNT(DISTINCT p.id)::int as projects_count,
+            COUNT(DISTINCT r.id)::int as repos_count
+     FROM tbl_organization o
+     LEFT JOIN tbl_project p ON p.organization_id = o.id
+     LEFT JOIN tbl_repository r ON r.organization_id = o.id OR r.project_id = p.id
+     WHERE o.created_by_user_id = $1 
+        OR LOWER(o.created_by_email) = LOWER($2)
+        OR ($3::uuid IS NOT NULL AND o.id = $3)
+     GROUP BY o.id, o.name, o.created_by_user_id, o.created_by_email, o.created_at
+     ORDER BY o.created_at DESC`,
+    [user.id, user.email, user.organizationId]
+  );
+  const organizations = orgsRes.rows || [];
 
-  // 2. Project Name (Strictly from DB)
-  let projectName = 'Unassigned Project';
-  if (user.organizationId) {
-    const projRes = await pool.query(
-      `SELECT name FROM tbl_project WHERE organization_id = $1 LIMIT 1`,
-      [user.organizationId]
-    );
-    if (projRes.rows.length > 0) {
-      projectName = projRes.rows[0].name;
-    }
-  }
+  // 2. Query Projects Created By or Associated With this User
+  const projectsRes = await pool.query(
+    `SELECT p.id, p.organization_id, p.name, p.description, p.created_by_user_id, p.created_by_email, p.created_at,
+            o.name as org_name,
+            COUNT(DISTINCT r.id)::int as repos_count
+     FROM tbl_project p
+     LEFT JOIN tbl_organization o ON p.organization_id = o.id
+     LEFT JOIN tbl_repository r ON r.project_id = p.id
+     WHERE p.created_by_user_id = $1 
+        OR LOWER(p.created_by_email) = LOWER($2)
+        OR ($3::uuid IS NOT NULL AND p.organization_id = $3)
+     GROUP BY p.id, p.organization_id, p.name, p.description, p.created_by_user_id, p.created_by_email, p.created_at, o.name
+     ORDER BY p.created_at DESC`,
+    [user.id, user.email, user.organizationId]
+  );
+  const projects = projectsRes.rows || [];
 
-  // 3. Developer Commit History & Activity Metrics (Strictly matching author_email in tbl_commit_record)
+  // 3. Query Repositories Created By, Connected, or Assigned to this User
+  const reposRes = await pool.query(
+    `SELECT r.id, r.name, r.git_url, r.project_id, r.organization_id, r.created_by_user_id, r.created_by_email, r.created_at, r.last_mined_at,
+            p.name as project_name, o.name as org_name,
+            COUNT(DISTINCT c.hash)::int as commits_count
+     FROM tbl_repository r
+     LEFT JOIN tbl_project p ON r.project_id = p.id
+     LEFT JOIN tbl_organization o ON r.organization_id = o.id OR p.organization_id = o.id
+     LEFT JOIN tbl_commit_record c ON c.repository_id = r.id
+     WHERE r.created_by_user_id = $1 
+        OR LOWER(r.created_by_email) = LOWER($2)
+        OR ($3::uuid IS NOT NULL AND r.organization_id = $3)
+     GROUP BY r.id, r.name, r.git_url, r.project_id, r.organization_id, r.created_by_user_id, r.created_by_email, r.created_at, r.last_mined_at, p.name, o.name
+     ORDER BY r.created_at DESC`,
+    [user.id, user.email, user.organizationId]
+  );
+  const repositories = reposRes.rows || [];
+
+  const orgName = organizations.length > 0 ? organizations[0].name : (user.organizationId ? 'Assigned Organization' : 'Unassigned Organization');
+  const projectName = projects.length > 0 ? projects[0].name : 'Unassigned Project';
+
+  // 4. Developer Commit History & Activity Metrics
   const commitsRes = await pool.query(
     `SELECT c.hash, c.repository_id, c.author_email, c.message, c.lines_added, c.lines_deleted, c.timestamp, r.name as repo_name
      FROM tbl_commit_record c
      LEFT JOIN tbl_repository r ON c.repository_id = r.id
-     WHERE LOWER(c.author_email) = LOWER($1)
+     WHERE LOWER(c.author_email) = LOWER($1) 
+        OR LOWER(c.author_email) LIKE LOWER($2)
      ORDER BY c.timestamp DESC`,
-    [user.email]
+    [user.email, `%${user.email.split('@')[0]}%`]
   );
 
   const commits = commitsRes.rows || [];
@@ -128,11 +163,17 @@ export const getUserDetailedProfile = async (targetUserId) => {
     user,
     organizationName: orgName,
     projectName: projectName,
+    organizations,
+    projects,
+    repositories,
     metrics: {
       totalCommits,
       totalLinesAdded,
       totalLinesDeleted,
-      netChurn
+      netChurn,
+      orgsCount: organizations.length,
+      projectsCount: projects.length,
+      reposCount: repositories.length
     },
     recentCommits: commits
   };

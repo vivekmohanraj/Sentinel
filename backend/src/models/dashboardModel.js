@@ -409,7 +409,7 @@ export const initializeDefaultRepository = async () => {
 
 export const getAllRepositories = async (projectId = null) => {
   let query = `
-    SELECT r.id, r.name, r.git_url, r.project_id, r.created_at, r.last_mined_at, p.name as project_name
+    SELECT r.id, r.name, r.git_url, r.project_id, r.created_by_user_id, r.created_by_email, r.created_at, r.last_mined_at, p.name as project_name
     FROM tbl_repository r
     LEFT JOIN tbl_project p ON r.project_id = p.id
   `;
@@ -423,7 +423,7 @@ export const getAllRepositories = async (projectId = null) => {
   return result.rows;
 };
 
-export const createRepository = async ({ name, gitUrl, projectId }) => {
+export const createRepository = async ({ name, gitUrl, projectId, createdByUserId = null, createdByEmail = null }) => {
   const trimmedName = (name || '').trim();
   const trimmedUrl = (gitUrl || '').trim();
 
@@ -440,7 +440,7 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
 
   // Deduplication check: check if repository already exists by name or git URL
   const existingRes = await pool.query(
-    `SELECT id, project_id, name, git_url, created_at 
+    `SELECT id, project_id, name, git_url, created_by_user_id, created_by_email, created_at 
      FROM tbl_repository 
      WHERE LOWER(name) = LOWER($1) 
         OR LOWER(name) = LOWER($2)
@@ -459,12 +459,15 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
       let orgRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
       let orgId = orgRes.rows[0]?.id;
       if (!orgId) {
-        const newOrg = await pool.query(`INSERT INTO tbl_organization (name) VALUES ('Engineering Workspace') RETURNING id`);
+        const newOrg = await pool.query(
+          `INSERT INTO tbl_organization (name, created_by_user_id, created_by_email) VALUES ('Engineering Workspace', $1, $2) RETURNING id`,
+          [createdByUserId, createdByEmail]
+        );
         orgId = newOrg.rows[0].id;
       }
       const newProj = await pool.query(
-        `INSERT INTO tbl_project (organization_id, name, description) VALUES ($1, 'Main Engineering', 'Default Engineering Workspace') RETURNING id`,
-        [orgId]
+        `INSERT INTO tbl_project (organization_id, name, description, created_by_user_id, created_by_email) VALUES ($1, 'Main Engineering', 'Default Engineering Workspace', $2, $3) RETURNING id`,
+        [orgId, createdByUserId, createdByEmail]
       );
       targetProjId = newProj.rows[0].id;
     }
@@ -476,10 +479,12 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
       `UPDATE tbl_repository 
        SET project_id = COALESCE($1, project_id), 
            name = $2, 
-           git_url = COALESCE(NULLIF($3, ''), git_url) 
-       WHERE id = $4 
-       RETURNING id, project_id, name, git_url, created_at`,
-      [targetProjId, finalName, finalUrl, existing.id]
+           git_url = COALESCE(NULLIF($3, ''), git_url),
+           created_by_user_id = COALESCE(created_by_user_id, $4),
+           created_by_email = COALESCE(created_by_email, $5)
+       WHERE id = $6 
+       RETURNING id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
+      [targetProjId, finalName, finalUrl, createdByUserId, createdByEmail, existing.id]
     );
     const updatedRepo = updateRes.rows[0];
     await mineRepositoryData(updatedRepo.id, updatedRepo.name, updatedRepo.git_url);
@@ -487,10 +492,10 @@ export const createRepository = async ({ name, gitUrl, projectId }) => {
   }
 
   const result = await pool.query(
-    `INSERT INTO tbl_repository (project_id, name, git_url)
-     VALUES ($1, $2, $3)
-     RETURNING id, project_id, name, git_url, created_at`,
-    [targetProjId, finalName, finalUrl]
+    `INSERT INTO tbl_repository (project_id, name, git_url, created_by_user_id, created_by_email)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
+    [targetProjId, finalName, finalUrl, createdByUserId, createdByEmail]
   );
   const newRepo = result.rows[0];
   if (newRepo) {
