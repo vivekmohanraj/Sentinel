@@ -409,9 +409,21 @@ export const initializeDefaultRepository = async () => {
 
 export const getAllRepositories = async (projectId = null) => {
   let query = `
-    SELECT r.id, r.name, r.git_url, r.project_id, r.created_by_user_id, r.created_by_email, r.created_at, r.last_mined_at, p.name as project_name
+    SELECT 
+      r.id, 
+      r.name, 
+      r.git_url, 
+      COALESCE(r.organization_id, p.organization_id) as organization_id,
+      r.project_id, 
+      r.created_by_user_id, 
+      r.created_by_email, 
+      r.created_at, 
+      r.last_mined_at, 
+      p.name as project_name,
+      o.name as organization_name
     FROM tbl_repository r
     LEFT JOIN tbl_project p ON r.project_id = p.id
+    LEFT JOIN tbl_organization o ON COALESCE(r.organization_id, p.organization_id) = o.id
   `;
   const params = [];
   if (projectId) {
@@ -423,7 +435,7 @@ export const getAllRepositories = async (projectId = null) => {
   return result.rows;
 };
 
-export const createRepository = async ({ name, gitUrl, projectId, organizationId, createdByUserId, createdByEmail }) => {
+export const createRepository = async ({ name, gitUrl, projectId, organizationId, projectName, newProjectName, createdByUserId, createdByEmail }) => {
   // Validate GitHub URL format and public API reachability
   const valResult = await validateGitHubRepository(gitUrl || name);
   if (!valResult.isValid) {
@@ -451,14 +463,31 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
   let targetOrgId = organizationId || null;
   let targetProjId = projectId || null;
 
-  if (targetProjId) {
-    if (!targetOrgId) {
-      const pRes = await pool.query(`SELECT organization_id FROM tbl_project WHERE id = $1`, [targetProjId]);
-      if (pRes.rows.length > 0 && pRes.rows[0].organization_id) {
-        targetOrgId = pRes.rows[0].organization_id;
-      }
+  const finalProjName = (projectName || newProjectName || '').trim();
+  if (finalProjName && !targetProjId) {
+    let projectOrgId = targetOrgId;
+    if (!projectOrgId) {
+      const orgsRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
+      projectOrgId = orgsRes.rows[0]?.id || null;
     }
-  } else if (targetOrgId) {
+    if (projectOrgId) {
+      const newProjRes = await pool.query(
+        `INSERT INTO tbl_project (organization_id, name, created_by_user_id, created_by_email)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
+        [projectOrgId, finalProjName, createdByUserId, createdByEmail]
+      );
+      targetProjId = newProjRes.rows[0].id;
+      targetOrgId = projectOrgId;
+    }
+  }
+
+  if (targetProjId && !targetOrgId) {
+    const pRes = await pool.query(`SELECT organization_id FROM tbl_project WHERE id = $1`, [targetProjId]);
+    if (pRes.rows.length > 0 && pRes.rows[0].organization_id) {
+      targetOrgId = pRes.rows[0].organization_id;
+    }
+  } else if (targetOrgId && !targetProjId) {
     const projRes = await pool.query(
       `SELECT id FROM tbl_project WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1`,
       [targetOrgId]
@@ -468,6 +497,7 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
     }
   }
 
+  let repoRecord = null;
   if (existingRes.rows.length > 0) {
     const existing = existingRes.rows[0];
     const updateRes = await pool.query(
@@ -482,22 +512,30 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
        RETURNING id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
       [targetOrgId, targetProjId, finalName, finalUrl, createdByUserId, createdByEmail, existing.id]
     );
-    const updatedRepo = updateRes.rows[0];
-    await mineRepositoryData(updatedRepo.id, updatedRepo.name, updatedRepo.git_url);
-    return updatedRepo;
+    repoRecord = updateRes.rows[0];
+  } else {
+    const result = await pool.query(
+      `INSERT INTO tbl_repository (organization_id, project_id, name, git_url, created_by_user_id, created_by_email)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
+      [targetOrgId, targetProjId, finalName, finalUrl, createdByUserId, createdByEmail]
+    );
+    repoRecord = result.rows[0];
   }
 
-  const result = await pool.query(
-    `INSERT INTO tbl_repository (organization_id, project_id, name, git_url, created_by_user_id, created_by_email)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, organization_id, project_id, name, git_url, created_by_user_id, created_by_email, created_at`,
-    [targetOrgId, targetProjId, finalName, finalUrl, createdByUserId, createdByEmail]
-  );
-  const newRepo = result.rows[0];
-  if (newRepo) {
-    await mineRepositoryData(newRepo.id, newRepo.name, newRepo.git_url);
+  if (repoRecord) {
+    await mineRepositoryData(repoRecord.id, repoRecord.name, repoRecord.git_url);
+    const details = await pool.query(
+      `SELECT r.id, r.name, r.git_url, COALESCE(r.organization_id, p.organization_id) as organization_id, r.project_id, r.created_by_user_id, r.created_by_email, r.created_at, p.name as project_name, o.name as organization_name
+       FROM tbl_repository r
+       LEFT JOIN tbl_project p ON r.project_id = p.id
+       LEFT JOIN tbl_organization o ON COALESCE(r.organization_id, p.organization_id) = o.id
+       WHERE r.id = $1`,
+      [repoRecord.id]
+    );
+    return details.rows[0] || repoRecord;
   }
-  return newRepo;
+  return repoRecord;
 };
 
 export const deleteRepository = async (repoId) => {

@@ -206,11 +206,13 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const [repoMsg, setRepoMsg] = useState(null);
   const [showAddRepoModal, setShowAddRepoModal] = useState(false);
 
-  // Add Repository Modal Extended State (Target Organization & Project + Quick Org creation)
+  // Add Repository Modal Extended State (Target Organization & Project + Quick Org/Project creation)
   const [addRepoOrgId, setAddRepoOrgId] = useState('');
   const [addRepoProjectId, setAddRepoProjectId] = useState('');
   const [addRepoNewOrgName, setAddRepoNewOrgName] = useState('');
   const [isCreatingNewOrgInModal, setIsCreatingNewOrgInModal] = useState(false);
+  const [addRepoNewProjectName, setAddRepoNewProjectName] = useState('');
+  const [isCreatingNewProjectInModal, setIsCreatingNewProjectInModal] = useState(false);
 
   // Project & Organization State
   const [orgsList, setOrgsList] = useState([]);
@@ -373,7 +375,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, isManager, profileData.email]);
 
-  // Fetch repositories from database
+  // Fetch Repositories from PostgreSQL on mount & activeTab changes
   useEffect(() => {
     let isMounted = true;
     const loadRepos = async () => {
@@ -383,12 +385,22 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         if (isMounted && list) {
           setDbRepos(list || []);
           if (list.length > 0) {
-            const hasSelectedInList = list.some(r => r.name === selectedRepo);
-            if (!hasSelectedInList || !selectedRepo) {
-              setSelectedRepo(list[0].name);
+            const currentSelected = selectedRepo;
+            const matched = list.find(r => r.name === currentSelected) || list[0];
+            setSelectedRepo(matched.name);
+            if (matched.organization_id) {
+              setSelectedOrg(matched.organization_id);
             }
+            if (matched.project_id) {
+              setSelectedProject(matched.project_id);
+            }
+            refreshAllDashboardData(matched.name);
           } else {
             setSelectedRepo('');
+            setDashboardData(null);
+            setHotspotsList([]);
+            setRiskPredictions([]);
+            setCommitsList([]);
           }
         }
       } catch (err) {
@@ -401,7 +413,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     return () => { isMounted = false; };
   }, [activeTab]);
 
-  // Fetch Organizations from PostgreSQL on mount
+  // Fetch Organizations from PostgreSQL on mount & activeTab changes
   useEffect(() => {
     let isMounted = true;
     const loadOrgs = async () => {
@@ -410,8 +422,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         if (isMounted && list) {
           setOrgsList(list || []);
           if (list.length > 0) {
-            const hasSelected = list.some(o => o.id === selectedOrg);
-            if (!hasSelected) setSelectedOrg(list[0].id);
+            setSelectedOrg((prev) => (list.some(o => o.id === prev) ? prev : list[0].id));
           } else {
             setSelectedOrg('');
           }
@@ -424,7 +435,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     return () => { isMounted = false; };
   }, [activeTab]);
 
-  // Fetch Projects from database on org change & tab changes
+  // Fetch Projects from database on mount & activeTab changes
   useEffect(() => {
     let isMounted = true;
     const loadProjects = async () => {
@@ -432,12 +443,6 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         const list = await fetchProjects();
         if (isMounted && list) {
           setProjectsList(list || []);
-          if (list.length > 0) {
-            const hasSelected = list.some(p => p.id === selectedProject);
-            if (!hasSelected) setSelectedProject(list[0].id);
-          } else {
-            setSelectedProject('');
-          }
         }
       } catch (err) {
         console.error('Failed to load projects:', err);
@@ -445,7 +450,44 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab, selectedOrg]);
+  }, [activeTab]);
+
+  const handleOrgChange = (newOrgId) => {
+    setSelectedOrg(newOrgId);
+    if (newOrgId) {
+      const orgProjects = projectsList.filter(p => p.organization_id === newOrgId);
+      if (orgProjects.length > 0) {
+        setSelectedProject(orgProjects[0].id);
+        const projRepos = dbRepos.filter(r => r.project_id === orgProjects[0].id || r.organization_id === newOrgId);
+        if (projRepos.length > 0) {
+          setSelectedRepo(projRepos[0].name);
+          refreshAllDashboardData(projRepos[0].name);
+        }
+      } else {
+        setSelectedProject('');
+        const orgRepos = dbRepos.filter(r => r.organization_id === newOrgId);
+        if (orgRepos.length > 0) {
+          setSelectedRepo(orgRepos[0].name);
+          refreshAllDashboardData(orgRepos[0].name);
+        }
+      }
+    }
+  };
+
+  const handleProjectChange = (newProjId) => {
+    setSelectedProject(newProjId);
+    if (newProjId) {
+      const proj = projectsList.find(p => p.id === newProjId);
+      if (proj?.organization_id && proj.organization_id !== selectedOrg) {
+        setSelectedOrg(proj.organization_id);
+      }
+      const projRepos = dbRepos.filter(r => r.project_id === newProjId);
+      if (projRepos.length > 0) {
+        setSelectedRepo(projRepos[0].name);
+        refreshAllDashboardData(projRepos[0].name);
+      }
+    }
+  };
 
   const handleCreateOrg = async (e) => {
     e.preventDefault();
@@ -508,18 +550,6 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       console.error('Failed to delete project:', err);
     }
   };
-
-  // Sync Project Dropdown selection when Repository selection changes
-  useEffect(() => {
-    if (selectedRepo && projectsList.length > 0) {
-      const matchedProj = projectsList.find(
-        (p) => p.name.toLowerCase() === selectedRepo.toLowerCase() || p.name.toLowerCase().includes(selectedRepo.toLowerCase())
-      );
-      if (matchedProj) {
-        setSelectedProject(matchedProj.id);
-      }
-    }
-  }, [selectedRepo, projectsList]);
 
   // Fetch Hotspots from database when Tech Debt tab opens
   useEffect(() => {
@@ -661,6 +691,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     setNewRepoName('');
     setNewRepoUrl('');
     setAddRepoNewOrgName('');
+    setAddRepoNewProjectName('');
     if (orgsList.length === 0) {
       setIsCreatingNewOrgInModal(true);
       setAddRepoOrgId('__new__');
@@ -669,6 +700,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       setAddRepoOrgId(selectedOrg || orgsList[0]?.id || '');
     }
     setAddRepoProjectId(selectedProject || '');
+    setIsCreatingNewProjectInModal(false);
     setShowAddRepoModal(true);
   };
 
@@ -702,39 +734,52 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         const createdOrg = await createOrganizationApi(trimmedOrgName, profileData?.email);
         if (createdOrg) {
           targetOrgId = createdOrg.id;
-          const updatedOrgs = await fetchOrganizations();
-          setOrgsList(updatedOrgs || [createdOrg]);
         }
       }
 
+      let targetProjId = addRepoProjectId && addRepoProjectId !== '__new__' ? addRepoProjectId : null;
+      let targetNewProjName = (isCreatingNewProjectInModal || addRepoProjectId === '__new__') ? addRepoNewProjectName.trim() : null;
+
       const targetName = trimmedName || `${parsed.owner}/${parsed.repo}`;
-      const targetProj = addRepoProjectId && addRepoProjectId !== '__auto__' ? addRepoProjectId : (selectedProject || null);
-      const created = await addRepositoryApi(targetName, trimmedUrl, targetProj, profileData?.email, targetOrgId || selectedOrg || null);
+      const created = await addRepositoryApi(
+        targetName, 
+        trimmedUrl, 
+        targetProjId, 
+        profileData?.email, 
+        targetOrgId || selectedOrg || null,
+        targetNewProjName
+      );
+
       if (created) {
-        const updatedList = await fetchRepositories();
-        setDbRepos(updatedList || [created]);
-        setSelectedRepo(created.name);
-
-        if (created.organization_id) {
-          setSelectedOrg(created.organization_id);
-        } else if (targetOrgId) {
-          setSelectedOrg(targetOrgId);
-        }
-
-        if (created.project_id) {
-          setSelectedProject(created.project_id);
-        }
-
-        const updatedProjects = await fetchProjects();
-        setProjectsList(updatedProjects || []);
         const updatedOrgs = await fetchOrganizations();
         setOrgsList(updatedOrgs || []);
 
-        setRepoMsg(`Repository "${created.name}" connected to organization and selected! Loading metrics...`);
+        const updatedProjects = await fetchProjects();
+        setProjectsList(updatedProjects || []);
+
+        const updatedList = await fetchRepositories();
+        setDbRepos(updatedList || [created]);
+
+        // Explicitly update active selections
+        const finalOrgId = created.organization_id || targetOrgId;
+        if (finalOrgId) {
+          setSelectedOrg(finalOrgId);
+        }
+        if (created.project_id) {
+          setSelectedProject(created.project_id);
+        }
+        setSelectedRepo(created.name);
+
+        const orgNameDisplay = updatedOrgs?.find(o => o.id === finalOrgId)?.name || created.organization_name || '';
+        const projNameDisplay = updatedProjects?.find(p => p.id === created.project_id)?.name || created.project_name || '';
+
+        setRepoMsg(`Repository "${created.name}" connected${orgNameDisplay ? ` to org "${orgNameDisplay}"` : ''}${projNameDisplay ? ` (project: ${projNameDisplay})` : ''} and selected! Loading metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
         setAddRepoNewOrgName('');
+        setAddRepoNewProjectName('');
         setIsCreatingNewOrgInModal(false);
+        setIsCreatingNewProjectInModal(false);
         setAddRepoError(null);
         setShowAddRepoModal(false);
 
@@ -1101,7 +1146,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 <div className="relative">
                   <select
                     value={selectedOrg}
-                    onChange={(e) => setSelectedOrg(e.target.value)}
+                    onChange={(e) => handleOrgChange(e.target.value)}
                     className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
                   >
                     {orgsList.length === 0 && <option value="">org: (No Organizations)</option>}
@@ -1127,13 +1172,17 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 <div className="relative">
                   <select
                     value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
+                    onChange={(e) => handleProjectChange(e.target.value)}
                     className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
                   >
-                    {projectsList.length === 0 && <option value="">proj: (No Projects)</option>}
-                    {projectsList.map((p) => (
-                      <option key={p.id} value={p.id}>proj: {p.name}</option>
-                    ))}
+                    {projectsList.filter((p) => !selectedOrg || p.organization_id === selectedOrg).length === 0 && (
+                      <option value="">proj: (No Projects)</option>
+                    )}
+                    {projectsList
+                      .filter((p) => !selectedOrg || p.organization_id === selectedOrg)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>proj: {p.name}</option>
+                      ))}
                   </select>
                   <FolderKanban className="w-3.5 h-3.5 text-[#8d937e] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -2908,30 +2957,74 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                     </div>
 
                     {/* TARGET PROJECT SELECTION (OPTIONAL) */}
-                    {!isCreatingNewOrgInModal && (
-                      <div className="space-y-1.5">
+                    {/* TARGET PROJECT SELECTION & CREATION */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
                         <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
                           Target Project (Optional)
                         </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreatingNewProjectInModal(!isCreatingNewProjectInModal);
+                            setAddRepoError(null);
+                          }}
+                          className="text-[11px] font-mono text-[#b7f15b] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          {isCreatingNewProjectInModal ? (
+                            <span>Choose Existing Project</span>
+                          ) : (
+                            <>
+                              <Plus className="w-3 h-3" />
+                              <span>+ New Project</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {isCreatingNewProjectInModal ? (
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={addRepoNewProjectName}
+                            onChange={(e) => {
+                              setAddRepoNewProjectName(e.target.value);
+                              setAddRepoError(null);
+                            }}
+                            placeholder="Enter new project name (e.g. Core Engine)"
+                            className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/40 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                          />
+                          <p className="text-[10px] font-mono text-[#8d937e]">
+                            Creates a new project under the selected organization.
+                          </p>
+                        </div>
+                      ) : (
                         <div className="relative">
                           <select
                             value={addRepoProjectId}
-                            onChange={(e) => setAddRepoProjectId(e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value === '__new__') {
+                                setIsCreatingNewProjectInModal(true);
+                              } else {
+                                setAddRepoProjectId(e.target.value);
+                              }
+                            }}
                             className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
                           >
                             <option value="">Auto-Assign / Default Project</option>
                             {projectsList
-                              .filter((p) => !addRepoOrgId || p.organization_id === addRepoOrgId)
+                              .filter((p) => !addRepoOrgId || addRepoOrgId === '__new__' || p.organization_id === addRepoOrgId)
                               .map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name}
                                 </option>
                               ))}
+                            <option value="__new__">+ Create New Project...</option>
                           </select>
                           <FolderKanban className="w-4 h-4 text-[#8d937e] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     <div className="pt-3 flex justify-end gap-3">
                       <button
@@ -3548,10 +3641,14 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                   if (!newProjectName) return;
                   setIsCreatingProject(true);
                   try {
-                    const created = await createProjectApi(selectedOrg || null, newProjectName, newProjectDesc, profileData?.email);
+                    const targetOrg = selectedOrg || (orgsList.length > 0 ? orgsList[0].id : null);
+                    const created = await createProjectApi(targetOrg, newProjectName, newProjectDesc, profileData?.email);
                     if (created) {
                       const updated = await fetchProjects();
                       setProjectsList(updated || [created, ...projectsList]);
+                      if (created.organization_id) {
+                        setSelectedOrg(created.organization_id);
+                      }
                       setSelectedProject(created.id);
                       setNewProjectName('');
                       setNewProjectDesc('');
@@ -3565,6 +3662,26 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 }}
                 className="space-y-4"
               >
+                {orgsList.length > 0 && (
+                  <div>
+                    <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-2">Target Organization</label>
+                    <div className="relative">
+                      <select
+                        value={selectedOrg}
+                        onChange={(e) => setSelectedOrg(e.target.value)}
+                        className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
+                      >
+                        {orgsList.map((org) => (
+                          <option key={org.id} value={org.id}>
+                            {org.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Building2 className="w-4 h-4 text-[#8d937e] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block font-mono text-xs text-[#c3c9b2] uppercase mb-2">Project Name</label>
                   <input

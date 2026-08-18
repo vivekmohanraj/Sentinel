@@ -35,7 +35,7 @@ export const getRepos = async (req, res, next) => {
 
 export const addRepo = async (req, res, next) => {
   try {
-    const { name, gitUrl, projectId, organizationId, orgId, creatorEmail } = req.body;
+    const { name, gitUrl, projectId, organizationId, orgId, projectName, newProjectName, creatorEmail } = req.body;
     if (!gitUrl && !name) {
       return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
@@ -55,6 +55,7 @@ export const addRepo = async (req, res, next) => {
       gitUrl: gitUrl || name,
       projectId,
       organizationId: organizationId || orgId || null,
+      projectName: projectName || newProjectName || null,
       createdByUserId: userId,
       createdByEmail: email
     });

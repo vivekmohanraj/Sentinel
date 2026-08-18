@@ -216,13 +216,13 @@ export const fetchRepositories = async (projectId = '') => {
   }
 };
 
-export const addRepositoryApi = async (name, gitUrl, projectId = null, creatorEmail = null, organizationId = null) => {
+export const addRepositoryApi = async (name, gitUrl, projectId = null, creatorEmail = null, organizationId = null, projectName = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ name, gitUrl, projectId, creatorEmail, organizationId })
+      body: JSON.stringify({ name, gitUrl, projectId, creatorEmail, organizationId, projectName })
     });
     if (!res.ok) {
       let errorMsg = `HTTP error! status: ${res.status}`;
