@@ -165,53 +165,9 @@ export const mineRepositoryData = async (repoId, repoName, gitUrl = null) => {
   );
 };
 
-// Seed and sync default repository data on initialization
+// Default repository initialization removed (no fake Sentinel seeding)
 export const initializeDefaultRepository = async () => {
-  try {
-    // 1. Ensure Default Organization exists
-    let orgRes = await pool.query(`SELECT id FROM tbl_organization WHERE name = 'Sentinel Core Org' LIMIT 1`);
-    let orgId = orgRes.rows[0]?.id;
-    if (!orgId) {
-      const newOrg = await pool.query(
-        `INSERT INTO tbl_organization (name) VALUES ('Sentinel Core Org') RETURNING id`
-      );
-      orgId = newOrg.rows[0].id;
-    }
-
-    // 2. Ensure Default Project exists
-    let projRes = await pool.query(`SELECT id FROM tbl_project WHERE name = 'Sentinel Core' LIMIT 1`);
-    let projId = projRes.rows[0]?.id;
-    if (!projId) {
-      const newProj = await pool.query(
-        `INSERT INTO tbl_project (organization_id, name, description)
-         VALUES ($1, 'Sentinel Core', 'Production Software Engineering Intelligence Platform')
-         RETURNING id`,
-        [orgId]
-      );
-      projId = newProj.rows[0].id;
-    }
-
-    // 3. Ensure Default Repository exists
-    let repoRes = await pool.query(`SELECT id FROM tbl_repository WHERE name = 'Sentinel' LIMIT 1`);
-    let repoId = repoRes.rows[0]?.id;
-    if (!repoId) {
-      const newRepo = await pool.query(
-        `INSERT INTO tbl_repository (project_id, name, git_url)
-         VALUES ($1, 'Sentinel', 'https://github.com/vivekmohanraj/Sentinel')
-         RETURNING id`,
-        [projId]
-      );
-      repoId = newRepo.rows[0].id;
-    }
-
-    // 4. Run real mining for this repository
-    await mineRepositoryData(repoId, 'Sentinel', 'https://github.com/vivekmohanraj/Sentinel');
-    console.log(`[Repository Sync] Successfully indexed Sentinel repository (ID: ${repoId}) with live Git commits and AST module metrics.`);
-    return repoId;
-  } catch (err) {
-    console.error('[Repository Sync Error]:', err.message);
-    return null;
-  }
+  return null;
 };
 
 export const getAllRepositories = async (projectId = null) => {
@@ -231,16 +187,59 @@ export const getAllRepositories = async (projectId = null) => {
 };
 
 export const createRepository = async ({ name, gitUrl, projectId }) => {
+  const trimmedName = name.trim();
+  const trimmedUrl = (gitUrl || '').trim();
+
+  // Deduplication check: check if repository already exists by name or git URL
+  const existingRes = await pool.query(
+    `SELECT id, project_id, name, git_url, created_at 
+     FROM tbl_repository 
+     WHERE LOWER(name) = LOWER($1) OR (git_url = $2 AND git_url != '') 
+     LIMIT 1`,
+    [trimmedName, trimmedUrl]
+  );
+
   let targetProjId = projectId;
   if (!targetProjId) {
-    const projRes = await pool.query(`SELECT id FROM tbl_project LIMIT 1`);
-    targetProjId = projRes.rows[0]?.id || null;
+    const projRes = await pool.query(`SELECT id FROM tbl_project ORDER BY created_at ASC LIMIT 1`);
+    if (projRes.rows.length > 0) {
+      targetProjId = projRes.rows[0].id;
+    } else {
+      let orgRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
+      let orgId = orgRes.rows[0]?.id;
+      if (!orgId) {
+        const newOrg = await pool.query(`INSERT INTO tbl_organization (name) VALUES ('Engineering Workspace') RETURNING id`);
+        orgId = newOrg.rows[0].id;
+      }
+      const newProj = await pool.query(
+        `INSERT INTO tbl_project (organization_id, name, description) VALUES ($1, 'Main Engineering', 'Default Engineering Workspace') RETURNING id`,
+        [orgId]
+      );
+      targetProjId = newProj.rows[0].id;
+    }
   }
+
+  if (existingRes.rows.length > 0) {
+    const existing = existingRes.rows[0];
+    const updateRes = await pool.query(
+      `UPDATE tbl_repository 
+       SET project_id = COALESCE($1, project_id), 
+           name = $2, 
+           git_url = COALESCE(NULLIF($3, ''), git_url) 
+       WHERE id = $4 
+       RETURNING id, project_id, name, git_url, created_at`,
+      [targetProjId, trimmedName, trimmedUrl, existing.id]
+    );
+    const updatedRepo = updateRes.rows[0];
+    await mineRepositoryData(updatedRepo.id, updatedRepo.name, updatedRepo.git_url);
+    return updatedRepo;
+  }
+
   const result = await pool.query(
     `INSERT INTO tbl_repository (project_id, name, git_url)
      VALUES ($1, $2, $3)
      RETURNING id, project_id, name, git_url, created_at`,
-    [targetProjId, name, gitUrl || '']
+    [targetProjId, trimmedName, trimmedUrl]
   );
   const newRepo = result.rows[0];
   if (newRepo) {
@@ -260,10 +259,10 @@ export const getDashboardSummary = async (repoFilter = null) => {
   try {
     let repoObj = null;
 
-    if (repoFilter) {
+    if (repoFilter && repoFilter.trim()) {
       const repoRes = await pool.query(
         `SELECT id, name, git_url FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
-        [repoFilter]
+        [repoFilter.trim()]
       );
       if (repoRes.rows.length > 0) {
         repoObj = repoRes.rows[0];
@@ -271,24 +270,30 @@ export const getDashboardSummary = async (repoFilter = null) => {
     }
 
     if (!repoObj) {
-      const defaultRepoRes = await pool.query(`SELECT id, name, git_url FROM tbl_repository ORDER BY created_at ASC LIMIT 1`);
-      if (defaultRepoRes.rows.length > 0) {
-        repoObj = defaultRepoRes.rows[0];
-      } else {
-        const seededId = await initializeDefaultRepository();
-        if (seededId) {
-          const fetched = await pool.query(`SELECT id, name, git_url FROM tbl_repository WHERE id = $1`, [seededId]);
-          repoObj = fetched.rows[0] || null;
-        }
+      const latestRepoRes = await pool.query(`SELECT id, name, git_url FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
+      if (latestRepoRes.rows.length > 0) {
+        repoObj = latestRepoRes.rows[0];
       }
     }
 
-    if (repoObj) {
-      await mineRepositoryData(repoObj.id, repoObj.name, repoObj.git_url);
+    if (!repoObj) {
+      return {
+        repoName: '',
+        totalCommits: 0,
+        totalLinesAdded: 0,
+        totalLinesDeleted: 0,
+        avgComplexityScore: '0.0',
+        timeSeries: [],
+        complexityDistribution: [],
+        contributors: [],
+        modules: []
+      };
     }
 
-    const targetRepoName = repoObj ? repoObj.name : 'Sentinel';
-    const repoId = repoObj ? repoObj.id : null;
+    await mineRepositoryData(repoObj.id, repoObj.name, repoObj.git_url);
+
+    const targetRepoName = repoObj.name;
+    const repoId = repoObj.id;
 
     // 1. Fetch Module Metrics for this Repository
     let modulesQuery = `SELECT file_path, complexity_score, churn_rate, bug_frequency FROM tbl_module_metric`;

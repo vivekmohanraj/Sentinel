@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, ShieldAlert, UserCheck, Activity, AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
 import { fetchBusFactorMetricsApi } from '../lib/api';
 
-const BusFactorDrawer = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' }) => {
+const BusFactorDrawer = ({ isOpen, onClose, selectedRepo = '' }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 

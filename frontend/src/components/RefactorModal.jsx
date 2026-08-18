@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Code2, ArrowRight, Check, Copy, TrendingDown, Loader2 } from 'lucide-react';
 import { generateRefactoringSnippetApi } from '../lib/api';
 
-const RefactorModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-engine/mainEngine.js', complexityScore = 18.5 }) => {
+const RefactorModal = ({ isOpen, onClose, filePath = 'src/core/main.js', complexityScore = 18.5 }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);

@@ -2,13 +2,40 @@ import pool from '../config/db.js';
 
 export const scanBranchDiagnostics = async (req, res, next) => {
   try {
-    const { branchName = 'feature/local-precheck', repoName = 'sentinel/core-engine' } = req.body;
+    const { branchName = 'feature/local-precheck', repoName = '' } = req.body;
+
+    let targetRepoName = repoName;
+    let targetRepoId = null;
+
+    if (repoName) {
+      const repoRes = await pool.query(
+        `SELECT id, name FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
+        [repoName]
+      );
+      if (repoRes.rows.length > 0) {
+        targetRepoId = repoRes.rows[0].id;
+        targetRepoName = repoRes.rows[0].name;
+      }
+    } else {
+      const defaultRepoRes = await pool.query(
+        `SELECT id, name FROM tbl_repository ORDER BY created_at DESC LIMIT 1`
+      );
+      if (defaultRepoRes.rows.length > 0) {
+        targetRepoId = defaultRepoRes.rows[0].id;
+        targetRepoName = defaultRepoRes.rows[0].name;
+      }
+    }
 
     // 1. Query repository modules from PostgreSQL to compare branch diffs against DB baselines
-    const modRes = await pool.query(
-      `SELECT file_path, complexity_score, churn_rate FROM tbl_module_metric ORDER BY complexity_score DESC LIMIT 5`
-    );
+    let modQuery = `SELECT file_path, complexity_score, churn_rate FROM tbl_module_metric`;
+    let modParams = [];
+    if (targetRepoId) {
+      modQuery += ` WHERE repository_id = $1`;
+      modParams.push(targetRepoId);
+    }
+    modQuery += ` ORDER BY complexity_score DESC LIMIT 5`;
 
+    const modRes = await pool.query(modQuery, modParams);
     const modules = modRes.rows || [];
 
     // 2. Compute dynamic diff analysis relative to PostgreSQL baseline metrics

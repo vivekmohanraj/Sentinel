@@ -1,5 +1,5 @@
 import pool from '../config/db.js';
-import { initializeDefaultRepository, extractRealModuleMetrics } from './dashboardModel.js';
+import { extractRealModuleMetrics } from './dashboardModel.js';
 
 export const getHotspots = async (repoFilter = null) => {
   let query = `
@@ -9,20 +9,23 @@ export const getHotspots = async (repoFilter = null) => {
   `;
   const params = [];
 
-  if (repoFilter) {
+  if (repoFilter && repoFilter.trim()) {
     query += ` WHERE m.repository_id::text = $1 OR LOWER(r.name) = LOWER($1)`;
-    params.push(repoFilter);
+    params.push(repoFilter.trim());
   }
 
   query += ` ORDER BY m.complexity_score DESC, m.churn_rate DESC LIMIT 15`;
 
   const result = await pool.query(query, params);
 
-  // If table is empty, seed real workspace module complexity metrics
+  // If table is empty for this repository, attempt scan if repo exists
   if (result.rows.length === 0) {
-    await seedOrRescanMetrics(repoFilter);
-    const retryRes = await pool.query(query, params);
-    return retryRes.rows;
+    const scanned = await seedOrRescanMetrics(repoFilter);
+    if (scanned) {
+      const retryRes = await pool.query(query, params);
+      return retryRes.rows;
+    }
+    return [];
   }
 
   return result.rows;
@@ -31,10 +34,10 @@ export const getHotspots = async (repoFilter = null) => {
 export const seedOrRescanMetrics = async (repoFilter = null) => {
   let targetRepoId = null;
 
-  if (repoFilter) {
+  if (repoFilter && repoFilter.trim()) {
     const repoRes = await pool.query(
       `SELECT id, name FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`,
-      [repoFilter]
+      [repoFilter.trim()]
     );
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
@@ -42,11 +45,9 @@ export const seedOrRescanMetrics = async (repoFilter = null) => {
   }
 
   if (!targetRepoId) {
-    const repoRes = await pool.query(`SELECT id, name FROM tbl_repository LIMIT 1`);
+    const repoRes = await pool.query(`SELECT id, name FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
     if (repoRes.rows.length > 0) {
       targetRepoId = repoRes.rows[0].id;
-    } else {
-      targetRepoId = await initializeDefaultRepository();
     }
   }
 
@@ -61,7 +62,8 @@ export const seedOrRescanMetrics = async (repoFilter = null) => {
         [targetRepoId, mod.file_path, mod.complexity_score, mod.churn_rate, mod.bug_frequency]
       );
     }
+    return true;
   }
 
-  return true;
+  return false;
 };

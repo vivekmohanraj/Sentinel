@@ -34,11 +34,11 @@ export const getRepos = async (req, res, next) => {
 
 export const addRepo = async (req, res, next) => {
   try {
-    const { name, gitUrl } = req.body;
+    const { name, gitUrl, projectId } = req.body;
     if (!name || !gitUrl) {
       return res.status(400).json({ success: false, error: 'Repository name and Git URL are required.' });
     }
-    const newRepo = await createRepository({ name, gitUrl });
+    const newRepo = await createRepository({ name, gitUrl, projectId });
     return res.status(201).json({
       success: true,
       data: newRepo

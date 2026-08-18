@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Cpu, ArrowRight, TrendingUp, TrendingDown, Info, Loader2, ShieldAlert } from 'lucide-react';
 import { fetchAstExplanationApi } from '../lib/api';
 
-const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/sentinel/core-engine/mainEngine.js', riskScore = 84 }) => {
+const ShapExplainerModal = ({ isOpen, onClose, filePath = 'src/core/main.js', riskScore = 84 }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 

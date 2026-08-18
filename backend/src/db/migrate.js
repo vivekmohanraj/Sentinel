@@ -110,7 +110,26 @@ export const runMigrations = async () => {
       `, [userId]);
     }
 
-    console.log('[Database] Migrations applied successfully.');
+    // Cleanup fake Sentinel repository
+    await pool.query(`
+      DELETE FROM tbl_repository 
+      WHERE (LOWER(name) = 'sentinel' AND git_url = 'https://github.com/vivekmohanraj/Sentinel')
+         OR (LOWER(name) = 'sentinel/core-engine');
+    `);
+
+    // Deduplicate repositories with same name (keep newest)
+    await pool.query(`
+      DELETE FROM tbl_repository
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY created_at DESC) as rnum
+          FROM tbl_repository
+        ) t
+        WHERE t.rnum > 1
+      );
+    `);
+
+    console.log('[Database] Migrations and repository cleanup applied successfully.');
   } catch (err) {
     console.error('[Database] Migration error:', err.message);
   }

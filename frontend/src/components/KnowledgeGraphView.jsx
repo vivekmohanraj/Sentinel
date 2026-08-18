@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Network, ShieldAlert, Cpu, RefreshCw, Info, Database } from 'lucide-react';
 import { fetchKnowledgeGraphApi } from '../lib/api';
 
-const KnowledgeGraphView = ({ selectedRepo = 'sentinel/core-engine', onSelectRefactor }) => {
+const KnowledgeGraphView = ({ selectedRepo = '', onSelectRefactor }) => {
   const [graphData, setGraphData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);

@@ -52,8 +52,6 @@ app.get("/health", (req, res) => {
     res.status(200).json({ status: "Sentinel Backend & Database Operational", timestamp: new Date() });
 });
 
-import { initializeDefaultRepository } from "./models/dashboardModel.js";
-
 // Centralized error handling middleware
 app.use((err, req, res, next) => {
     console.error('[Server Error]:', err);
@@ -66,5 +64,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, async () => {
     console.log(`Sentinel backend running on port ${PORT}`);
     await runMigrations();
-    await initializeDefaultRepository();
 });

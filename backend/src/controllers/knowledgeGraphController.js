@@ -5,7 +5,7 @@ export const getKnowledgeGraphTopology = async (req, res, next) => {
     const { repoId, repoName, userEmail } = req.query;
 
     let targetRepoId = repoId;
-    let targetRepoName = repoName || 'sentinel/core-engine';
+    let targetRepoName = repoName || '';
 
     if (repoName && !targetRepoId) {
       const repoRes = await pool.query(
@@ -15,6 +15,16 @@ export const getKnowledgeGraphTopology = async (req, res, next) => {
       if (repoRes.rows.length > 0) {
         targetRepoId = repoRes.rows[0].id;
         targetRepoName = repoRes.rows[0].name;
+      }
+    }
+
+    if (!targetRepoId && !targetRepoName) {
+      const defaultRepoRes = await pool.query(
+        `SELECT id, name FROM tbl_repository ORDER BY created_at DESC LIMIT 1`
+      );
+      if (defaultRepoRes.rows.length > 0) {
+        targetRepoId = defaultRepoRes.rows[0].id;
+        targetRepoName = defaultRepoRes.rows[0].name;
       }
     }
 

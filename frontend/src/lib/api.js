@@ -216,13 +216,13 @@ export const fetchRepositories = async (projectId = '') => {
   }
 };
 
-export const addRepositoryApi = async (name, gitUrl) => {
+export const addRepositoryApi = async (name, gitUrl, projectId = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ name, gitUrl })
+      body: JSON.stringify({ name, gitUrl, projectId })
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const result = await res.json();

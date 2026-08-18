@@ -96,7 +96,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [selectedRepo, setSelectedRepo] = useState('sentinel/core-engine');
+  const [selectedRepo, setSelectedRepo] = useState('');
 
   // Modal States for Phase 2, 3 & 4 Extension Modules
   const [showPrScanModal, setShowPrScanModal] = useState(false);
@@ -295,20 +295,22 @@ const Dashboard = ({ onNavigateToLanding }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, isManager, profileData.email]);
 
-  // Fetch repositories from database filtered by selected project
+  // Fetch repositories from database
   useEffect(() => {
     let isMounted = true;
     const loadRepos = async () => {
       setIsLoadingRepos(true);
       try {
-        const list = await fetchRepositories(selectedProject);
+        const list = await fetchRepositories();
         if (isMounted && list) {
           setDbRepos(list || []);
           if (list.length > 0) {
             const hasSelectedInList = list.some(r => r.name === selectedRepo);
-            if (!hasSelectedInList) {
+            if (!hasSelectedInList || !selectedRepo) {
               setSelectedRepo(list[0].name);
             }
+          } else {
+            setSelectedRepo('');
           }
         }
       } catch (err) {
@@ -319,7 +321,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
     };
     loadRepos();
     return () => { isMounted = false; };
-  }, [activeTab, selectedProject]);
+  }, [activeTab]);
 
   // Fetch Organizations from PostgreSQL on mount
   useEffect(() => {
@@ -453,18 +455,23 @@ const Dashboard = ({ onNavigateToLanding }) => {
     setIsAddingRepo(true);
     setRepoMsg(null);
     try {
-      const created = await addRepositoryApi(newRepoName, newRepoUrl);
+      const created = await addRepositoryApi(newRepoName.trim(), newRepoUrl.trim(), selectedProject || null);
       if (created) {
         const updatedList = await fetchRepositories();
-        setDbRepos(updatedList || [created, ...dbRepos]);
+        setDbRepos(updatedList || [created]);
         setSelectedRepo(created.name);
+        if (created.project_id) {
+          setSelectedProject(created.project_id);
+        }
         setRepoMsg(`Repository ${created.name} linked and selected! Rescanning metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
         setShowAddRepoModal(false);
-        await rescanCodebaseApi(created.id);
-        const updatedHotspots = await fetchHotspotsApi(created.id);
+        await rescanCodebaseApi(created.name);
+        const updatedHotspots = await fetchHotspotsApi(created.name);
         if (updatedHotspots) setHotspotsList(updatedHotspots);
+        const summary = await fetchDashboardSummary(created.name);
+        if (summary) setDashboardData(summary);
         setTimeout(() => setRepoMsg(null), 5000);
       }
     } catch (err) {
@@ -477,7 +484,11 @@ const Dashboard = ({ onNavigateToLanding }) => {
   const handleDeleteRepo = async (repoId, repoName) => {
     try {
       await deleteRepositoryApi(repoId);
-      setDbRepos((prev) => prev.filter((r) => r.id !== repoId));
+      const remaining = dbRepos.filter((r) => r.id !== repoId);
+      setDbRepos(remaining);
+      if (selectedRepo === repoName) {
+        setSelectedRepo(remaining.length > 0 ? remaining[0].name : '');
+      }
       setRepoMsg(`Repository ${repoName} unlinked.`);
       setTimeout(() => setRepoMsg(null), 3000);
     } catch (err) {
@@ -847,7 +858,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                   onChange={(e) => setSelectedRepo(e.target.value)}
                   className="h-9 px-3 pr-8 rounded-xl bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] transition-colors cursor-pointer appearance-none"
                 >
-                  {dbRepos.length === 0 && <option value="sentinel/core-engine">repo: sentinel/core-engine</option>}
+                  {dbRepos.length === 0 && <option value="">repo: (No Connected Repositories)</option>}
                   {dbRepos.map((r) => (
                     <option key={r.id} value={r.name}>repo: {r.name}</option>
                   ))}
@@ -1776,7 +1787,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                                   {c.hash.substring(0, 8)}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-4 text-[#dfe4de]">{c.repo_name || 'sentinel/core-engine'}</td>
+                              <td className="py-3.5 px-4 text-[#dfe4de]">{c.repo_name || selectedRepo || 'Active Repo'}</td>
                               <td className="py-3.5 px-4 text-[#dfe4de] max-w-md truncate">{c.message}</td>
                               <td className="py-3.5 px-4">
                                 <span className="text-[#b7f15b] font-bold">+{c.lines_added || 0}</span> /{' '}
@@ -2420,7 +2431,7 @@ const Dashboard = ({ onNavigateToLanding }) => {
                           </div>
 
                           <button
-                            onClick={() => setShapModalData({ isOpen: true, filePath: (item.modules && item.modules[0]) || 'src/sentinel/core-engine/mainEngine.js', riskScore: item.score || 84 })}
+                            onClick={() => setShapModalData({ isOpen: true, filePath: (item.modules && item.modules[0]) || 'src/core/main.js', riskScore: item.score || 84 })}
                             className="px-3 py-1 rounded-lg bg-[#b7f15b]/10 hover:bg-[#b7f15b]/20 border border-[#b7f15b]/30 text-[#b7f15b] text-[11px] font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Cpu className="w-3.5 h-3.5 text-[#b7f15b]" />

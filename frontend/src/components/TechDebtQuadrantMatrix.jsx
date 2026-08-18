@@ -6,10 +6,10 @@ const TechDebtQuadrantMatrix = ({ hotspots = [], onSelectRefactor }) => {
 
   // Dynamically map database hotspots into the 4 Impact vs Effort Quadrants
   const rawList = hotspots && hotspots.length > 0 ? hotspots : [
-    { file_path: 'src/sentinel/core-engine/mainEngine.js', complexity_score: 18.5, churn_rate: 142, bug_frequency: 12 },
-    { file_path: 'src/sentinel/core-engine/connectionPool.js', complexity_score: 16.2, churn_rate: 98, bug_frequency: 8 },
-    { file_path: 'src/sentinel/core-engine/apiRouter.js', complexity_score: 12.4, churn_rate: 64, bug_frequency: 4 },
-    { file_path: 'src/sentinel/core-engine/cryptoUtil.js', complexity_score: 8.2, churn_rate: 22, bug_frequency: 1 }
+    { file_path: 'src/core/main.js', complexity_score: 18.5, churn_rate: 142, bug_frequency: 12 },
+    { file_path: 'src/db/connectionPool.js', complexity_score: 16.2, churn_rate: 98, bug_frequency: 8 },
+    { file_path: 'src/api/apiRouter.js', complexity_score: 12.4, churn_rate: 64, bug_frequency: 4 },
+    { file_path: 'src/utils/cryptoUtil.js', complexity_score: 8.2, churn_rate: 22, bug_frequency: 1 }
   ];
 
   const quadrantItems = rawList.map((h, idx) => {

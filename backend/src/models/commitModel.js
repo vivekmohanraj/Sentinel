@@ -1,18 +1,6 @@
 import pool from '../config/db.js';
-import { initializeDefaultRepository } from './dashboardModel.js';
 
 export const getCommits = async ({ search = '', repoFilter = '', limit = 50 } = {}) => {
-  // Check if tbl_commit_record has entries; if empty, ensure default repository is seeded
-  const countRes = await pool.query(`SELECT COUNT(*) FROM tbl_commit_record`);
-  if (parseInt(countRes.rows[0].count, 10) === 0) {
-    let repoRes = await pool.query(`SELECT id FROM tbl_repository LIMIT 1`);
-    let repoId = repoRes.rows.length > 0 ? repoRes.rows[0].id : null;
-
-    if (!repoId) {
-      repoId = await initializeDefaultRepository();
-    }
-  }
-
   let query = `
     SELECT c.hash, c.repository_id, c.author_email, c.message, c.lines_added, c.lines_deleted, c.timestamp, r.name as repo_name
     FROM tbl_commit_record c
@@ -26,9 +14,9 @@ export const getCommits = async ({ search = '', repoFilter = '', limit = 50 } = 
     params.push(`%${search}%`);
   }
 
-  if (repoFilter) {
+  if (repoFilter && repoFilter.trim()) {
     whereConditions.push(`(c.repository_id::text = $${params.length + 1} OR LOWER(r.name) = LOWER($${params.length + 1}))`);
-    params.push(repoFilter);
+    params.push(repoFilter.trim());
   }
 
   if (whereConditions.length > 0) {
@@ -45,11 +33,8 @@ export const getCommits = async ({ search = '', repoFilter = '', limit = 50 } = 
 export const createCommitRecord = async ({ hash, repositoryId, authorEmail, message, linesAdded = 0, linesDeleted = 0, timestamp }) => {
   let targetRepoId = repositoryId;
   if (!targetRepoId) {
-    const repoRes = await pool.query(`SELECT id FROM tbl_repository LIMIT 1`);
-    targetRepoId = repoRes.rows[0]?.id;
-    if (!targetRepoId) {
-      targetRepoId = await initializeDefaultRepository();
-    }
+    const repoRes = await pool.query(`SELECT id FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
+    targetRepoId = repoRes.rows[0]?.id || null;
   }
 
   const result = await pool.query(

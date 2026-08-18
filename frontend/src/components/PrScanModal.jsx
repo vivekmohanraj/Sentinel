@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { X, GitPullRequest, ShieldAlert, CheckCircle2, AlertTriangle, Cpu, Loader2, Play } from 'lucide-react';
 import { scanPullRequestApi } from '../lib/api';
 
-const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' }) => {
+const PrScanModal = ({ isOpen, onClose, selectedRepo = '' }) => {
   const [branchName, setBranchName] = useState('feature/decouple-auth-middleware');
   const [additions, setAdditions] = useState(240);
   const [deletions, setDeletions] = useState(45);
-  const [targetFile, setTargetFile] = useState('src/sentinel/core-engine/mainEngine.js');
+  const [targetFile, setTargetFile] = useState('src/core/main.js');
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -39,58 +39,68 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' })
         {/* Modal Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#181d1a]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b] border border-[#b7f15b]/30">
-              <GitPullRequest className="w-6 h-6 text-[#b7f15b]" />
+            <div className="p-2.5 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b]">
+              <GitPullRequest className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#dfe4de]">PR Pre-Merge Risk Scanner</h2>
-              <p className="text-xs font-mono text-[#c3c9b2]">Automated pre-merge AST risk simulation & co-change vulnerability audit</p>
+              <h2 className="text-lg font-bold text-[#dfe4de] flex items-center gap-2">
+                <span>Pull Request Automated Risk Scanner</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#b7f15b]/10 text-[#b7f15b] border border-[#b7f15b]/30">PRE-MERGE</span>
+              </h2>
+              <p className="text-xs font-mono text-[#c3c9b2]/70">
+                Run deterministic AST churn & co-change coupling pre-merge checks on candidate branches.
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-[#8d937e] hover:text-[#dfe4de] flex items-center justify-center transition-colors"
+            className="p-2 rounded-xl text-[#8d937e] hover:text-[#dfe4de] hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-          {/* Simulation Input Form */}
-          <form onSubmit={handleRunScan} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          {/* PR Simulator Form */}
+          <form onSubmit={handleRunScan} className="p-5 rounded-xl bg-[#141815] border border-white/5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Branch Name</label>
+                <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Branch / Ref Name</label>
                 <input
                   type="text"
                   value={branchName}
                   onChange={(e) => setBranchName(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                  placeholder="feature/branch-name"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Lines Added / Deleted</label>
-                <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Lines Added (+)</label>
                   <input
                     type="number"
                     value={additions}
                     onChange={(e) => setAdditions(e.target.value)}
-                    placeholder="+Add"
-                    className="w-1/2 h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#92d957] focus:outline-none focus:border-[#b7f15b]"
+                    className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b] focus:outline-none focus:border-[#b7f15b]"
+                    min="0"
                   />
+                </div>
+                <div>
+                  <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Lines Deleted (-)</label>
                   <input
                     type="number"
                     value={deletions}
                     onChange={(e) => setDeletions(e.target.value)}
-                    placeholder="-Del"
-                    className="w-1/2 h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#ffb4ab] focus:outline-none focus:border-[#b7f15b]"
+                    className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-amber-400 focus:outline-none focus:border-[#b7f15b]"
+                    min="0"
                   />
                 </div>
               </div>
+            </div>
 
+            <div>
               <div>
                 <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Target Module Path</label>
                 <select
@@ -98,10 +108,10 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' })
                   onChange={(e) => setTargetFile(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
                 >
-                  <option value="src/sentinel/core-engine/mainEngine.js">mainEngine.js (High Risk)</option>
-                  <option value="src/sentinel/core-engine/connectionPool.js">connectionPool.js (Warning)</option>
-                  <option value="src/sentinel/core-engine/apiRouter.js">apiRouter.js (Elevated)</option>
-                  <option value="src/sentinel/core-engine/cryptoUtil.js">cryptoUtil.js (Optimized)</option>
+                  <option value="src/core/main.js">main.js (Core Logic)</option>
+                  <option value="src/api/router.js">router.js (API Layer)</option>
+                  <option value="src/db/connection.js">connection.js (Database Pool)</option>
+                  <option value="src/utils/crypto.js">crypto.js (Utilities)</option>
                 </select>
               </div>
             </div>

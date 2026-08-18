@@ -12,19 +12,38 @@ export const simulatePullRequestScan = async (req, res, next) => {
     } = req.body;
 
     // 1. Fetch Repository Details
-    let repoName = 'sentinel/core-engine';
+    let repoName = '';
+    let repoId = null;
     if (repositoryId) {
       const repoRes = await pool.query(`SELECT id, name FROM tbl_repository WHERE id::text = $1 OR LOWER(name) = LOWER($1) LIMIT 1`, [repositoryId]);
       if (repoRes.rows.length > 0) {
         repoName = repoRes.rows[0].name;
+        repoId = repoRes.rows[0].id;
+      }
+    } else {
+      const defaultRepoRes = await pool.query(`SELECT id, name FROM tbl_repository ORDER BY created_at DESC LIMIT 1`);
+      if (defaultRepoRes.rows.length > 0) {
+        repoName = defaultRepoRes.rows[0].name;
+        repoId = defaultRepoRes.rows[0].id;
       }
     }
 
-    // Default target files if none supplied
-    const targetFiles = modifiedFiles.length > 0 ? modifiedFiles : [
-      'src/sentinel/core-engine/mainEngine.js',
-      'src/sentinel/core-engine/apiRouter.js'
-    ];
+    // Dynamic target files if none supplied
+    let targetFiles = modifiedFiles;
+    if (!targetFiles || targetFiles.length === 0) {
+      let filesQuery = `SELECT file_path FROM tbl_module_metric`;
+      let filesParams = [];
+      if (repoId) {
+        filesQuery += ` WHERE repository_id = $1`;
+        filesParams.push(repoId);
+      }
+      filesQuery += ` ORDER BY complexity_score DESC LIMIT 3`;
+      const dbFiles = await pool.query(filesQuery, filesParams);
+      targetFiles = dbFiles.rows.map(r => r.file_path);
+      if (targetFiles.length === 0) {
+        targetFiles = ['src/core/main.js', 'src/api/router.js'];
+      }
+    }
 
     // 2. Query module metrics from PostgreSQL for modified files
     const metricsRes = await pool.query(

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, GitBranch, ShieldCheck, CheckCircle2, AlertTriangle, Play, Loader2, Cpu } from 'lucide-react';
 import { runBranchDiagnosticsApi } from '../lib/api';
 
-const BranchDiagnosticsModal = ({ isOpen, onClose, selectedRepo = 'sentinel/core-engine' }) => {
+const BranchDiagnosticsModal = ({ isOpen, onClose, selectedRepo = '' }) => {
   const [branchName, setBranchName] = useState('feature/local-precheck');
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState(null);
