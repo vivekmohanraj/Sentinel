@@ -227,6 +227,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [busFactorMetrics, setBusFactorMetrics] = useState(null);
 
   // Notifications & Alert Center State
   const [notificationsList, setNotificationsList] = useState([]);
@@ -656,11 +657,12 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     if (!targetRepo) return;
     setIsSyncingData(true);
     try {
-      const [summary, hotspots, risk, commits] = await Promise.allSettled([
+      const [summary, hotspots, risk, commits, busFactor] = await Promise.allSettled([
         fetchDashboardSummary(targetRepo),
         fetchHotspotsApi(targetRepo),
         fetchRiskRadarApi(targetRepo),
-        fetchCommitsApi('', targetRepo)
+        fetchCommitsApi('', targetRepo),
+        fetchBusFactorMetricsApi(targetRepo)
       ]);
       if (summary.status === 'fulfilled' && summary.value) {
         setDashboardData(summary.value);
@@ -673,6 +675,9 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       }
       if (commits.status === 'fulfilled' && commits.value) {
         setCommitsList(commits.value);
+      }
+      if (busFactor.status === 'fulfilled' && busFactor.value) {
+        setBusFactorMetrics(busFactor.value);
       }
     } catch (err) {
       console.warn('Dashboard data refresh error:', err);
@@ -1768,39 +1773,65 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                       <span>BUS FACTOR RISK</span>
                       <ShieldAlert className="w-4 h-4 text-[#ffb4ab]" />
                     </div>
-                    <div className="text-base font-bold text-[#ffb4ab] font-mono">
-                      Module mainEngine.js
-                    </div>
-                    <p className="text-[11px] font-mono text-[#c3c9b2]/70">
-                      84% of modifications by single contributor (<span className="text-[#b7f15b]">lead_dev</span>). High dependency risk.
-                    </p>
+                    {busFactorMetrics?.moduleOwnership?.length > 0 ? (
+                      <>
+                        <div className="text-base font-bold text-[#ffb4ab] font-mono truncate" title={busFactorMetrics.moduleOwnership[0].filePath}>
+                          Module {busFactorMetrics.moduleOwnership[0].filePath.split('/').pop()}
+                        </div>
+                        <p className="text-[11px] font-mono text-[#c3c9b2]/70">
+                          {busFactorMetrics.moduleOwnership[0].ownershipPct}% of modifications by single contributor (<span className="text-[#b7f15b]">@{busFactorMetrics.moduleOwnership[0].primaryOwner.split('@')[0]}</span>). High dependency risk.
+                        </p>
+                      </>
+                    ) : busFactorMetrics?.topContributorEmail && busFactorMetrics?.totalContributorsCount > 0 ? (
+                      <>
+                        <div className="text-base font-bold text-[#ffb4ab] font-mono truncate" title={busFactorMetrics.topContributorEmail}>
+                          Maintainer @{busFactorMetrics.topContributorEmail.split('@')[0]}
+                        </div>
+                        <p className="text-[11px] font-mono text-[#c3c9b2]/70">
+                          {busFactorMetrics.topContributorSharePct}% of total commits authored by this single contributor.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-base font-bold text-[#dfe4de] font-mono">
+                          No Risk Recorded
+                        </div>
+                        <p className="text-[11px] font-mono text-[#8d937e]">
+                          No commit bottlenecks recorded for {selectedRepo || 'this repository'}.
+                        </p>
+                      </>
+                    )}
                   </div>
 
-                  {/* Sprint Delivery Telemetry */}
+                  {/* Contributor Balance & Bus Factor Score */}
                   <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-2">
                     <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
-                      <span>SPRINT VELOCITY RISK</span>
+                      <span>KNOWLEDGE CONCENTRATION</span>
                       <Activity className="w-4 h-4 text-amber-400" />
                     </div>
                     <div className="text-base font-bold text-amber-300 font-mono">
-                      Sprint 42 Completion: 88%
+                      {busFactorMetrics?.totalContributorsCount > 0 
+                        ? `Score: ${busFactorMetrics.busFactorIndex} / 5 (${busFactorMetrics.busFactorIndex <= 2 ? 'High Dependency' : 'Distributed'})`
+                        : 'No Data Yet'}
                     </div>
                     <p className="text-[11px] font-mono text-[#c3c9b2]/70">
-                      Task-code velocity alignment on track. 2 PRs require additional reviewers.
+                      {busFactorMetrics?.totalContributorsCount > 0
+                        ? `${busFactorMetrics.totalContributorsCount} contributor${busFactorMetrics.totalContributorsCount === 1 ? '' : 's'} recorded in repository commit history.`
+                        : 'Connect and mine commit logs to compute knowledge concentration.'}
                     </p>
                   </div>
 
                   {/* Manager Action Recommendation */}
                   <div className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-2">
                     <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
-                      <span>MANAGER ACTION</span>
+                      <span>TEAM ACTION</span>
                       <UserPlus className="w-4 h-4 text-[#b7f15b]" />
                     </div>
                     <div className="text-base font-bold text-[#b7f15b] font-mono">
-                      Assign Co-Reviewer
+                      {busFactorMetrics?.totalContributorsCount <= 1 ? 'Expand Maintainers' : 'Rebalance Reviews'}
                     </div>
-                    <p className="text-[11px] font-mono text-[#8d937e]">
-                      Rebalance PR reviews across team members to broaden codebase knowledge.
+                    <p className="text-[11px] font-mono text-[#8d937e] line-clamp-2" title={busFactorMetrics?.rebalanceRecommendation}>
+                      {busFactorMetrics?.rebalanceRecommendation || 'Rebalance PR reviews across team members to broaden codebase knowledge.'}
                     </p>
                   </div>
                 </div>

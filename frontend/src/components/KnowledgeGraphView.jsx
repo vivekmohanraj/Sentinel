@@ -81,8 +81,12 @@ const KnowledgeGraphView = ({ selectedRepo = '', onSelectRefactor }) => {
                 <RefreshCw className="w-5 h-5 animate-spin" />
                 <span>Computing Co-Change Coupling Vectors...</span>
               </div>
-            ) : !graphData?.nodes ? (
-              <div className="text-xs font-mono text-[#8d937e]">No graph nodes indexed.</div>
+            ) : (!graphData?.nodes || graphData.nodes.length === 0) ? (
+              <div className="p-8 text-center space-y-2">
+                <Network className="w-10 h-10 text-[#8d937e]/40 mx-auto" />
+                <div className="text-xs font-mono text-[#c3c9b2] font-semibold">No module metrics recorded for this repository yet.</div>
+                <p className="text-[11px] font-mono text-[#8d937e]">Topological node-link graph will render dynamically once AST modules are mined.</p>
+              </div>
             ) : (
               <svg className="w-full h-full overflow-visible" viewBox="0 0 600 300">
                 <defs>

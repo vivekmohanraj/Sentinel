@@ -40,18 +40,6 @@ export const getKnowledgeGraphTopology = async (req, res, next) => {
     const modulesRes = await pool.query(modulesQuery, params);
     let modules = modulesRes.rows || [];
 
-    // Fallback if no module metrics mined yet for this specific repository
-    if (modules.length === 0) {
-      const cleanRepo = targetRepoName.replace(/^.*\//, '');
-      modules = [
-        { id: '1', file_path: `src/${cleanRepo}/core.js`, complexity_score: 16.5, churn_rate: 110, bug_frequency: 9 },
-        { id: '2', file_path: `src/${cleanRepo}/renderer.js`, complexity_score: 14.2, churn_rate: 75, bug_frequency: 6 },
-        { id: '3', file_path: `src/${cleanRepo}/router.js`, complexity_score: 12.8, churn_rate: 54, bug_frequency: 4 },
-        { id: '4', file_path: `src/${cleanRepo}/parser.js`, complexity_score: 10.4, churn_rate: 38, bug_frequency: 2 },
-        { id: '5', file_path: `src/${cleanRepo}/utils.js`, complexity_score: 7.2, churn_rate: 18, bug_frequency: 1 }
-      ];
-    }
-
     // 2. Fetch commit authors strictly scoped to this repository
     let authorParams = [];
     let authorSql = `SELECT author_email, COUNT(*) as commit_count FROM tbl_commit_record`;

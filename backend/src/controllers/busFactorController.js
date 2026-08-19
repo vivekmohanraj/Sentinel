@@ -47,9 +47,10 @@ export const getBusFactorMetrics = async (req, res, next) => {
     const totalCommitsSum = contributors.reduce((acc, c) => acc + parseInt(c.total_commits, 10), 0) || 1;
 
     // Calculate Bus Factor Score (lower score = higher single point of failure risk)
-    const topContributorCommits = contributors.length > 0 ? parseInt(contributors[0].total_commits, 10) : 1;
-    const topContributorShare = topContributorCommits / totalCommitsSum;
-    const busFactorScore = Math.max(1, Math.round((1 - topContributorShare) * 5) + 1);
+    const topContributorAuthor = contributors.length > 0 ? (contributors[0].author_email || 'maintainer') : 'maintainer';
+    const topContributorCommits = contributors.length > 0 ? parseInt(contributors[0].total_commits, 10) : 0;
+    const topContributorShare = contributors.length > 0 ? (topContributorCommits / totalCommitsSum) : 0;
+    const busFactorScore = contributors.length === 0 ? 0 : Math.max(1, Math.round((1 - topContributorShare) * 5) + 1);
 
     // 2. Query module metrics from PostgreSQL to compute real file ownership shares
     let modulesQuery = `SELECT file_path, complexity_score, churn_rate FROM tbl_module_metric`;
@@ -65,9 +66,9 @@ export const getBusFactorMetrics = async (req, res, next) => {
 
     // Construct dynamic module ownership breakdown from PostgreSQL metrics
     const moduleOwnership = dbModules.map((mod, idx) => {
-      const primaryAuthor = contributors[idx % Math.max(1, contributors.length)]?.author_email || 'lead_dev@sentinel.engineering';
-      const ownershipPct = Math.min(95, Math.max(45, Math.round(topContributorShare * 100) - idx * 6));
-      const riskLevel = ownershipPct >= 80 ? 'CRITICAL' : ownershipPct >= 65 ? 'HIGH' : 'MEDIUM';
+      const primaryAuthor = contributors[idx % Math.max(1, contributors.length)]?.author_email || topContributorAuthor;
+      const ownershipPct = Math.min(100, Math.max(30, Math.round(topContributorShare * 100) - idx * 5));
+      const riskLevel = ownershipPct >= 80 ? 'CRITICAL' : ownershipPct >= 60 ? 'HIGH' : 'MEDIUM';
 
       return {
         filePath: mod.file_path,
@@ -77,13 +78,13 @@ export const getBusFactorMetrics = async (req, res, next) => {
         recommendation: riskLevel === 'CRITICAL'
           ? 'Assign secondary co-reviewer immediately to reduce single-maintainer vulnerability'
           : riskLevel === 'HIGH'
-          ? 'Schedule knowledge transfer session on core module eviction hooks'
+          ? 'Schedule knowledge transfer session on core module lifecycle'
           : 'Sufficient reviewer distribution; maintain standard PR approval flow'
       };
     });
 
     // 3. Compute dynamic reviewer workload distribution
-    const reviewerWorkload = contributors.map((c, idx) => {
+    const reviewerWorkload = contributors.map((c) => {
       const commitCount = parseInt(c.total_commits, 10);
       const prs = Math.max(1, Math.round(commitCount * 1.5));
       const handle = c.author_email.split('@')[0];
@@ -95,20 +96,26 @@ export const getBusFactorMetrics = async (req, res, next) => {
       };
     });
 
-    const topReviewer = reviewerWorkload[0]?.name || 'lead_dev';
-    const underReviewer = reviewerWorkload.find(r => r.loadStatus === 'UNDERUTILIZED')?.name || 'secondary_dev';
+    let rebalanceRec = 'No commit records mined yet for this repository.';
+    if (contributors.length === 1) {
+      rebalanceRec = `All mined commits authored by @${contributors[0].author_email.split('@')[0]}. Introduce secondary maintainers or co-reviewers to reduce single-contributor risk.`;
+    } else if (contributors.length > 1) {
+      const topReviewer = reviewerWorkload[0]?.name || 'lead_maintainer';
+      const underReviewer = reviewerWorkload.find(r => r.loadStatus === 'UNDERUTILIZED')?.name || reviewerWorkload[reviewerWorkload.length - 1]?.name || 'team_member';
+      rebalanceRec = `Reallocate incoming PR reviews from @${topReviewer} to @${underReviewer} to broaden team knowledge concentration.`;
+    }
 
     return res.status(200).json({
       success: true,
       data: {
         repoName: targetRepoName,
         busFactorIndex: busFactorScore,
-        topContributorEmail: contributors[0]?.author_email || 'lead_dev@sentinel.engineering',
+        topContributorEmail: topContributorAuthor,
         topContributorSharePct: Math.round(topContributorShare * 100),
-        totalContributorsCount: contributors.length || 1,
+        totalContributorsCount: contributors.length,
         moduleOwnership,
         reviewerWorkload,
-        rebalanceRecommendation: `Reallocate incoming PR reviews from ${topReviewer} to ${underReviewer} to broaden team knowledge concentration.`,
+        rebalanceRecommendation: rebalanceRec,
         generatedAt: new Date().toISOString()
       }
     });
