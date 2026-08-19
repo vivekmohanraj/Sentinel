@@ -465,21 +465,18 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
 
   const finalProjName = (projectName || newProjectName || '').trim();
   if (finalProjName && !targetProjId) {
-    let projectOrgId = targetOrgId;
-    if (!projectOrgId) {
-      const orgsRes = await pool.query(`SELECT id FROM tbl_organization ORDER BY created_at ASC LIMIT 1`);
-      projectOrgId = orgsRes.rows[0]?.id || null;
+    if (!targetOrgId) {
+      const err = new Error('An organization is required to create a project and connect a repository.');
+      err.statusCode = 400;
+      throw err;
     }
-    if (projectOrgId) {
-      const newProjRes = await pool.query(
-        `INSERT INTO tbl_project (organization_id, name, created_by_user_id, created_by_email)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id`,
-        [projectOrgId, finalProjName, createdByUserId, createdByEmail]
-      );
-      targetProjId = newProjRes.rows[0].id;
-      targetOrgId = projectOrgId;
-    }
+    const newProjRes = await pool.query(
+      `INSERT INTO tbl_project (organization_id, name, created_by_user_id, created_by_email)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [targetOrgId, finalProjName, createdByUserId, createdByEmail]
+    );
+    targetProjId = newProjRes.rows[0].id;
   }
 
   if (targetProjId && !targetOrgId) {
@@ -487,14 +484,18 @@ export const createRepository = async ({ name, gitUrl, projectId, organizationId
     if (pRes.rows.length > 0 && pRes.rows[0].organization_id) {
       targetOrgId = pRes.rows[0].organization_id;
     }
-  } else if (targetOrgId && !targetProjId) {
-    const projRes = await pool.query(
-      `SELECT id FROM tbl_project WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1`,
-      [targetOrgId]
-    );
-    if (projRes.rows.length > 0) {
-      targetProjId = projRes.rows[0].id;
-    }
+  }
+
+  if (!targetOrgId) {
+    const err = new Error('An organization is required to connect a repository. Please select or create an organization.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!targetProjId) {
+    const err = new Error('A project is required to connect a repository. Please select or create a project under this organization.');
+    err.statusCode = 400;
+    throw err;
   }
 
   let repoRecord = null;

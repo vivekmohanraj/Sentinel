@@ -692,15 +692,29 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     setNewRepoUrl('');
     setAddRepoNewOrgName('');
     setAddRepoNewProjectName('');
+
     if (orgsList.length === 0) {
       setIsCreatingNewOrgInModal(true);
       setAddRepoOrgId('__new__');
+      setIsCreatingNewProjectInModal(true);
+      setAddRepoProjectId('__new__');
     } else {
+      const initialOrgId = selectedOrg || orgsList[0]?.id || '';
       setIsCreatingNewOrgInModal(false);
-      setAddRepoOrgId(selectedOrg || orgsList[0]?.id || '');
+      setAddRepoOrgId(initialOrgId);
+
+      const orgProjects = projectsList.filter(p => p.organization_id === initialOrgId);
+      if (orgProjects.length > 0) {
+        setIsCreatingNewProjectInModal(false);
+        const matchProj = selectedProject && orgProjects.some(p => p.id === selectedProject)
+          ? selectedProject
+          : orgProjects[0].id;
+        setAddRepoProjectId(matchProj);
+      } else {
+        setIsCreatingNewProjectInModal(true);
+        setAddRepoProjectId('__new__');
+      }
     }
-    setAddRepoProjectId(selectedProject || '');
-    setIsCreatingNewProjectInModal(false);
     setShowAddRepoModal(true);
   };
 
@@ -721,24 +735,40 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       return;
     }
 
+    // Strict validation: Organization is a must
+    let targetOrgId = addRepoOrgId;
+    if (isCreatingNewOrgInModal || addRepoOrgId === '__new__') {
+      const trimmedOrgName = addRepoNewOrgName.trim();
+      if (!trimmedOrgName) {
+        setAddRepoError('An organization is required. Please enter an organization name.');
+        return;
+      }
+    } else if (!targetOrgId) {
+      setAddRepoError('An organization is required. Please select or create an organization.');
+      return;
+    }
+
+    // Strict validation: Project is a must
+    const targetNewProjName = (isCreatingNewProjectInModal || addRepoProjectId === '__new__')
+      ? addRepoNewProjectName.trim()
+      : null;
+    const targetProjId = (!isCreatingNewProjectInModal && addRepoProjectId && addRepoProjectId !== '__new__')
+      ? addRepoProjectId
+      : null;
+
+    if (!targetProjId && !targetNewProjName) {
+      setAddRepoError('A project is required. Please select an existing project or enter a new project name.');
+      return;
+    }
+
     setIsAddingRepo(true);
     try {
-      let targetOrgId = addRepoOrgId;
       if (isCreatingNewOrgInModal || addRepoOrgId === '__new__') {
-        const trimmedOrgName = addRepoNewOrgName.trim();
-        if (!trimmedOrgName) {
-          setAddRepoError('Please specify a name for the new organization.');
-          setIsAddingRepo(false);
-          return;
-        }
-        const createdOrg = await createOrganizationApi(trimmedOrgName, profileData?.email);
+        const createdOrg = await createOrganizationApi(addRepoNewOrgName.trim(), profileData?.email);
         if (createdOrg) {
           targetOrgId = createdOrg.id;
         }
       }
-
-      let targetProjId = addRepoProjectId && addRepoProjectId !== '__new__' ? addRepoProjectId : null;
-      let targetNewProjName = (isCreatingNewProjectInModal || addRepoProjectId === '__new__') ? addRepoNewProjectName.trim() : null;
 
       const targetName = trimmedName || `${parsed.owner}/${parsed.repo}`;
       const created = await addRepositoryApi(
@@ -746,7 +776,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         trimmedUrl, 
         targetProjId, 
         profileData?.email, 
-        targetOrgId || selectedOrg || null,
+        targetOrgId,
         targetNewProjName
       );
 
@@ -773,7 +803,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         const orgNameDisplay = updatedOrgs?.find(o => o.id === finalOrgId)?.name || created.organization_name || '';
         const projNameDisplay = updatedProjects?.find(p => p.id === created.project_id)?.name || created.project_name || '';
 
-        setRepoMsg(`Repository "${created.name}" connected${orgNameDisplay ? ` to org "${orgNameDisplay}"` : ''}${projNameDisplay ? ` (project: ${projNameDisplay})` : ''} and selected! Loading metrics...`);
+        setRepoMsg(`Repository "${created.name}" connected to organization "${orgNameDisplay}" (project: "${projNameDisplay}")! Loading metrics...`);
         setNewRepoName('');
         setNewRepoUrl('');
         setAddRepoNewOrgName('');
@@ -2885,18 +2915,34 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                       />
                     </div>
 
-                    {/* TARGET ORGANIZATION SELECTION & CREATION */}
+                    {/* TARGET ORGANIZATION SELECTION & CREATION (MANDATORY) */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
-                          Target Organization
+                          Target Organization <span className="text-[#b7f15b] font-bold">*</span>
                         </label>
                         {orgsList.length > 0 && (
                           <button
                             type="button"
                             onClick={() => {
-                              setIsCreatingNewOrgInModal(!isCreatingNewOrgInModal);
+                              const nextState = !isCreatingNewOrgInModal;
+                              setIsCreatingNewOrgInModal(nextState);
                               setAddRepoError(null);
+                              if (nextState) {
+                                setIsCreatingNewProjectInModal(true);
+                                setAddRepoProjectId('__new__');
+                              } else {
+                                const activeOrg = addRepoOrgId && addRepoOrgId !== '__new__' ? addRepoOrgId : (orgsList[0]?.id || '');
+                                setAddRepoOrgId(activeOrg);
+                                const orgProjects = projectsList.filter(p => p.organization_id === activeOrg);
+                                if (orgProjects.length > 0) {
+                                  setIsCreatingNewProjectInModal(false);
+                                  setAddRepoProjectId(orgProjects[0].id);
+                                } else {
+                                  setIsCreatingNewProjectInModal(true);
+                                  setAddRepoProjectId('__new__');
+                                }
+                              }
                             }}
                             className="text-[11px] font-mono text-[#b7f15b] hover:underline flex items-center gap-1 cursor-pointer"
                           >
@@ -2923,7 +2969,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                             }}
                             placeholder="Enter new organization name (e.g. Acme Engineering)"
                             className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/40 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
-                            required={isCreatingNewOrgInModal || orgsList.length === 0}
+                            required
                           />
                           <p className="text-[10px] font-mono text-[#8d937e]">
                             Creates a new organization and assigns ownership to your profile.
@@ -2936,13 +2982,23 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                             onChange={(e) => {
                               if (e.target.value === '__new__') {
                                 setIsCreatingNewOrgInModal(true);
+                                setIsCreatingNewProjectInModal(true);
+                                setAddRepoProjectId('__new__');
                               } else {
                                 setAddRepoOrgId(e.target.value);
                                 const orgProjects = projectsList.filter(p => p.organization_id === e.target.value);
-                                setAddRepoProjectId(orgProjects.length > 0 ? orgProjects[0].id : '');
+                                if (orgProjects.length > 0) {
+                                  setIsCreatingNewProjectInModal(false);
+                                  setAddRepoProjectId(orgProjects[0].id);
+                                } else {
+                                  setIsCreatingNewProjectInModal(true);
+                                  setAddRepoProjectId('__new__');
+                                  setAddRepoNewProjectName('');
+                                }
                               }
                             }}
                             className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
+                            required
                           >
                             {orgsList.map((org) => (
                               <option key={org.id} value={org.id}>
@@ -2956,33 +3012,34 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                       )}
                     </div>
 
-                    {/* TARGET PROJECT SELECTION (OPTIONAL) */}
-                    {/* TARGET PROJECT SELECTION & CREATION */}
+                    {/* TARGET PROJECT SELECTION & CREATION (MANDATORY) */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="block font-mono text-xs text-[#c3c9b2] uppercase">
-                          Target Project (Optional)
+                          Target Project <span className="text-[#b7f15b] font-bold">*</span>
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreatingNewProjectInModal(!isCreatingNewProjectInModal);
-                            setAddRepoError(null);
-                          }}
-                          className="text-[11px] font-mono text-[#b7f15b] hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          {isCreatingNewProjectInModal ? (
-                            <span>Choose Existing Project</span>
-                          ) : (
-                            <>
-                              <Plus className="w-3 h-3" />
-                              <span>+ New Project</span>
-                            </>
-                          )}
-                        </button>
+                        {!isCreatingNewOrgInModal && projectsList.filter(p => p.organization_id === addRepoOrgId).length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreatingNewProjectInModal(!isCreatingNewProjectInModal);
+                              setAddRepoError(null);
+                            }}
+                            className="text-[11px] font-mono text-[#b7f15b] hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            {isCreatingNewProjectInModal ? (
+                              <span>Choose Existing Project</span>
+                            ) : (
+                              <>
+                                <Plus className="w-3 h-3" />
+                                <span>+ New Project</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
 
-                      {isCreatingNewProjectInModal ? (
+                      {isCreatingNewProjectInModal || isCreatingNewOrgInModal || projectsList.filter(p => p.organization_id === addRepoOrgId).length === 0 ? (
                         <div className="space-y-1">
                           <input
                             type="text"
@@ -2991,8 +3048,9 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                               setAddRepoNewProjectName(e.target.value);
                               setAddRepoError(null);
                             }}
-                            placeholder="Enter new project name (e.g. Core Engine)"
+                            placeholder="Enter project name (e.g. Core Backend Engine)"
                             className="w-full h-11 px-4 rounded-xl bg-[#181d1a] border border-[#b7f15b]/40 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                            required
                           />
                           <p className="text-[10px] font-mono text-[#8d937e]">
                             Creates a new project under the selected organization.
@@ -3010,10 +3068,10 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                               }
                             }}
                             className="w-full h-11 px-4 pr-9 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer appearance-none"
+                            required
                           >
-                            <option value="">Auto-Assign / Default Project</option>
                             {projectsList
-                              .filter((p) => !addRepoOrgId || addRepoOrgId === '__new__' || p.organization_id === addRepoOrgId)
+                              .filter((p) => p.organization_id === addRepoOrgId)
                               .map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name}
