@@ -5,19 +5,34 @@ const TechDebtQuadrantMatrix = ({ hotspots = [], onSelectRefactor }) => {
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Dynamically map database hotspots into the 4 Impact vs Effort Quadrants
-  const rawList = hotspots && hotspots.length > 0 ? hotspots : [
-    { file_path: 'src/core/main.js', complexity_score: 18.5, churn_rate: 142, bug_frequency: 12 },
-    { file_path: 'src/db/connectionPool.js', complexity_score: 16.2, churn_rate: 98, bug_frequency: 8 },
-    { file_path: 'src/api/apiRouter.js', complexity_score: 12.4, churn_rate: 64, bug_frequency: 4 },
-    { file_path: 'src/utils/cryptoUtil.js', complexity_score: 8.2, churn_rate: 22, bug_frequency: 1 }
-  ];
+  const rawList = Array.isArray(hotspots) ? hotspots : [];
+
+  if (rawList.length === 0) {
+    return (
+      <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4 animate-fadeIn font-mono text-xs">
+        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+          <div className="p-2.5 rounded-xl bg-[#b7f15b]/10 text-[#b7f15b] border border-[#b7f15b]/30">
+            <TrendingUp className="w-5 h-5 text-[#b7f15b]" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-[#dfe4de]">Refactoring Priority Quadrant Matrix</h3>
+            <p className="text-[11px] text-[#c3c9b2]">Dynamic Impact vs Refactoring Effort Matrix computed from PostgreSQL metrics</p>
+          </div>
+        </div>
+        <div className="p-8 text-center text-[#8d937e] space-y-1.5">
+          <div className="text-sm text-[#dfe4de] font-semibold">No complexity hotspots recorded yet for this repository.</div>
+          <p className="text-[11px]">Run a codebase scan to populate cyclomatic complexity and churn priority quadrants.</p>
+        </div>
+      </div>
+    );
+  }
 
   const quadrantItems = rawList.map((h, idx) => {
     const filePath = h.file_path || h.filePath || `module-${idx}.js`;
     const fileName = filePath.split('/').pop();
-    const complexity = parseFloat(h.complexity_score || h.complexityScore || 12.0);
-    const churn = parseInt(h.churn_rate || h.churnRate || 40, 10);
-    const bugs = parseInt(h.bug_frequency || h.bugFrequency || 2, 10);
+    const complexity = parseFloat(h.complexity_score || h.complexityScore || 0);
+    const churn = parseInt(h.churn_rate || h.churnRate || 0, 10);
+    const bugs = parseInt(h.bug_frequency || h.bugFrequency || 0, 10);
 
     const isHighImpact = churn >= 60 || bugs >= 4;
     const isHighEffort = complexity >= 14.0;

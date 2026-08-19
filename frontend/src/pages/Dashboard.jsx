@@ -3261,143 +3261,167 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         )}
 
         {/* 6. TECH DEBT ARCHITECTURAL HOTSPOTS TAB */}
-        {activeTab === 'Tech Debt' && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Header Telemetry Card */}
-            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
-                  <TrendingUp className="w-6 h-6 text-[#b7f15b]" />
+        {activeTab === 'Tech Debt' && (() => {
+          const avgComplexity = hotspotsList.length > 0
+            ? (hotspotsList.reduce((acc, h) => acc + parseFloat(h.complexity_score || 0), 0) / hotspotsList.length)
+            : 0;
+          const computedHealthIndex = hotspotsList.length > 0
+            ? Math.max(10, Math.min(100, Math.round(100 - (avgComplexity * 2.5))))
+            : 100;
+          const computedDebtIndex = hotspotsList.length > 0
+            ? (avgComplexity / 2.0).toFixed(1)
+            : '0.0';
+          const topHotspot = hotspotsList[0];
+          const topHotspotName = topHotspot ? (topHotspot.file_path || '').split('/').pop() : '';
+          const topHotspotComplexity = topHotspot ? parseFloat(topHotspot.complexity_score || 0) : 0;
+          const gaugeOffset = Math.max(0, Math.min(251.2, 251.2 - (parseFloat(computedDebtIndex) / 10) * 251.2));
+
+          return (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Header Telemetry Card */}
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                    <TrendingUp className="w-6 h-6 text-[#b7f15b]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-[#dfe4de]">Architectural Tech Debt Hotspots</h2>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
+                      Systemic behavioral code degradation insights and automated refactoring recommendations.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[#dfe4de]">Architectural Tech Debt Hotspots</h2>
-                  <p className="text-xs font-mono text-[#c3c9b2]/70 mt-0.5">
-                    Systemic behavioral code degradation insights and automated refactoring recommendations.
+
+                <div className="flex items-center gap-2">
+                  <span className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold ${
+                    computedHealthIndex >= 75
+                      ? 'bg-[#b7f15b]/10 border-[#b7f15b]/30 text-[#b7f15b]'
+                      : computedHealthIndex >= 50
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }`}>
+                    Health Index: {computedHealthIndex}/100
+                  </span>
+                </div>
+              </div>
+
+              {/* Refactoring Priority Quadrant Matrix */}
+              <TechDebtQuadrantMatrix
+                hotspots={hotspotsList}
+                onSelectRefactor={(filePath, complexity) => setRefactorModalData({ isOpen: true, filePath, complexityScore: complexity })}
+              />
+
+              {/* Architectural Dependency Node Diagram & Radial Gauge Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Architectural Module Coupling & Dependency Node Diagram */}
+                <div className="lg:col-span-8 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-[#dfe4de]">Architectural Dependency & Coupling Graph</h3>
+                      <p className="text-xs font-mono text-[#c3c9b2]/70">Inter-module coupling index map and tangled import vectors from PostgreSQL metrics.</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
+                      {computedDebtIndex} / 10 Coupling Index
+                    </span>
+                  </div>
+
+                  {hotspotsList.length === 0 ? (
+                    <div className="relative w-full h-64 bg-[#181d1a] rounded-xl border border-white/5 p-4 flex flex-col items-center justify-center text-center space-y-2">
+                      <TrendingUp className="w-8 h-8 text-[#8d937e]/40" />
+                      <div className="text-xs font-mono text-[#c3c9b2] font-semibold">No architectural hotspots recorded for {selectedRepo || 'this repository'}</div>
+                      <p className="text-[11px] font-mono text-[#8d937e]">Run codebase analysis or mine repository metrics to view the coupling graph.</p>
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-64 bg-[#181d1a] rounded-xl border border-white/5 p-4 flex items-center justify-center overflow-hidden">
+                      <svg className="w-full h-full" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet">
+                        {/* Dynamic Links */}
+                        {hotspotsList.length > 1 && (
+                          <>
+                            <path d="M 100 110 Q 250 50 400 110" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 2" />
+                            <path d="M 100 110 Q 250 170 400 110" fill="none" stroke="#f59e0b" strokeWidth="2" />
+                            {hotspotsList.length > 2 && <path d="M 400 110 Q 480 60 520 110" fill="none" stroke="#b7f15b" strokeWidth="1.5" />}
+                            {hotspotsList.length > 3 && <path d="M 100 110 Q 300 110 520 110" fill="none" stroke="#8d937e" strokeWidth="1" strokeDasharray="2 2" />}
+
+                            <rect x="230" y="65" width="55" height="18" rx="4" fill="#1c211e" stroke="#ef4444" strokeWidth="1" />
+                            <text x="257" y="78" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                              {(parseFloat(hotspotsList[0]?.complexity_score || 16) / 2.2).toFixed(1)} CPL
+                            </text>
+
+                            {hotspotsList[1] && (
+                              <>
+                                <rect x="230" y="140" width="55" height="18" rx="4" fill="#1c211e" stroke="#f59e0b" strokeWidth="1" />
+                                <text x="257" y="153" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                                  {(parseFloat(hotspotsList[1]?.complexity_score || 12) / 2.5).toFixed(1)} CPL
+                                </text>
+                              </>
+                            )}
+                          </>
+                        )}
+
+                        {/* Dynamic Nodes */}
+                        {hotspotsList.slice(0, 5).map((mod, idx) => {
+                          const positions = [
+                            { x: 100, y: 110, r: 26, color: '#ef4444' },
+                            { x: 400, y: 110, r: 24, color: '#f59e0b' },
+                            { x: 250, y: 40, r: 18, color: '#a855f7' },
+                            { x: 250, y: 180, r: 18, color: '#b7f15b' },
+                            { x: 520, y: 110, r: 20, color: '#92d957' }
+                          ];
+                          const pos = positions[idx];
+                          const name = (mod.file_path || '').split('/').pop();
+                          const score = parseFloat(mod.complexity_score || 0).toFixed(1);
+
+                          return (
+                            <g key={mod.id || idx} transform={`translate(${pos.x}, ${pos.y})`}>
+                              <circle r={pos.r} fill="#1c211e" stroke={pos.color} strokeWidth="3" />
+                              <text y={idx === 3 ? 30 : -32} fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                                {name}
+                              </text>
+                              <text y="4" fill={pos.color} fontSize="9" fontFamily="monospace" textAnchor="middle">
+                                {score} CPL
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Technical Debt Degradation Radial Gauge Arc */}
+                <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col justify-between items-center space-y-4 text-center">
+                  <span className="text-xs font-mono text-[#c3c9b2]/70 uppercase tracking-wider">Technical Debt Arc Gauge</span>
+                  <div className="relative w-36 h-36 flex items-center justify-center">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#262b28" strokeWidth="8" />
+                      <circle cx="50" cy="50" r="40" fill="none" stroke={parseFloat(computedDebtIndex) >= 7 ? '#ef4444' : parseFloat(computedDebtIndex) >= 4 ? '#f59e0b' : '#b7f15b'} strokeWidth="8" strokeDasharray="251.2" strokeDashoffset={gaugeOffset} strokeLinecap="round" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
+                      <span className="text-3xl font-bold text-amber-400">{computedDebtIndex}</span>
+                      <span className="text-[10px] text-[#8d937e]">DEBT INDEX</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#c3c9b2]/70 font-mono">
+                    {topHotspot ? (
+                      <>
+                        Decoupling <span className="text-[#dfe4de] font-bold">{topHotspotName}</span> will reduce predicted release risk by <span className="text-[#b7f15b] font-bold">{Math.min(50, Math.max(15, Math.round(topHotspotComplexity * 2.2)))}%</span>.
+                      </>
+                    ) : (
+                      'No technical debt hotspots recorded. Repository complexity is within nominal limits.'
+                    )}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="px-3.5 py-1.5 rounded-full bg-[#181d1a] border border-white/10 text-xs font-mono text-[#b7f15b]">
-                  Health Index: 78/100
-                </span>
-              </div>
-            </div>
-
-            {/* Refactoring Priority Quadrant Matrix */}
-            <TechDebtQuadrantMatrix
-              hotspots={hotspotsList}
-              onSelectRefactor={(filePath, complexity) => setRefactorModalData({ isOpen: true, filePath, complexityScore: complexity })}
-            />
-
-            {/* Architectural Dependency Node Diagram & Radial Gauge Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Architectural Module Coupling & Dependency Node Diagram */}
-              <div className="lg:col-span-8 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <div>
-                    <h3 className="text-base font-semibold text-[#dfe4de]">Architectural Dependency & Coupling Graph</h3>
-                    <p className="text-xs font-mono text-[#c3c9b2]/70">Inter-module coupling index map and tangled import vectors from PostgreSQL metrics.</p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
-                    {hotspotsList.length > 0 ? (parseFloat(hotspotsList[0]?.complexity_score || 16) / 2.2).toFixed(1) : '7.4'} / 10 Coupling Index
-                  </span>
+              {rescanMessage && (
+                <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <span>{rescanMessage}</span>
                 </div>
+              )}
 
-                <div className="relative w-full h-64 bg-[#181d1a] rounded-xl border border-white/5 p-4 flex items-center justify-center overflow-hidden">
-                  <svg className="w-full h-full" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet">
-                    {/* Connection Edges */}
-                    <path d="M 100 110 Q 250 50 400 110" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 2" />
-                    <path d="M 100 110 Q 250 170 400 110" fill="none" stroke="#f59e0b" strokeWidth="2" />
-                    <path d="M 400 110 Q 480 60 520 110" fill="none" stroke="#b7f15b" strokeWidth="1.5" />
-                    <path d="M 100 110 Q 300 110 520 110" fill="none" stroke="#8d937e" strokeWidth="1" strokeDasharray="2 2" />
-
-                    {/* Coupling Weight Badges */}
-                    <rect x="230" y="65" width="45" height="18" rx="4" fill="#1c211e" stroke="#ef4444" strokeWidth="1" />
-                    <text x="252" y="78" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">7.4 CPL</text>
-
-                    <rect x="230" y="140" width="45" height="18" rx="4" fill="#1c211e" stroke="#f59e0b" strokeWidth="1" />
-                    <text x="252" y="153" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">5.8 CPL</text>
-
-                    {/* Node 1: Top Hotspot */}
-                    <g transform="translate(100, 110)">
-                      <circle r="26" fill="#1c211e" stroke="#ef4444" strokeWidth="3" />
-                      <circle r="32" fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.3" />
-                      <text y="-35" fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-                        {(hotspotsList[0]?.file_path || 'mainEngine.js').split('/').pop()}
-                      </text>
-                      <text y="4" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                        {hotspotsList[0]?.complexity_score ? `${parseFloat(hotspotsList[0].complexity_score).toFixed(1)} CPL` : '84% Risk'}
-                      </text>
-                    </g>
-
-                    {/* Node 2: Second Hotspot */}
-                    <g transform="translate(400, 110)">
-                      <circle r="24" fill="#1c211e" stroke="#f59e0b" strokeWidth="3" />
-                      <text y="-33" fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-                        {(hotspotsList[1]?.file_path || 'connectionPool.js').split('/').pop()}
-                      </text>
-                      <text y="4" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                        {hotspotsList[1]?.complexity_score ? `${parseFloat(hotspotsList[1].complexity_score).toFixed(1)} CPL` : '72% Risk'}
-                      </text>
-                    </g>
-
-                    {/* Node 3: Third Hotspot */}
-                    <g transform="translate(250, 40)">
-                      <circle r="18" fill="#1c211e" stroke="#a855f7" strokeWidth="2.5" />
-                      <text y="-25" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                        {(hotspotsList[2]?.file_path || 'apiRouter.js').split('/').pop()}
-                      </text>
-                    </g>
-
-                    {/* Node 4: Auxiliary */}
-                    <g transform="translate(250, 180)">
-                      <circle r="18" fill="#1c211e" stroke="#b7f15b" strokeWidth="2.5" />
-                      <text y="30" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                        {(hotspotsList[3]?.file_path || 'plannerEngine.js').split('/').pop()}
-                      </text>
-                    </g>
-
-                    {/* Node 5: Crypto / Storage */}
-                    <g transform="translate(520, 110)">
-                      <circle r="20" fill="#1c211e" stroke="#92d957" strokeWidth="2.5" />
-                      <text y="-28" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                        {(hotspotsList[4]?.file_path || 'cryptoUtil.js').split('/').pop()}
-                      </text>
-                      <text y="4" fill="#92d957" fontSize="9" fontFamily="monospace" textAnchor="middle">Stable</text>
-                    </g>
-                  </svg>
-                </div>
-              </div>
-
-              {/* Technical Debt Degradation Radial Gauge Arc */}
-              <div className="lg:col-span-4 p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl flex flex-col justify-between items-center space-y-4 text-center">
-                <span className="text-xs font-mono text-[#c3c9b2]/70 uppercase tracking-wider">Technical Debt Arc Gauge</span>
-                <div className="relative w-36 h-36 flex items-center justify-center">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#262b28" strokeWidth="8" />
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="65" strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
-                    <span className="text-3xl font-bold text-amber-400">7.4</span>
-                    <span className="text-[10px] text-[#8d937e]">DEBT INDEX</span>
-                  </div>
-                </div>
-                <p className="text-xs text-[#c3c9b2]/70 font-mono">
-                  Decoupling Auth & Cache interface will reduce predicted release risk by <span className="text-[#b7f15b] font-bold">32%</span>.
-                </p>
-              </div>
-            </div>
-
-            {rescanMessage && (
-              <div className="p-4 rounded-2xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b] flex items-center gap-3 text-sm font-mono animate-fadeIn">
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
-                <span>{rescanMessage}</span>
-              </div>
-            )}
-
-            {/* Ingested Module Hotspots Table */}
-            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              {/* Ingested Module Hotspots Table */}
+              <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
                 <div>
                   <h3 className="text-base font-semibold text-[#dfe4de]">Inferred Architectural Hotspots</h3>
@@ -3487,17 +3511,19 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-[#c3c9b2]/70">Coupling Index</span>
                   <span className="text-[#ffb4ab] font-bold">
-                    {hotspotsList[0]?.complexity_score ? `${(parseFloat(hotspotsList[0].complexity_score) / 2.2).toFixed(1)} / 10` : '7.4 / 10'} (HIGH)
+                    {hotspotsList[0]?.complexity_score ? `${(parseFloat(hotspotsList[0].complexity_score) / 2.2).toFixed(1)} / 10` : '0.0 / 10'} {parseFloat(hotspotsList[0]?.complexity_score || 0) >= 15 ? '(CRITICAL)' : '(NORMAL)'}
                   </span>
                 </div>
-                <h4 className="font-semibold text-base text-[#dfe4de]">
-                  {(hotspotsList[0]?.file_path || 'mainEngine.js').split('/').pop()} Tight Coupling
+                <h4 className="font-semibold text-base text-[#dfe4de] truncate" title={hotspotsList[0]?.file_path}>
+                  {hotspotsList[0] ? `${(hotspotsList[0].file_path || '').split('/').pop()} Coupling` : 'No Tight Coupling'}
                 </h4>
                 <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
-                  Calculated cyclomatic complexity is {hotspotsList[0]?.complexity_score || 18.5} CPL across {hotspotsList[0]?.churn_rate || 142} mined edits.
+                  {hotspotsList[0]
+                    ? `Calculated cyclomatic complexity is ${parseFloat(hotspotsList[0].complexity_score || 0).toFixed(1)} CPL across ${hotspotsList[0].churn_rate || 0} mined edits.`
+                    : 'All modules in this repository are operating within standard complexity thresholds.'}
                 </p>
                 <div className="pt-2 border-t border-white/5 text-xs font-mono text-[#b7f15b]">
-                  Action: Decouple Service Facade
+                  Action: {hotspotsList[0] ? 'Decouple Service Facade' : 'Maintain Modular Design'}
                 </div>
               </div>
 
@@ -3505,38 +3531,43 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-[#c3c9b2]/70">Complexity Churn</span>
                   <span className="text-amber-300 font-bold">
-                    {hotspotsList[1]?.churn_rate || 98} Churn Edits
+                    {hotspotsList[1] ? `${hotspotsList[1].churn_rate || 0} Churn Edits` : 'Nominal Churn'}
                   </span>
                 </div>
-                <h4 className="font-semibold text-base text-[#dfe4de]">
-                  {(hotspotsList[1]?.file_path || 'connectionPool.js').split('/').pop()} Branching
+                <h4 className="font-semibold text-base text-[#dfe4de] truncate" title={hotspotsList[1]?.file_path}>
+                  {hotspotsList[1] ? `${(hotspotsList[1].file_path || '').split('/').pop()} Branching` : 'No Churn Anomalies'}
                 </h4>
                 <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
-                  Accumulated {hotspotsList[1]?.bug_frequency || 8} defect reports in PostgreSQL history. Refactoring improves maintainability index.
+                  {hotspotsList[1]
+                    ? `Accumulated ${hotspotsList[1].bug_frequency || 0} defect reports in PostgreSQL history. Refactoring improves maintainability index.`
+                    : 'No high-churn architectural modules requiring urgent refactoring.'}
                 </p>
                 <div className="pt-2 border-t border-white/5 text-xs font-mono text-amber-300">
-                  Action: Extract Repository Pattern
+                  Action: {hotspotsList[1] ? 'Extract Repository Pattern' : 'Standard Sprint Review'}
                 </div>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-3">
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-[#c3c9b2]/70">Refactoring Priority</span>
-                  <span className="text-[#b7f15b] font-bold">Recommended</span>
+                  <span className="text-[#b7f15b] font-bold">{hotspotsList[2] ? 'Recommended' : 'Optimal'}</span>
                 </div>
-                <h4 className="font-semibold text-base text-[#dfe4de]">
-                  {(hotspotsList[2]?.file_path || 'apiRouter.js').split('/').pop()} Middleware
+                <h4 className="font-semibold text-base text-[#dfe4de] truncate" title={hotspotsList[2]?.file_path}>
+                  {hotspotsList[2] ? `${(hotspotsList[2].file_path || '').split('/').pop()} Middleware` : 'Clean Architectural Layer'}
                 </h4>
                 <p className="text-xs text-[#c3c9b2]/70 leading-relaxed">
-                  Decoupling route handlers reduces sprint regression risk by an estimated 32%.
+                  {hotspotsList[2]
+                    ? `Decoupling route handlers reduces sprint regression risk by an estimated ${Math.min(45, Math.round(parseFloat(hotspotsList[2].complexity_score || 0) * 2.2))}%.`
+                    : 'System architectural boundaries and layer couplings are balanced.'}
                 </p>
                 <div className="pt-2 border-t border-white/5 text-xs font-mono text-[#b7f15b]">
-                  Action: Priority Refactor Sprint
+                  Action: {hotspotsList[2] ? 'Priority Refactor Sprint' : 'Continue Monitoring'}
                 </div>
               </div>
             </div>
           </div>
-        )}
+        );
+      })()}
 
         {/* 7. ADMIN SYSTEM TELEMETRY & EXECUTION LOGS TAB */}
         {activeTab === 'Telemetry' && isAdmin && (
