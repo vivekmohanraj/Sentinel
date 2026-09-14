@@ -41,7 +41,7 @@ export const simulatePullRequestScan = async (req, res, next) => {
       const dbFiles = await pool.query(filesQuery, filesParams);
       targetFiles = dbFiles.rows.map(r => r.file_path);
       if (targetFiles.length === 0) {
-        targetFiles = ['src/core/main.js', 'src/api/router.js'];
+        targetFiles = ['src/index.js'];
       }
     }
 

@@ -1,1 +1,3 @@
 documents
+*.sql
+sentinel_backup.sql

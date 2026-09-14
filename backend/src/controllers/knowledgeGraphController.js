@@ -1,8 +1,9 @@
 import pool from '../config/db.js';
+import { seedOrRescanMetrics } from '../models/moduleMetricModel.js';
 
 export const getKnowledgeGraphTopology = async (req, res, next) => {
   try {
-    const { repoId, repoName, userEmail } = req.query;
+    const { repoId, repoName, userEmail, rescan } = req.query;
 
     let targetRepoId = repoId;
     let targetRepoName = repoName || '';
@@ -28,6 +29,11 @@ export const getKnowledgeGraphTopology = async (req, res, next) => {
       }
     }
 
+    // If explicit rescan requested or empty, calibrate metrics from Git
+    if (rescan === 'true') {
+      await seedOrRescanMetrics(targetRepoName || targetRepoId);
+    }
+
     // 1. Fetch modules for this repository from PostgreSQL database
     let modulesQuery = `SELECT id, file_path, complexity_score, churn_rate, bug_frequency FROM tbl_module_metric`;
     let params = [];
@@ -37,8 +43,14 @@ export const getKnowledgeGraphTopology = async (req, res, next) => {
     }
     modulesQuery += ` ORDER BY complexity_score DESC LIMIT 20`;
 
-    const modulesRes = await pool.query(modulesQuery, params);
+    let modulesRes = await pool.query(modulesQuery, params);
     let modules = modulesRes.rows || [];
+
+    if (modules.length === 0) {
+      await seedOrRescanMetrics(targetRepoName || targetRepoId);
+      modulesRes = await pool.query(modulesQuery, params);
+      modules = modulesRes.rows || [];
+    }
 
     // 2. Fetch commit authors strictly scoped to this repository
     let authorParams = [];

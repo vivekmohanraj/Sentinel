@@ -176,11 +176,13 @@ export const deleteUserApi = async (userId, adminEmail) => {
   }
 };
 
-export const fetchDashboardSummary = async (repoName = '') => {
+export const fetchDashboardSummary = async (repoName = '', sync = false) => {
   try {
-    const url = repoName
-      ? `${API_BASE_URL}/dashboard/summary?repoName=${encodeURIComponent(repoName)}`
-      : `${API_BASE_URL}/dashboard/summary`;
+    const params = new URLSearchParams();
+    if (repoName) params.append('repoName', repoName);
+    if (sync) params.append('sync', 'true');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const url = `${API_BASE_URL}/dashboard/summary${qs}`;
 
     const res = await fetch(url, {
       method: 'GET',
@@ -284,8 +286,11 @@ export const fetchSystemTelemetry = async (adminEmail) => {
   }
 };
 
-export const getExportReportUrl = (format = 'csv') => {
-  return `${API_BASE_URL}/dashboard/export?format=${format}`;
+export const getExportReportUrl = (format = 'csv', repoName = '') => {
+  const query = new URLSearchParams();
+  if (format) query.append('format', format);
+  if (repoName) query.append('repoName', repoName);
+  return `${API_BASE_URL}/dashboard/export?${query.toString()}`;
 };
 
 export const fetchOrganizations = async () => {
@@ -559,11 +564,14 @@ export const scanPullRequestApi = async (prData) => {
   }
 };
 
-export const fetchKnowledgeGraphApi = async (repoName = '') => {
+export const fetchKnowledgeGraphApi = async (repoName = '', rescan = false) => {
   try {
-    const url = repoName
+    let url = repoName
       ? `${API_BASE_URL}/graph/topology?repoName=${encodeURIComponent(repoName)}`
       : `${API_BASE_URL}/graph/topology`;
+    if (rescan) {
+      url += (url.includes('?') ? '&' : '?') + 'rescan=true';
+    }
 
     const res = await fetch(url, {
       method: 'GET',
@@ -681,6 +689,50 @@ export const runBranchDiagnosticsApi = async (branchData) => {
     return result.data;
   } catch (err) {
     console.error('Failed to run branch diagnostics:', err);
+    throw err;
+  }
+};
+
+export const fetchDoraMetricsApi = async (repoNameOrId, sync = false) => {
+  try {
+    const params = new URLSearchParams();
+    if (repoNameOrId) params.append('repoName', repoNameOrId);
+    if (sync) params.append('sync', 'true');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const url = `${API_BASE_URL}/dashboard/dora${qs}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch DORA metrics:', err);
+    throw err;
+  }
+};
+
+export const fetchContributorAnalyticsApi = async (repoNameOrId, sync = false) => {
+  try {
+    const params = new URLSearchParams();
+    if (repoNameOrId) params.append('repoName', repoNameOrId);
+    if (sync) params.append('sync', 'true');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const url = `${API_BASE_URL}/dashboard/contributors${qs}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch contributor analytics:', err);
     throw err;
   }
 };

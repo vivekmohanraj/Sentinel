@@ -27,6 +27,8 @@ function AppContent() {
         <Route path="/risk-radar" element={<Dashboard defaultTab="Risk Radar" />} />
         <Route path="/tech-debt" element={<Dashboard defaultTab="Tech Debt" />} />
         <Route path="/knowledge-graph" element={<Dashboard defaultTab="Knowledge Graph" />} />
+        <Route path="/dora" element={<Dashboard defaultTab="DORA Metrics" />} />
+        <Route path="/velocity" element={<Dashboard defaultTab="DORA Metrics" />} />
         <Route path="/users" element={<Dashboard defaultTab="Users" />} />
         <Route path="/telemetry" element={<Dashboard defaultTab="Telemetry" />} />
         <Route path="/settings" element={<Dashboard defaultTab="Settings" />} />

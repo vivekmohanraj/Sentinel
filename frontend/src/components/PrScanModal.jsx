@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, GitPullRequest, ShieldAlert, CheckCircle2, AlertTriangle, Cpu, Loader2, Play } from 'lucide-react';
-import { scanPullRequestApi } from '../lib/api';
+import { scanPullRequestApi, fetchHotspotsApi } from '../lib/api';
 
 const PrScanModal = ({ isOpen, onClose, selectedRepo = '' }) => {
-  const [branchName, setBranchName] = useState('feature/decouple-auth-middleware');
-  const [additions, setAdditions] = useState(240);
-  const [deletions, setDeletions] = useState(45);
-  const [targetFile, setTargetFile] = useState('src/core/main.js');
+  const [branchName, setBranchName] = useState(`feature/update-${(selectedRepo || 'repo').toLowerCase().replace(/[^a-z0-9]/g, '-')}`);
+  const [additions, setAdditions] = useState(85);
+  const [deletions, setDeletions] = useState(15);
+  const [targetFile, setTargetFile] = useState('');
+  const [repoModules, setRepoModules] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setBranchName(`feature/update-${(selectedRepo || 'repo').toLowerCase().replace(/[^a-z0-9]/g, '-')}`);
+      if (selectedRepo) {
+        fetchHotspotsApi(selectedRepo)
+          .then((hotspots) => {
+            if (Array.isArray(hotspots) && hotspots.length > 0) {
+              setRepoModules(hotspots);
+              setTargetFile(hotspots[0].file_path || hotspots[0].filePath || '');
+            } else {
+              setRepoModules([]);
+              setTargetFile('src/index.js');
+            }
+          })
+          .catch(() => {
+            setRepoModules([]);
+            setTargetFile('src/index.js');
+          });
+      }
+    }
+  }, [isOpen, selectedRepo]);
 
   if (!isOpen) return null;
 
@@ -21,9 +44,9 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = '' }) => {
       const data = await scanPullRequestApi({
         repositoryId: selectedRepo,
         branchName,
-        additions: parseInt(additions, 10) || 100,
-        deletions: parseInt(deletions, 10) || 20,
-        modifiedFiles: [targetFile]
+        additions: parseInt(additions, 10) || 50,
+        deletions: parseInt(deletions, 10) || 10,
+        modifiedFiles: targetFile ? [targetFile] : []
       });
       setScanResult(data);
     } catch (err) {
@@ -101,19 +124,35 @@ const PrScanModal = ({ isOpen, onClose, selectedRepo = '' }) => {
             </div>
 
             <div>
-              <div>
-                <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">Target Module Path</label>
+              <label className="block font-mono text-[11px] text-[#c3c9b2] uppercase mb-1.5">
+                Target Module Path {selectedRepo && `(${selectedRepo})`}
+              </label>
+              {repoModules.length > 0 ? (
                 <select
                   value={targetFile}
                   onChange={(e) => setTargetFile(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b] cursor-pointer"
                 >
-                  <option value="src/core/main.js">main.js (Core Logic)</option>
-                  <option value="src/api/router.js">router.js (API Layer)</option>
-                  <option value="src/db/connection.js">connection.js (Database Pool)</option>
-                  <option value="src/utils/crypto.js">crypto.js (Utilities)</option>
+                  {repoModules.map((m, idx) => {
+                    const path = m.file_path || m.filePath || `module-${idx}.js`;
+                    const name = path.split('/').pop();
+                    const score = parseFloat(m.complexity_score || m.complexityScore || 0).toFixed(1);
+                    return (
+                      <option key={m.id || idx} value={path}>
+                        {name} (Complexity: {score} CPL) — {path}
+                      </option>
+                    );
+                  })}
                 </select>
-              </div>
+              ) : (
+                <input
+                  type="text"
+                  value={targetFile}
+                  onChange={(e) => setTargetFile(e.target.value)}
+                  placeholder="e.g. src/index.js"
+                  className="w-full h-10 px-3 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                />
+              )}
             </div>
 
             <div className="flex justify-end">

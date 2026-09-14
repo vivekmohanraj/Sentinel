@@ -5,7 +5,9 @@ import {
   addRepo,
   removeRepo,
   getSystemTelemetry,
-  exportReportData
+  exportReportData,
+  getDoraMetrics,
+  getContributorAnalytics
 } from '../controllers/dashboardController.js';
 import { getUserByEmail, ADMIN_EMAIL } from '../models/userModel.js';
 import { auth } from '../auth.js';
@@ -43,5 +45,7 @@ router.post('/repositories', addRepo);
 router.delete('/repositories/:id', removeRepo);
 router.get('/telemetry', requireAdmin, getSystemTelemetry);
 router.get('/export', exportReportData);
+router.get('/dora', getDoraMetrics);
+router.get('/contributors', getContributorAnalytics);
 
 export default router;

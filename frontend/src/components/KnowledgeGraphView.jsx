@@ -49,9 +49,9 @@ const KnowledgeGraphView = ({ selectedRepo = '', onSelectRefactor }) => {
           <button
             onClick={() => {
               setIsLoading(true);
-              fetchKnowledgeGraphApi(selectedRepo).then(d => { setGraphData(d); setIsLoading(false); });
+              fetchKnowledgeGraphApi(selectedRepo, true).then(d => { setGraphData(d); setIsLoading(false); }).catch(() => setIsLoading(false));
             }}
-            className="h-10 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono uppercase text-[#dfe4de] hover:bg-white/10 transition-all flex items-center gap-2"
+            className="h-10 px-4 rounded-xl bg-[#181d1a] border border-white/10 text-xs font-mono uppercase text-[#dfe4de] hover:bg-white/10 transition-all flex items-center gap-2 cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 text-[#b7f15b] ${isLoading ? 'animate-spin' : ''}`} />
             <span>Re-Index Topology</span>

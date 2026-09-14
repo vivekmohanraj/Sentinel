@@ -120,7 +120,7 @@ const TechDebtQuadrantMatrix = ({ hotspots = [], onSelectRefactor }) => {
                   className="mt-1 px-2.5 py-1 rounded bg-[#b7f15b] text-[#223600] font-bold text-[10px] uppercase flex items-center gap-1 hover:opacity-90 cursor-pointer"
                 >
                   <Sparkles className="w-3 h-3 fill-current" />
-                  <span>Generate Refactoring Snippet</span>
+                  <span>Inspect Refactoring Advisory</span>
                 </button>
               </div>
             ))
@@ -156,7 +156,7 @@ const TechDebtQuadrantMatrix = ({ hotspots = [], onSelectRefactor }) => {
                   className="mt-1 px-2.5 py-1 rounded bg-amber-400 text-[#223600] font-bold text-[10px] uppercase flex items-center gap-1 hover:opacity-90 cursor-pointer"
                 >
                   <Sparkles className="w-3 h-3 fill-current" />
-                  <span>Refactor Strategic Module</span>
+                  <span>Inspect Strategic Advisory</span>
                 </button>
               </div>
             ))

@@ -47,7 +47,9 @@ import {
   BarChart3,
   Network,
   GitPullRequest,
-  LogOut
+  Gauge,
+  LogOut,
+  Crown
 } from 'lucide-react';
 import { useSession, authClient } from '../lib/auth-client.js';
 import PrScanModal from '../components/PrScanModal.jsx';
@@ -57,7 +59,10 @@ import ShapExplainerModal from '../components/ShapExplainerModal.jsx';
 import BusFactorDrawer from '../components/BusFactorDrawer.jsx';
 import BranchDiagnosticsModal from '../components/BranchDiagnosticsModal.jsx';
 import AlertPolicyModal from '../components/AlertPolicyModal.jsx';
+import ExportReportModal from '../components/ExportReportModal.jsx';
 import TechDebtQuadrantMatrix from '../components/TechDebtQuadrantMatrix.jsx';
+import DoraMetricsView from '../components/DoraMetricsView.jsx';
+import ContributorAnalyticsView from '../components/ContributorAnalyticsView.jsx';
 
 import {
   fetchUserProfile,
@@ -92,7 +97,8 @@ import {
   fetchBusFactorMetricsApi,
   fetchAlertPoliciesApi,
   updateAlertPolicyApi,
-  runBranchDiagnosticsApi
+  runBranchDiagnosticsApi,
+  fetchContributorAnalyticsApi
 } from '../lib/api.js';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -150,6 +156,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('');
+  const [syncCounter, setSyncCounter] = useState(0);
 
   // Modal States for Phase 2, 3 & 4 Extension Modules
   const [showPrScanModal, setShowPrScanModal] = useState(false);
@@ -158,6 +165,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const [showBusFactorDrawer, setShowBusFactorDrawer] = useState(false);
   const [showBranchDiagModal, setShowBranchDiagModal] = useState(false);
   const [showAlertPolicyModal, setShowAlertPolicyModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Profile Management State for Settings Tab
   const [profileData, setProfileData] = useState({
@@ -268,6 +276,8 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'Repositories', label: 'Repositories', icon: FolderGit2 },
     { id: 'Commits', label: 'Commits Log', icon: GitCommit },
+    { id: 'DORA Metrics', label: 'Velocity & DORA', icon: Gauge },
+    { id: 'Contributors', label: 'Contributors', icon: Crown },
     { id: 'Risk Radar', label: 'Risk Radar', icon: Radar },
     { id: 'Tech Debt', label: 'Tech Debt', icon: TrendingUp },
     { id: 'Knowledge Graph', label: 'Knowledge Graph', icon: Network },
@@ -656,9 +666,10 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const refreshAllDashboardData = async (targetRepo = selectedRepo) => {
     if (!targetRepo) return;
     setIsSyncingData(true);
+    setSyncCounter((prev) => prev + 1);
     try {
       const [summary, hotspots, risk, commits, busFactor] = await Promise.allSettled([
-        fetchDashboardSummary(targetRepo),
+        fetchDashboardSummary(targetRepo, true),
         fetchHotspotsApi(targetRepo),
         fetchRiskRadarApi(targetRepo),
         fetchCommitsApi('', targetRepo),
@@ -1088,6 +1099,8 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                   {activeTab === 'Dashboard' && 'Predictive Command Center'}
                   {activeTab === 'Repositories' && 'Repository Graph Index'}
                   {activeTab === 'Commits' && 'Commit Log & Developer Churn Activity'}
+                  {activeTab === 'DORA Metrics' && 'DevOps & Engineering Delivery Velocity (DORA)'}
+                  {activeTab === 'Contributors' && 'Contributor Analytics & Bus Factor Analysis'}
                   {activeTab === 'Risk Radar' && 'Real-Time Telemetry Matrix'}
                   {activeTab === 'Tech Debt' && 'Architectural Degradation Analysis'}
                   {activeTab === 'Knowledge Graph' && 'Engineering Knowledge Graph'}
@@ -1116,16 +1129,15 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 <span className="hidden sm:inline">PR Scan</span>
               </button>
 
-              {/* Export CSV Report Button */}
-              <a
-                href={getExportReportUrl('csv')}
-                download="sentinel-report.csv"
+              {/* Executive Report Export Button */}
+              <button
+                onClick={() => setShowExportModal(true)}
                 className="h-9 px-3 rounded-xl bg-[#1c211e] border border-[#b7f15b]/30 text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-all flex items-center gap-2 text-xs font-mono font-bold uppercase cursor-pointer"
-                title="Download Executive Engineering CSV Report"
+                title="Export Executive Engineering Audit Report (PDF / CSV / JSON)"
               >
                 <Download className="w-3.5 h-3.5 text-[#b7f15b]" />
                 <span className="hidden sm:inline">Export</span>
-              </a>
+              </button>
 
               {/* Notification Bell Button */}
               <button
@@ -1334,7 +1346,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
             </div>
 
             {/* KPI STATS CARDS GRID */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-[#b7f15b]/40 transition-all shadow-lg">
                 <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
                   <span>MINED COMMITS</span>
@@ -1377,6 +1389,25 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                   {dashboardData?.avgComplexityScore ?? '12.5'}
                 </div>
                 <div className="text-[11px] text-[#8d937e]">Cyclomatic complexity index</div>
+              </div>
+
+              <div
+                onClick={() => setActiveTab('DORA Metrics')}
+                className="p-5 rounded-2xl bg-[#1c211e] border border-white/10 space-y-2 hover:border-[#b7f15b]/60 transition-all shadow-lg cursor-pointer group"
+                title="View DORA delivery metrics"
+              >
+                <div className="flex items-center justify-between text-xs font-mono text-[#c3c9b2]">
+                  <span>DORA VELOCITY</span>
+                  <Gauge className="w-4 h-4 text-[#b7f15b] group-hover:rotate-12 transition-transform" />
+                </div>
+                <div className="text-3xl font-bold text-[#b7f15b] font-mono flex items-center justify-between">
+                  <span>DORA</span>
+                  <ArrowUpRight className="w-4 h-4 text-[#8d937e] group-hover:text-[#b7f15b] transition-colors" />
+                </div>
+                <div className="text-[11px] text-[#8d937e] flex items-center justify-between">
+                  <span>Delivery Cadence</span>
+                  <span className="text-[#b7f15b] font-mono text-[10px] uppercase font-bold">Metrics &rarr;</span>
+                </div>
               </div>
             </div>
 
@@ -2056,12 +2087,20 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                 </div>
               </div>
 
-              {/* SAVE CHANGES CTA BUTTON (Lower-thumb zone) */}
-              <div className="pt-4 flex justify-end">
+              {/* SAVE CHANGES CTA BUTTON & SUCCESS INDICATOR */}
+              <div className="pt-4 flex items-center justify-between">
+                <div>
+                  {saveSuccess && (
+                    <span className="flex items-center gap-1.5 text-xs font-mono text-[#b7f15b] animate-fadeIn">
+                      <CheckCircle2 className="w-4 h-4 text-[#b7f15b]" />
+                      <span>Preferences saved successfully to PostgreSQL!</span>
+                    </span>
+                  )}
+                </div>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="h-11 px-8 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2 disabled:opacity-50"
+                  className="h-11 px-8 rounded-xl bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#b7f15b]/20 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>{isSaving ? 'Updating Database...' : 'Save Changes'}</span>
@@ -3335,49 +3374,59 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                     <div className="relative w-full h-64 bg-[#181d1a] rounded-xl border border-white/5 p-4 flex items-center justify-center overflow-hidden">
                       <svg className="w-full h-full" viewBox="0 0 600 220" preserveAspectRatio="xMidYMid meet">
                         {/* Dynamic Links */}
-                        {hotspotsList.length > 1 && (
-                          <>
-                            <path d="M 100 110 Q 250 50 400 110" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="4 2" />
-                            <path d="M 100 110 Q 250 170 400 110" fill="none" stroke="#f59e0b" strokeWidth="2" />
-                            {hotspotsList.length > 2 && <path d="M 400 110 Q 480 60 520 110" fill="none" stroke="#b7f15b" strokeWidth="1.5" />}
-                            {hotspotsList.length > 3 && <path d="M 100 110 Q 300 110 520 110" fill="none" stroke="#8d937e" strokeWidth="1" strokeDasharray="2 2" />}
+                        {hotspotsList.length > 1 && (() => {
+                          const score0 = parseFloat(hotspotsList[0]?.complexity_score || 0);
+                          const score1 = parseFloat(hotspotsList[1]?.complexity_score || 0);
+                          const linkWeight01 = ((score0 + score1) / 3.5).toFixed(1);
+                          const isHighCoupling = parseFloat(linkWeight01) >= 6.0;
+                          const linkColor = isHighCoupling ? '#ef4444' : parseFloat(linkWeight01) >= 3.0 ? '#f59e0b' : '#8d937e';
 
-                            <rect x="230" y="65" width="55" height="18" rx="4" fill="#1c211e" stroke="#ef4444" strokeWidth="1" />
-                            <text x="257" y="78" fill="#ffb4ab" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-                              {(parseFloat(hotspotsList[0]?.complexity_score || 16) / 2.2).toFixed(1)} CPL
-                            </text>
+                          return (
+                            <>
+                              <path
+                                d="M 100 110 Q 250 50 400 110"
+                                fill="none"
+                                stroke={linkColor}
+                                strokeWidth="2"
+                                strokeDasharray={isHighCoupling ? '4 2' : 'none'}
+                              />
+                              {hotspotsList.length > 2 && (
+                                <path d="M 100 110 Q 250 170 400 110" fill="none" stroke="#8d937e" strokeWidth="1.5" />
+                              )}
+                              {hotspotsList.length > 3 && (
+                                <path d="M 400 110 Q 480 60 520 110" fill="none" stroke="#8d937e" strokeWidth="1" strokeDasharray="2 2" />
+                              )}
 
-                            {hotspotsList[1] && (
-                              <>
-                                <rect x="230" y="140" width="55" height="18" rx="4" fill="#1c211e" stroke="#f59e0b" strokeWidth="1" />
-                                <text x="257" y="153" fill="#f59e0b" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-                                  {(parseFloat(hotspotsList[1]?.complexity_score || 12) / 2.5).toFixed(1)} CPL
-                                </text>
-                              </>
-                            )}
-                          </>
-                        )}
+                              <rect x="230" y="65" width="55" height="18" rx="4" fill="#1c211e" stroke={linkColor} strokeWidth="1" />
+                              <text x="257" y="78" fill="#dfe4de" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                                {linkWeight01} CPL
+                              </text>
+                            </>
+                          );
+                        })()}
 
                         {/* Dynamic Nodes */}
                         {hotspotsList.slice(0, 5).map((mod, idx) => {
                           const positions = [
-                            { x: 100, y: 110, r: 26, color: '#ef4444' },
-                            { x: 400, y: 110, r: 24, color: '#f59e0b' },
-                            { x: 250, y: 40, r: 18, color: '#a855f7' },
-                            { x: 250, y: 180, r: 18, color: '#b7f15b' },
-                            { x: 520, y: 110, r: 20, color: '#92d957' }
+                            { x: 100, y: 110, r: 24 },
+                            { x: 400, y: 110, r: 24 },
+                            { x: 250, y: 40, r: 18 },
+                            { x: 250, y: 180, r: 18 },
+                            { x: 520, y: 110, r: 20 }
                           ];
                           const pos = positions[idx];
                           const name = (mod.file_path || '').split('/').pop();
-                          const score = parseFloat(mod.complexity_score || 0).toFixed(1);
+                          const scoreNum = parseFloat(mod.complexity_score || 0);
+                          const score = scoreNum.toFixed(1);
+                          const nodeColor = scoreNum >= 15.0 ? '#ef4444' : scoreNum >= 10.0 ? '#f59e0b' : '#b7f15b';
 
                           return (
                             <g key={mod.id || idx} transform={`translate(${pos.x}, ${pos.y})`}>
-                              <circle r={pos.r} fill="#1c211e" stroke={pos.color} strokeWidth="3" />
-                              <text y={idx === 3 ? 30 : -32} fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                              <circle r={pos.r} fill="#1c211e" stroke={nodeColor} strokeWidth="2.5" />
+                              <text y={idx === 3 ? 30 : -30} fill="#dfe4de" fontSize="10" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                                 {name}
                               </text>
-                              <text y="4" fill={pos.color} fontSize="9" fontFamily="monospace" textAnchor="middle">
+                              <text y="4" fill={nodeColor} fontSize="9" fontFamily="monospace" textAnchor="middle">
                                 {score} CPL
                               </text>
                             </g>
@@ -4148,6 +4197,24 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
           </div>
         )}
 
+        {/* DORA & VELOCITY METRICS TAB */}
+        {activeTab === 'DORA Metrics' && (
+          <DoraMetricsView
+            selectedRepo={selectedRepo}
+            userRole={profileData.role}
+            onOpenPrPreCheck={() => setShowBranchDiagModal(true)}
+            syncTrigger={syncCounter}
+          />
+        )}
+
+        {/* CONTRIBUTOR ANALYTICS TAB */}
+        {activeTab === 'Contributors' && (
+          <ContributorAnalyticsView
+            selectedRepo={selectedRepo}
+            syncTrigger={syncCounter}
+          />
+        )}
+
         {/* 8. KNOWLEDGE GRAPH TOPOLOGY TAB */}
         {activeTab === 'Knowledge Graph' && (
           <KnowledgeGraphView
@@ -4194,6 +4261,13 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         <AlertPolicyModal
           isOpen={showAlertPolicyModal}
           onClose={() => setShowAlertPolicyModal(false)}
+        />
+
+        <ExportReportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          selectedRepo={selectedRepo}
+          summary={dashboardData}
         />
       </main>
     </div>
