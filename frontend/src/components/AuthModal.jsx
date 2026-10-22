@@ -240,6 +240,7 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
       await signIn.social({
         provider: provider,
         callbackURL: `${window.location.origin}/?view=dashboard`,
+        errorCallbackURL: `${window.location.origin}/?error=auth_failed`,
       });
     } catch (err) {
       console.error(`${provider} OAuth authentication error:`, err);
