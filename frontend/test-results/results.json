@@ -1,0 +1,1708 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/mnt/storage/Projects/sentinel/frontend/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/mnt/storage/Projects/sentinel/frontend/playwright.config.js",
+    "rootDir": "/mnt/storage/Projects/sentinel/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/mnt/storage/Projects/sentinel/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5173",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "analytics-modals.spec.js",
+      "file": "analytics-modals.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sentinel Predictive Analytics Modals & Drawers",
+          "file": "analytics-modals.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should open and close the Pull Request Automated Risk Scanner modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4749,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:48.146Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--04920-utomated-Risk-Scanner-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--04920-utomated-Risk-Scanner-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--04920-utomated-Risk-Scanner-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fe68a637c7600598f301-14e49383154daa8edd92",
+              "file": "analytics-modals.spec.js",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "should open and close the Executive Export modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4333,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:48.179Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--ffdeb--the-Executive-Export-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--ffdeb--the-Executive-Export-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--ffdeb--the-Executive-Export-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fe68a637c7600598f301-49b1c5b7c16f65a6b2be",
+              "file": "analytics-modals.spec.js",
+              "line": 33,
+              "column": 3
+            },
+            {
+              "title": "should open and close the System Alerts and Notifications drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4636,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:48.189Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--752a4-ts-and-Notifications-drawer-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--752a4-ts-and-Notifications-drawer-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/analytics-modals-Sentinel--752a4-ts-and-Notifications-drawer-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fe68a637c7600598f301-7a73bead09c06ecb9009",
+              "file": "analytics-modals.spec.js",
+              "line": 55,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth-forms.spec.js",
+      "file": "auth-forms.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication Forms & Live Validations",
+          "file": "auth-forms.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should validate required fields on Log In form submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4201,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:48.187Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--ee49a-s-on-Log-In-form-submission-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--ee49a-s-on-Log-In-form-submission-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--ee49a-s-on-Log-In-form-submission-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "810c27ca1aaa18c1860f-969077ba293ab76fa5f3",
+              "file": "auth-forms.spec.js",
+              "line": 8,
+              "column": 3
+            },
+            {
+              "title": "should toggle password visibility in Log In form",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4502,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:52.755Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--0be78-d-visibility-in-Log-In-form-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--0be78-d-visibility-in-Log-In-form-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--0be78-d-visibility-in-Log-In-form-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "810c27ca1aaa18c1860f-94891d558f18365643a9",
+              "file": "auth-forms.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "should perform live validation on Sign Up form for email, phone, and password mismatch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4673,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:53.075Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--6620c-phone-and-password-mismatch-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--6620c-phone-and-password-mismatch-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--6620c-phone-and-password-mismatch-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "810c27ca1aaa18c1860f-f1bfc8f9c72cb4c454a9",
+              "file": "auth-forms.spec.js",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "should allow filling a complete valid registration form with role selection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 7250,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:53.445Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--174b8-on-form-with-role-selection-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--174b8-on-form-with-role-selection-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/auth-forms-Authentication--174b8-on-form-with-role-selection-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "810c27ca1aaa18c1860f-2661bf282698a43f1606",
+              "file": "auth-forms.spec.js",
+              "line": 82,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "dashboard-navigation.spec.js",
+      "file": "dashboard-navigation.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sentinel Dashboard Navigation & Analytics Views",
+          "file": "dashboard-navigation.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display primary predictive metrics on main Dashboard tab",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3641,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:53.455Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d9344-trics-on-main-Dashboard-tab-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d9344-trics-on-main-Dashboard-tab-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d9344-trics-on-main-Dashboard-tab-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-99d6f5a931b02a226d4d",
+              "file": "dashboard-navigation.spec.js",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Repositories tab and display repository index",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4627,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:57.307Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-0fa5b-nd-display-repository-index-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-0fa5b-nd-display-repository-index-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-0fa5b-nd-display-repository-index-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-b2b8c46e2baf84583b00",
+              "file": "dashboard-navigation.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Commits Log tab and display commit records",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6961,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:57.613Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-90b63--and-display-commit-records-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-90b63--and-display-commit-records-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-90b63--and-display-commit-records-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-e2da67b994e8b706dea4",
+              "file": "dashboard-navigation.spec.js",
+              "line": 34,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Velocity & DORA tab and display delivery metrics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4936,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:51:58.158Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-4f8b0-nd-display-delivery-metrics-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-4f8b0-nd-display-delivery-metrics-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-4f8b0-nd-display-delivery-metrics-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-d3478f513448540e6050",
+              "file": "dashboard-navigation.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Contributors tab and display team analytics",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5034,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:01.262Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d8159--and-display-team-analytics-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d8159--and-display-team-analytics-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-d8159--and-display-team-analytics-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-c63ac04e603da8b3ae95",
+              "file": "dashboard-navigation.spec.js",
+              "line": 49,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Risk Radar tab and display telemetry matrix",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4117,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:02.502Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-749a5-nd-display-telemetry-matrix-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-749a5-nd-display-telemetry-matrix-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-749a5-nd-display-telemetry-matrix-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-c187df3877b9a2ce5f91",
+              "file": "dashboard-navigation.spec.js",
+              "line": 56,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Tech Debt tab and display architectural analysis",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5351,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:03.684Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-31aab-play-architectural-analysis-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-31aab-play-architectural-analysis-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-31aab-play-architectural-analysis-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-3f26f3feec680e4f548e",
+              "file": "dashboard-navigation.spec.js",
+              "line": 64,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Knowledge Graph tab and display graph topology",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3949,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:05.688Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-50780--and-display-graph-topology-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-50780--and-display-graph-topology-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-50780--and-display-graph-topology-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-f62036d6b609e134adbf",
+              "file": "dashboard-navigation.spec.js",
+              "line": 72,
+              "column": 3
+            },
+            {
+              "title": "should navigate to Settings tab and display profile preferences",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3806,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:06.807Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-83f0c-display-profile-preferences-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-83f0c-display-profile-preferences-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/dashboard-navigation-Senti-83f0c-display-profile-preferences-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "636f4ed29453469acd0f-c244c1e4842f7aa1d9a1",
+              "file": "dashboard-navigation.spec.js",
+              "line": 80,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "landing.spec.js",
+      "file": "landing.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sentinel Landing Page & Authentication Journeys",
+          "file": "landing.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display Sentinel command branding and hero headline",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4544,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:07.057Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-8ec10--branding-and-hero-headline-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-8ec10--branding-and-hero-headline-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-8ec10--branding-and-hero-headline-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3370f39aa0d6cc6ba3dc-803cea097a12a1e519e6",
+              "file": "landing.spec.js",
+              "line": 8,
+              "column": 3
+            },
+            {
+              "title": "should open and close the Sign In authentication modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4057,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:09.495Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-04a04-ign-In-authentication-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-04a04-ign-In-authentication-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-04a04-ign-In-authentication-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3370f39aa0d6cc6ba3dc-ad73577fd1e280c41b2a",
+              "file": "landing.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "should open Sign Up modal and switch between Sign In and Sign Up tabs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6131,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:10.032Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-47725-en-Sign-In-and-Sign-Up-tabs-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-47725-en-Sign-In-and-Sign-Up-tabs-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-47725-en-Sign-In-and-Sign-Up-tabs-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3370f39aa0d6cc6ba3dc-3db27accedf19f0720a3",
+              "file": "landing.spec.js",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "should open and close the Start Forecasting modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4339,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:11.186Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-00180-the-Start-Forecasting-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-00180-the-Start-Forecasting-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/landing-Sentinel-Landing-P-00180-the-Start-Forecasting-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3370f39aa0d6cc6ba3dc-c59ca69b759f7b586c20",
+              "file": "landing.spec.js",
+              "line": 81,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "profile-settings-form.spec.js",
+      "file": "profile-settings-form.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "User Profile & Workspace Settings Form",
+          "file": "profile-settings-form.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display Profile Details form with current values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2902,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:11.881Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-4f2a6-ls-form-with-current-values-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-4f2a6-ls-form-with-current-values-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-4f2a6-ls-form-with-current-values-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15cc57c795f0c46d77d2-116fd017b3ed29a6f405",
+              "file": "profile-settings-form.spec.js",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "should modify profile inputs, toggle preferences, and save to PostgreSQL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4313,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:13.940Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-74e33-nces-and-save-to-PostgreSQL-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-74e33-nces-and-save-to-PostgreSQL-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/profile-settings-form-User-74e33-nces-and-save-to-PostgreSQL-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15cc57c795f0c46d77d2-9ed312080fbd1e617d55",
+              "file": "profile-settings-form.spec.js",
+              "line": 23,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "repository-management.spec.js",
+      "file": "repository-management.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Repository, Organization & Project Management",
+          "file": "repository-management.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should open New Organization modal and create an organization",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:14.991Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-8452b--and-create-an-organization-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-8452b--and-create-an-organization-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-8452b--and-create-an-organization-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73cb0ff3d03211829ef4-f8508c2f802f02a17838",
+              "file": "repository-management.spec.js",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "should open New Project modal and create a project",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3076,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:15.887Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-11dca--modal-and-create-a-project-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-11dca--modal-and-create-a-project-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-11dca--modal-and-create-a-project-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73cb0ff3d03211829ef4-76ca7b3d6e4d635cf4ba",
+              "file": "repository-management.spec.js",
+              "line": 34,
+              "column": 3
+            },
+            {
+              "title": "should validate repository input format in Connect Repository modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4007,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:16.463Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85f14-in-Connect-Repository-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85f14-in-Connect-Repository-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85f14-in-Connect-Repository-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73cb0ff3d03211829ef4-3e626207092d693cae43",
+              "file": "repository-management.spec.js",
+              "line": 58,
+              "column": 3
+            },
+            {
+              "title": "should detect repository format and fill valid details in Connect Repository modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:17.912Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85fd0-in-Connect-Repository-modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85fd0-in-Connect-Repository-modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/repository-management-Repo-85fd0-in-Connect-Repository-modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "73cb0ff3d03211829ef4-44409ca1d1345547e5f8",
+              "file": "repository-management.spec.js",
+              "line": 90,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "search-and-filtering.spec.js",
+      "file": "search-and-filtering.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Search, Filters & System Features",
+          "file": "search-and-filtering.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should filter commits in Commits Log using search input",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6813,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:18.993Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-adcbf-mits-Log-using-search-input-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-adcbf-mits-Log-using-search-input-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-adcbf-mits-Log-using-search-input-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15fc423bc170821eef7a-2155e5c7fc2325b9ad3f",
+              "file": "search-and-filtering.spec.js",
+              "line": 9,
+              "column": 3
+            },
+            {
+              "title": "should open and save Automated Alert Policies in Alert Policy Modal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 6045,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:19.356Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-eb2ca-icies-in-Alert-Policy-Modal-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-eb2ca-icies-in-Alert-Policy-Modal-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-eb2ca-icies-in-Alert-Policy-Modal-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15fc423bc170821eef7a-ceafa5cdadf9dfb27d17",
+              "file": "search-and-filtering.spec.js",
+              "line": 28,
+              "column": 3
+            },
+            {
+              "title": "should interact with top navigation repository selector and sync button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3235,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:21.008Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-32427-ry-selector-and-sync-button-chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-32427-ry-selector-and-sync-button-chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-32427-ry-selector-and-sync-button-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15fc423bc170821eef7a-6de968dc9554985266a7",
+              "file": "search-and-filtering.spec.js",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "should open Executive Export Modal and show all format options (PDF, CSV, JSON)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3203,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-09-29T07:52:22.537Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-ac828-ormat-options-PDF-CSV-JSON--chromium/test-finished-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-ac828-ormat-options-PDF-CSV-JSON--chromium/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/mnt/storage/Projects/sentinel/frontend/test-results/artifacts/search-and-filtering-Searc-ac828-ormat-options-PDF-CSV-JSON--chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "15fc423bc170821eef7a-adb2db0901fda9197848",
+              "file": "search-and-filtering.spec.js",
+              "line": 80,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-29T07:51:47.391Z",
+    "duration": 38821.384999999995,
+    "expected": 30,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

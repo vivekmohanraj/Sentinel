@@ -63,6 +63,7 @@ const AlertPolicyModal = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close alert policy modal"
             className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-[#8d937e] hover:text-[#dfe4de] flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />

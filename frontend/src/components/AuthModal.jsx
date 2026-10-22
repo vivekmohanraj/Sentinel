@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   X,
@@ -94,6 +94,14 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsSignUp(initialSignUp);
+      setErrors({});
+      setAuthSuccess(null);
+    }
+  }, [isOpen, initialSignUp]);
 
   if (!isOpen) return null;
 
