@@ -43,6 +43,13 @@ app.use(cors({
 // Better Auth endpoint routing
 app.use("/api/auth", toNodeHandler(auth));
 
+// Graceful fallback for root and OAuth error callbacks to redirect to frontend
+app.get(["/", "/error"], (req, res) => {
+    const targetFrontend = (process.env.FRONTEND_URL || "https://sentinel-xi-vert.vercel.app").replace(/\/+$/, '');
+    const queryString = req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : "";
+    return res.redirect(`${targetFrontend}/${queryString}`);
+});
+
 app.use(express.json());
 
 // API Routes
