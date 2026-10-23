@@ -310,6 +310,10 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       setIsLoadingProfile(true);
       try {
         const userEmail = session?.user?.email;
+        if (!userEmail) {
+          if (isMounted) setIsLoadingProfile(false);
+          return;
+        }
         const data = await fetchUserProfile(userEmail);
         if (isMounted && data) {
           const defaultFirstName = session?.user?.name ? session.user.name.split(' ')[0] : '';

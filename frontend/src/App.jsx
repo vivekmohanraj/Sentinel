@@ -9,8 +9,18 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If user is on landing page with an active session or ?view=dashboard, route to /dashboard
+  // If running inside an OAuth popup window, signal parent and close
   useEffect(() => {
+    if (window.opener && window.opener !== window) {
+      try {
+        window.opener.postMessage({ type: 'SENTINEL_AUTH_SUCCESS' }, window.location.origin);
+      } catch (e) {
+        // Fallback
+      }
+      window.close();
+      return;
+    }
+
     const params = new URLSearchParams(location.search);
     if (params.get('view') === 'dashboard' || (session?.user && location.pathname === '/')) {
       navigate('/dashboard', { replace: true });
