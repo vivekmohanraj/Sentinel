@@ -429,10 +429,23 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
         setIsLoadingRepos(true);
         const list = await fetchRepositories(selectedProject, activeEmail);
         if (isMounted && list) {
-          setDbRepos(list || []);
-          if (list.length > 0) {
+          // STRICT CLIENT-SIDE ISOLATION:
+          // Admins see all repositories.
+          // Non-admins ONLY see repositories they created or belonging to their allowed projects.
+          const scopedRepos = isAdmin
+            ? (list || [])
+            : (list || []).filter(r => {
+                const creator = (r.created_by_email || '').toLowerCase().trim();
+                const me = (activeEmail || '').toLowerCase().trim();
+                const isCreator = Boolean(me && creator && creator === me);
+                const isProjectAllowed = Boolean(r.project_id && projectsList.some(p => p.id === r.project_id));
+                return isCreator || isProjectAllowed;
+              });
+
+          setDbRepos(scopedRepos);
+          if (scopedRepos.length > 0) {
             const currentSelected = selectedRepo;
-            const matched = list.find(r => r.name === currentSelected) || list[0];
+            const matched = scopedRepos.find(r => r.name === currentSelected) || scopedRepos[0];
             setSelectedRepo(matched.name);
             if (matched.organization_id) {
               setSelectedOrg(matched.organization_id);
@@ -458,7 +471,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadRepos();
     return () => { isMounted = false; };
-  }, [activeTab, selectedProject, isSessionLoading, session?.user?.email, profileData.email]);
+  }, [activeTab, selectedProject, isSessionLoading, session?.user?.email, profileData.email, isAdmin, projectsList]);
 
   // Fetch Organizations from PostgreSQL on mount & activeTab changes
   useEffect(() => {
@@ -492,8 +505,15 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
 
         const list = await fetchProjects(activeEmail);
         if (isMounted && list) {
-          setProjectsList(list || []);
-          if (!list || list.length === 0) {
+          const scopedProjects = isAdmin
+            ? (list || [])
+            : (list || []).filter(p => {
+                const creator = (p.created_by_email || '').toLowerCase().trim();
+                const me = (activeEmail || '').toLowerCase().trim();
+                return Boolean((me && creator && creator === me) || (p.members_count && p.members_count > 0));
+              });
+          setProjectsList(scopedProjects);
+          if (!scopedProjects || scopedProjects.length === 0) {
             setSelectedProject('');
           }
         }
@@ -503,7 +523,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab, isSessionLoading, session?.user?.email, profileData.email]);
+  }, [activeTab, isSessionLoading, session?.user?.email, profileData.email, isAdmin]);
 
   const handleOrgChange = (newOrgId) => {
     setSelectedOrg(newOrgId);
