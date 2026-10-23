@@ -1,5 +1,4 @@
 import { createAuthClient } from "better-auth/react";
-import { oauthPopupClient } from "better-auth/client/plugins";
 
 const getBackendUrl = () => {
     if (import.meta.env.VITE_BACKEND_URL) return import.meta.env.VITE_BACKEND_URL;
@@ -23,7 +22,6 @@ if (typeof window !== "undefined") {
 
 export const authClient = createAuthClient({
     baseURL: getBackendUrl(),
-    plugins: [oauthPopupClient()],
     fetchOptions: {
         onRequest(context) {
             try {

@@ -316,44 +316,37 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
     setErrors({});
 
     try {
-      // First attempt native Better-Auth OAuth popup flow
-      if (typeof signIn?.popup === 'function') {
-        const popupRes = await signIn.popup({
-          provider: provider,
-          callbackURL: `${window.location.origin}/dashboard`,
-          errorCallbackURL: `${window.location.origin}/?error=auth_failed`,
-        });
+      const backendUrl = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'https://sentinel-backend-u3bv.onrender.com').replace(/\/+$/, '');
+      const popupOrigin = window.location.origin;
+      const startUrl = `${backendUrl}/api/auth/oauth-popup/start?provider=${provider}&popupOrigin=${encodeURIComponent(popupOrigin)}`;
 
-        if (popupRes?.data) {
-          cleanupOAuthPopup();
-          setAuthSuccess('Authenticated successfully! Redirecting...');
-          setTimeout(() => {
-            onClose();
-            if (onSuccess) onSuccess();
-            window.location.href = '/dashboard';
-          }, 350);
-          return;
-        }
+      // Calculate center coordinates
+      const width = 560;
+      const height = 680;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
 
-        if (popupRes?.error) {
-          if (popupRes.error.code === 'POPUP_CLOSED' || popupRes.error.message?.includes('closed')) {
-            cleanupOAuthPopup();
-            return;
-          }
-          if (popupRes.error.code !== 'POPUP_BLOCKED') {
-            setErrors({ general: popupRes.error.message || `Failed to connect to ${provider}.` });
-            cleanupOAuthPopup();
-            return;
-          }
-        }
+      const popup = window.open(
+        startUrl,
+        `sentinel_oauth_${provider}`,
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+      );
+
+      // If browser blocked popup, fall back to direct navigation
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = startUrl;
+        return;
       }
 
-      // Fallback: direct window redirect if popups are blocked or popup method not available
-      await signIn.social({
-        provider: provider,
-        callbackURL: `${window.location.origin}/dashboard`,
-        errorCallbackURL: `${window.location.origin}/?error=auth_failed`,
-      });
+      popupRef.current = popup;
+
+      // Monitor popup window: if user closes popup manually, unfreeze buttons
+      popupTimerRef.current = setInterval(() => {
+        if (!popup || popup.closed) {
+          cleanupOAuthPopup();
+        }
+      }, 400);
+
     } catch (err) {
       console.error(`${provider} OAuth initialization notice:`, err);
       cleanupOAuthPopup();

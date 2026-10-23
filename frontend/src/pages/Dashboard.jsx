@@ -133,7 +133,10 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
 
   // Authentication Guard: Disallow unauthenticated dummy access
   useEffect(() => {
-    if (!isSessionLoading && !session?.user) {
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('sentinel_token') || localStorage.getItem('better-auth.popup_token'))
+      : null;
+    if (!isSessionLoading && !session?.user && !token) {
       try {
         localStorage.clear();
         sessionStorage.clear();
