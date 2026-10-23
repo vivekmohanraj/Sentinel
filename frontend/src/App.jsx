@@ -13,10 +13,15 @@ function AppContent() {
   useEffect(() => {
     // If running inside an OAuth popup window, signal parent and close
     if (window.opener && window.opener !== window) {
-      try {
-        window.opener.postMessage({ type: 'SENTINEL_AUTH_SUCCESS' }, window.location.origin);
-      } catch (e) {
-        // Fallback
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has('error')) {
+        try {
+          window.opener.postMessage({ type: 'SENTINEL_AUTH_ERROR', error: searchParams.get('error') }, window.location.origin);
+        } catch (e) {}
+      } else {
+        try {
+          window.opener.postMessage({ type: 'SENTINEL_AUTH_SUCCESS' }, window.location.origin);
+        } catch (e) {}
       }
       window.close();
       return;
@@ -24,15 +29,16 @@ function AppContent() {
 
     const params = new URLSearchParams(location.search);
     const isDashboardRoute = location.pathname !== '/';
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('sentinel_token') || localStorage.getItem('better-auth.popup_token'));
 
-    // If on landing page with active session or ?view=dashboard (with session), route to /dashboard
-    if (session?.user && (location.pathname === '/' || params.get('view') === 'dashboard')) {
+    // If on landing page with active session or ?view=dashboard (with session or token), route to /dashboard
+    if ((session?.user || hasToken) && (location.pathname === '/' || params.get('view') === 'dashboard')) {
       navigate('/dashboard', { replace: true });
       return;
     }
 
-    // If trying to access a protected dashboard route without an active session
-    if (!isPending && !session?.user && isDashboardRoute) {
+    // Only redirect away from protected dashboard route if session is confirmed absent AND no stored auth token exists
+    if (!isPending && !session?.user && !hasToken && isDashboardRoute) {
       navigate('/', { replace: true });
     }
   }, [session, isPending, location.search, location.pathname, navigate]);

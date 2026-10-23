@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { betterAuth } from "better-auth";
+import { bearer, oauthPopup } from "better-auth/plugins";
 import dbPool from './config/db.js';
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.BETTER_AUTH_URL?.startsWith("https://");
@@ -29,7 +30,10 @@ export const auth = betterAuth({
             prompt: "select_account",
             accessType: "offline",
         },
-        github: { clientId: process.env.GITHUB_CLIENT_ID, clientSecret: process.env.GITHUB_CLIENT_SECRET },
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
     },
     user: { modelName: "tbl_user" },
     session: { modelName: "tbl_session" },
@@ -37,8 +41,16 @@ export const auth = betterAuth({
         modelName: "tbl_account",
         storeStateStrategy: "database",
         skipStateCookieCheck: true,
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ["google", "github"],
+        },
     },
     verification: { modelName: "tbl_verification" },
+    plugins: [
+        bearer(),
+        oauthPopup(),
+    ],
     advanced: {
         useSecureCookies: isProduction,
         defaultCookieAttributes: {

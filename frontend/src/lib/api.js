@@ -1,5 +1,18 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const getAuthHeaders = (extraHeaders = {}) => {
+  const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+  try {
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('sentinel_token') || localStorage.getItem('better-auth.popup_token'))
+      : null;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (e) {}
+  return headers;
+};
+
 export const fetchUserProfile = async (email) => {
   try {
     const url = email
@@ -8,7 +21,7 @@ export const fetchUserProfile = async (email) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -28,7 +41,7 @@ export const fetchUserDetailsApi = async (userId, requesterEmail) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) {
@@ -51,7 +64,7 @@ export const updateUserProfile = async (profileData, email) => {
 
     const res = await fetch(url, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(profileData)
     });
@@ -72,7 +85,7 @@ export const fetchAllUsers = async (adminEmail) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -92,7 +105,7 @@ export const updateUserRoleApi = async (userId, role, adminEmail) => {
 
     const res = await fetch(url, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ userId, role, adminEmail })
     });
@@ -113,7 +126,7 @@ export const createUserByAdminApi = async (userData, adminEmail) => {
 
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ ...userData, adminEmail })
     });
@@ -137,7 +150,7 @@ export const toggleUserDisableApi = async (userId, isDisabled, adminEmail) => {
 
     const res = await fetch(url, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ userId, isDisabled, adminEmail })
     });
@@ -161,7 +174,7 @@ export const deleteUserApi = async (userId, adminEmail) => {
 
     const res = await fetch(url, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) {
@@ -186,7 +199,7 @@ export const fetchDashboardSummary = async (repoName = '', sync = false) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -206,7 +219,7 @@ export const fetchRepositories = async (projectId = '') => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -222,7 +235,7 @@ export const addRepositoryApi = async (name, gitUrl, projectId = null, creatorEm
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/repositories`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ name, gitUrl, projectId, creatorEmail, organizationId, projectName })
     });
@@ -247,7 +260,7 @@ export const deleteRepositoryApi = async (id) => {
   try {
     const res = await fetch(`${API_BASE_URL}/dashboard/repositories/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) {
@@ -274,7 +287,7 @@ export const fetchSystemTelemetry = async (adminEmail) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -297,7 +310,7 @@ export const fetchOrganizations = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/orgs`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -313,7 +326,7 @@ export const createOrganizationApi = async (name, creatorEmail = null) => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/orgs`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ name, creatorEmail })
     });
@@ -330,7 +343,7 @@ export const deleteOrganizationApi = async (id) => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/orgs/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -346,7 +359,7 @@ export const fetchProjects = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/projects`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -362,7 +375,7 @@ export const createProjectApi = async (orgId, name, description, creatorEmail = 
   try {
     const res = await fetch(`${API_BASE_URL}/org/projects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ orgId, name, description, creatorEmail })
     });
@@ -379,7 +392,7 @@ export const deleteProjectApi = async (id) => {
   try {
     const res = await fetch(`${API_BASE_URL}/org/projects/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -399,7 +412,7 @@ export const fetchNotificationsApi = async (email) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -415,7 +428,7 @@ export const markNotificationReadApi = async (id) => {
   try {
     const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -431,7 +444,7 @@ export const markAllNotificationsReadApi = async (email) => {
   try {
     const res = await fetch(`${API_BASE_URL}/notifications/read-all`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ email })
     });
@@ -454,7 +467,7 @@ export const fetchCommitsApi = async (search = '', repoName = '') => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -470,7 +483,7 @@ export const addCommitRecordApi = async (commitData) => {
   try {
     const res = await fetch(`${API_BASE_URL}/commits`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(commitData)
     });
@@ -491,7 +504,7 @@ export const fetchHotspotsApi = async (repoId = '') => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -507,7 +520,7 @@ export const rescanCodebaseApi = async (repoId = '') => {
   try {
     const res = await fetch(`${API_BASE_URL}/metrics/rescan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ repoId })
     });
@@ -535,7 +548,7 @@ export const fetchRiskRadarApi = async (repoName = '') => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -551,7 +564,7 @@ export const scanPullRequestApi = async (prData) => {
   try {
     const res = await fetch(`${API_BASE_URL}/pr/scan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(prData)
     });
@@ -575,7 +588,7 @@ export const fetchKnowledgeGraphApi = async (repoName = '', rescan = false) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -591,7 +604,7 @@ export const generateRefactoringSnippetApi = async (filePath, complexityScore) =
   try {
     const res = await fetch(`${API_BASE_URL}/refactor/suggest`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ filePath, complexityScore })
     });
@@ -608,7 +621,7 @@ export const fetchAstExplanationApi = async (filePath, riskScore) => {
   try {
     const res = await fetch(`${API_BASE_URL}/predictions/ast-explain`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ filePath, riskScore })
     });
@@ -631,7 +644,7 @@ export const fetchBusFactorMetricsApi = async (repoName = '') => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -647,7 +660,7 @@ export const fetchAlertPoliciesApi = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/policies`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -663,7 +676,7 @@ export const updateAlertPolicyApi = async (policies) => {
   try {
     const res = await fetch(`${API_BASE_URL}/policies`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ policies })
     });
@@ -680,7 +693,7 @@ export const runBranchDiagnosticsApi = async (branchData) => {
   try {
     const res = await fetch(`${API_BASE_URL}/branch-diagnostics/scan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(branchData)
     });
@@ -703,7 +716,7 @@ export const fetchDoraMetricsApi = async (repoNameOrId, sync = false) => {
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -725,7 +738,7 @@ export const fetchContributorAnalyticsApi = async (repoNameOrId, sync = false) =
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

@@ -38,6 +38,7 @@ app.use(cors({
         return callback(null, true);
     },
     credentials: true,
+    exposedHeaders: ["set-auth-token"],
 }));
 
 // Better Auth endpoint routing
