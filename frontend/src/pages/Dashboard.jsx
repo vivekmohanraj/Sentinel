@@ -85,6 +85,9 @@ import {
   fetchProjects,
   createProjectApi,
   deleteProjectApi,
+  fetchProjectMembers,
+  addProjectMemberApi,
+  removeProjectMemberApi,
   fetchNotificationsApi,
   markNotificationReadApi,
   markAllNotificationsReadApi,
@@ -251,6 +254,16 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [busFactorMetrics, setBusFactorMetrics] = useState(null);
 
+  // Project Team & Developer Assignment State (Project Manager)
+  const [showProjectTeamModal, setShowProjectTeamModal] = useState(false);
+  const [managingProject, setManagingProject] = useState(null);
+  const [projectMembersList, setProjectMembersList] = useState([]);
+  const [isLoadingProjectMembers, setIsLoadingProjectMembers] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState('Developer');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [memberActionMsg, setMemberActionMsg] = useState(null);
+
   // Notifications & Alert Center State
   const [notificationsList, setNotificationsList] = useState([]);
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
@@ -326,8 +339,10 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
           if (isMounted) setIsLoadingProfile(false);
           return;
         }
+        localStorage.setItem('sentinel_user_email', userEmail);
         const data = await fetchUserProfile(userEmail);
         if (isMounted && data) {
+          localStorage.setItem('sentinel_user_email', data.email || userEmail);
           const defaultFirstName = session?.user?.name ? session.user.name.split(' ')[0] : '';
           const defaultLastName = session?.user?.name ? session.user.name.split(' ').slice(1).join(' ') : '';
 
@@ -345,6 +360,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       } catch (err) {
         console.warn('Using session fallback profile data:', err);
         if (session?.user && isMounted) {
+          localStorage.setItem('sentinel_user_email', session.user.email);
           const parts = (session.user.name || '').split(' ');
           setProfileData((prev) => ({
             ...prev,
@@ -402,13 +418,14 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     return () => { isMounted = false; };
   }, [activeTab, isAdmin, isManager, profileData.email]);
 
-  // Fetch Repositories from PostgreSQL on mount & activeTab changes
+  // Fetch Repositories from PostgreSQL on mount & activeTab changes (scoped to user)
   useEffect(() => {
     let isMounted = true;
     const loadRepos = async () => {
       setIsLoadingRepos(true);
       try {
-        const list = await fetchRepositories();
+        const activeEmail = session?.user?.email || profileData?.email || (typeof window !== 'undefined' ? localStorage.getItem('sentinel_user_email') : '') || '';
+        const list = await fetchRepositories(selectedProject, activeEmail);
         if (isMounted && list) {
           setDbRepos(list || []);
           if (list.length > 0) {
@@ -438,7 +455,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadRepos();
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, selectedProject, session?.user?.email, profileData.email]);
 
   // Fetch Organizations from PostgreSQL on mount & activeTab changes
   useEffect(() => {
@@ -462,12 +479,13 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     return () => { isMounted = false; };
   }, [activeTab]);
 
-  // Fetch Projects from database on mount & activeTab changes
+  // Fetch Projects from database on mount & activeTab changes (scoped to user)
   useEffect(() => {
     let isMounted = true;
     const loadProjects = async () => {
       try {
-        const list = await fetchProjects();
+        const activeEmail = session?.user?.email || profileData?.email || (typeof window !== 'undefined' ? localStorage.getItem('sentinel_user_email') : '') || '';
+        const list = await fetchProjects(activeEmail);
         if (isMounted && list) {
           setProjectsList(list || []);
         }
@@ -477,7 +495,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab]);
+  }, [activeTab, session?.user?.email, profileData.email]);
 
   const handleOrgChange = (newOrgId) => {
     setSelectedOrg(newOrgId);
@@ -684,8 +702,9 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     setIsSyncingData(true);
     setSyncCounter((prev) => prev + 1);
     try {
+      const activeEmail = session?.user?.email || profileData?.email || (typeof window !== 'undefined' ? localStorage.getItem('sentinel_user_email') : '') || '';
       const [summary, hotspots, risk, commits, busFactor] = await Promise.allSettled([
-        fetchDashboardSummary(targetRepo, true),
+        fetchDashboardSummary(targetRepo, true, activeEmail),
         fetchHotspotsApi(targetRepo),
         fetchRiskRadarApi(targetRepo),
         fetchCommitsApi('', targetRepo),
@@ -710,6 +729,58 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
       console.warn('Dashboard data refresh error:', err);
     } finally {
       setIsSyncingData(false);
+    }
+  };
+
+  const handleOpenProjectTeam = async (project) => {
+    setManagingProject(project);
+    setShowProjectTeamModal(true);
+    setMemberActionMsg(null);
+    setNewMemberEmail('');
+    setIsLoadingProjectMembers(true);
+    try {
+      const members = await fetchProjectMembers(project.id);
+      setProjectMembersList(members || []);
+    } catch (err) {
+      console.error('Failed to load project members:', err);
+    } finally {
+      setIsLoadingProjectMembers(false);
+    }
+  };
+
+  const handleAddProjectMember = async (e) => {
+    e.preventDefault();
+    if (!managingProject || !newMemberEmail.trim()) return;
+    setIsAddingMember(true);
+    setMemberActionMsg(null);
+    try {
+      const activeEmail = session?.user?.email || profileData.email;
+      const res = await addProjectMemberApi(managingProject.id, newMemberEmail.trim(), newMemberRole, activeEmail);
+      setMemberActionMsg({ type: 'success', text: res.message || 'Developer assigned to project successfully!' });
+      const updatedMembers = await fetchProjectMembers(managingProject.id);
+      setProjectMembersList(updatedMembers || []);
+      setNewMemberEmail('');
+      const updatedProjects = await fetchProjects(activeEmail);
+      setProjectsList(updatedProjects || []);
+    } catch (err) {
+      setMemberActionMsg({ type: 'error', text: err.message || 'Failed to add developer.' });
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveProjectMember = async (memberId) => {
+    if (!managingProject) return;
+    try {
+      const activeEmail = session?.user?.email || profileData.email;
+      await removeProjectMemberApi(managingProject.id, memberId, activeEmail);
+      setMemberActionMsg({ type: 'success', text: 'Developer removed from project.' });
+      const updatedMembers = await fetchProjectMembers(managingProject.id);
+      setProjectMembersList(updatedMembers || []);
+      const updatedProjects = await fetchProjects(activeEmail);
+      setProjectsList(updatedProjects || []);
+    } catch (err) {
+      setMemberActionMsg({ type: 'error', text: err.message || 'Failed to remove developer.' });
     }
   };
 
@@ -2943,6 +3014,95 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
               )}
             </div>
 
+            {/* Managed Projects & Team Allocation Section */}
+            <div className="p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                    <FolderKanban className="w-5 h-5 text-[#b7f15b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#dfe4de]">Project Workspaces & Team Allocation</h3>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70">Projects started and mined by you, with developer access controls.</p>
+                  </div>
+                </div>
+                {(isAdmin || isManager) && (
+                  <button
+                    onClick={() => setShowAddProjectModal(true)}
+                    className="px-4 py-2 rounded-xl bg-[#181d1a] border border-[#b7f15b]/30 text-xs font-mono text-[#b7f15b] hover:bg-[#b7f15b]/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>New Project</span>
+                  </button>
+                )}
+              </div>
+
+              {projectsList.length === 0 ? (
+                <div className="p-8 text-center space-y-3 font-mono text-xs text-[#8d937e]">
+                  <FolderKanban className="w-10 h-10 text-[#8d937e] mx-auto opacity-50" />
+                  <p>No project workspaces active for your account.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {projectsList.map((project) => {
+                    const isOwner = (project.created_by_user_id && project.created_by_user_id === profileData.id) ||
+                                    (project.created_by_email && project.created_by_email.toLowerCase() === (profileData.email || '').toLowerCase()) ||
+                                    isAdmin;
+                    return (
+                      <div
+                        key={project.id}
+                        className="p-5 rounded-xl bg-[#181d1a] border border-white/5 hover:border-white/20 transition-all flex flex-col justify-between space-y-4"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-sm font-bold text-[#dfe4de] truncate flex items-center gap-2">
+                              <FolderKanban className="w-4 h-4 text-[#b7f15b]" />
+                              {project.name}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-white/5 text-[#c3c9b2] border border-white/10 text-[10px] font-mono font-bold uppercase">
+                              {project.org_name || 'Organization'}
+                            </span>
+                          </div>
+                          {project.description && (
+                            <p className="text-xs font-mono text-[#c3c9b2]/70 line-clamp-2">
+                              {project.description}
+                            </p>
+                          )}
+                          <div className="pt-2 flex items-center gap-4 text-xs font-mono text-[#8d937e]">
+                            <span className="flex items-center gap-1">
+                              <FolderGit2 className="w-3.5 h-3.5 text-[#b7f15b]" />
+                              <strong className="text-[#dfe4de]">{project.repos_count ?? 0}</strong> repos
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5 text-[#92d957]" />
+                              <strong className="text-[#dfe4de]">{project.members_count ?? 0}</strong> devs
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs font-mono">
+                          <span className="text-[11px] text-[#8d937e] truncate max-w-[140px]">
+                            {isOwner ? 'Created by you' : `By ${project.created_by_email?.split('@')[0] || 'Manager'}`}
+                          </span>
+                          {(isOwner || isAdmin || isManager) ? (
+                            <button
+                              onClick={() => handleOpenProjectTeam(project)}
+                              className="px-3 py-1.5 rounded-lg bg-[#b7f15b]/10 text-[#b7f15b] hover:bg-[#b7f15b]/20 border border-[#b7f15b]/30 transition-all flex items-center gap-1.5 font-bold text-[11px] cursor-pointer"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              <span>Manage Team</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] uppercase font-bold text-[#92d957]">Assigned</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* ADD REPOSITORY MODAL */}
             {showAddRepoModal && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -3914,6 +4074,164 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* MANAGE PROJECT TEAM & DEVELOPER ACCESS MODAL (PROJECT MANAGER) */}
+        {showProjectTeamModal && managingProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-xl p-6 rounded-2xl bg-[#1c211e] border border-white/10 shadow-2xl space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#b7f15b]/10 border border-[#b7f15b]/30 flex items-center justify-center text-[#b7f15b]">
+                    <Users className="w-5 h-5 text-[#b7f15b]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#dfe4de]">
+                      Project Team: {managingProject.name}
+                    </h3>
+                    <p className="text-xs font-mono text-[#c3c9b2]/70">
+                      Add developers to grant access to mined repositories and metrics.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowProjectTeamModal(false)}
+                  className="text-[#8d937e] hover:text-[#dfe4de] transition-colors p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {memberActionMsg && (
+                <div
+                  className={`p-3.5 rounded-xl text-xs font-mono flex items-center gap-2.5 animate-fadeIn ${
+                    memberActionMsg.type === 'error'
+                      ? 'bg-red-500/10 border border-red-500/30 text-red-300'
+                      : 'bg-[#b7f15b]/10 border border-[#b7f15b]/30 text-[#b7f15b]'
+                  }`}
+                >
+                  {memberActionMsg.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>{memberActionMsg.text}</span>
+                </div>
+              )}
+
+              {/* Form to Add Developer */}
+              <form onSubmit={handleAddProjectMember} className="p-4 rounded-xl bg-[#181d1a] border border-white/5 space-y-3">
+                <div className="font-mono text-xs uppercase font-bold text-[#dfe4de] flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-[#b7f15b]" />
+                  <span>Assign Developer to Project</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="block text-[11px] font-mono text-[#8d937e]">Select or Enter Developer Email</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        list="registered-developers-list"
+                        value={newMemberEmail}
+                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                        placeholder="developer@sentinel.engineering"
+                        className="w-full h-10 px-3 rounded-lg bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                        required
+                      />
+                      <datalist id="registered-developers-list">
+                        {(usersList || []).map((u) => (
+                          <option key={u.id} value={u.email}>
+                            {u.name || u.email} ({u.role || 'Developer'})
+                          </option>
+                        ))}
+                      </datalist>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-mono text-[#8d937e]">Project Role</label>
+                    <select
+                      value={newMemberRole}
+                      onChange={(e) => setNewMemberRole(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg bg-[#1c211e] border border-white/10 text-xs font-mono text-[#dfe4de] focus:outline-none focus:border-[#b7f15b]"
+                    >
+                      <option value="Developer">Developer</option>
+                      <option value="Tech Lead">Tech Lead</option>
+                      <option value="Code Reviewer">Code Reviewer</option>
+                      <option value="Contributor">Contributor</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isAddingMember || !newMemberEmail.trim()}
+                    className="h-9 px-5 rounded-lg bg-[#b7f15b] text-[#223600] font-mono text-xs uppercase font-bold hover:opacity-90 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isAddingMember ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    <span>{isAddingMember ? 'Assigning...' : 'Add to Project'}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Members List */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono text-[#8d937e] uppercase">
+                  <span>Assigned Developers ({projectMembersList.length})</span>
+                  {isLoadingProjectMembers && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#b7f15b]" />}
+                </div>
+
+                {projectMembersList.length === 0 && !isLoadingProjectMembers ? (
+                  <div className="py-6 text-center rounded-xl bg-[#181d1a] border border-white/5 font-mono text-xs text-[#8d937e]">
+                    No developers assigned to this project yet. Use the form above to add a developer.
+                  </div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                    {projectMembersList.map((member) => (
+                      <div
+                        key={member.id}
+                        className="p-3 rounded-xl bg-[#181d1a] border border-white/5 flex items-center justify-between gap-3 font-mono text-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#b7f15b]/20 text-[#b7f15b] flex items-center justify-center font-bold text-xs uppercase">
+                            {(member.user_name || member.user_email || 'D')[0]}
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#dfe4de] text-xs">
+                              {member.user_name || member.user_email.split('@')[0]}
+                            </div>
+                            <div className="text-[11px] text-[#8d937e]">{member.user_email}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="px-2 py-0.5 rounded-full bg-[#b7f15b]/10 text-[#b7f15b] border border-[#b7f15b]/20 text-[10px] font-bold uppercase">
+                            {member.role || 'Developer'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProjectMember(member.id)}
+                            className="p-1.5 rounded text-[#8d937e] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                            title="Remove from project"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-white/10 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowProjectTeamModal(false)}
+                  className="h-10 px-5 rounded-xl bg-white/5 text-[#c3c9b2] hover:bg-white/10 transition-all font-mono text-xs uppercase cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

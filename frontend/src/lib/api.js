@@ -9,6 +9,12 @@ const getAuthHeaders = (extraHeaders = {}) => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    const userEmail = typeof window !== 'undefined'
+      ? (localStorage.getItem('sentinel_user_email') || localStorage.getItem('sentinel_email'))
+      : null;
+    if (userEmail) {
+      headers['X-User-Email'] = userEmail;
+    }
   } catch (e) {}
   return headers;
 };
@@ -189,11 +195,12 @@ export const deleteUserApi = async (userId, adminEmail) => {
   }
 };
 
-export const fetchDashboardSummary = async (repoName = '', sync = false) => {
+export const fetchDashboardSummary = async (repoName = '', sync = false, userEmail = '') => {
   try {
     const params = new URLSearchParams();
     if (repoName) params.append('repoName', repoName);
     if (sync) params.append('sync', 'true');
+    if (userEmail) params.append('userEmail', userEmail);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const url = `${API_BASE_URL}/dashboard/summary${qs}`;
 
@@ -211,11 +218,13 @@ export const fetchDashboardSummary = async (repoName = '', sync = false) => {
   }
 };
 
-export const fetchRepositories = async (projectId = '') => {
+export const fetchRepositories = async (projectId = '', userEmail = '') => {
   try {
-    const url = projectId
-      ? `${API_BASE_URL}/dashboard/repositories?projectId=${encodeURIComponent(projectId)}`
-      : `${API_BASE_URL}/dashboard/repositories`;
+    const params = new URLSearchParams();
+    if (projectId) params.append('projectId', projectId);
+    if (userEmail) params.append('userEmail', userEmail);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const url = `${API_BASE_URL}/dashboard/repositories${qs}`;
 
     const res = await fetch(url, {
       method: 'GET',
@@ -355,9 +364,14 @@ export const deleteOrganizationApi = async (id) => {
   }
 };
 
-export const fetchProjects = async () => {
+export const fetchProjects = async (userEmail = '') => {
   try {
-    const res = await fetch(`${API_BASE_URL}/org/projects`, {
+    const params = new URLSearchParams();
+    if (userEmail) params.append('userEmail', userEmail);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const url = `${API_BASE_URL}/org/projects${qs}`;
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include'
@@ -367,6 +381,62 @@ export const fetchProjects = async () => {
     return result.data;
   } catch (err) {
     console.error('Failed to fetch projects:', err);
+    throw err;
+  }
+};
+
+export const fetchProjectMembers = async (projectId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects/${projectId}/members`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const result = await res.json();
+    return result.data;
+  } catch (err) {
+    console.error('Failed to fetch project members:', err);
+    throw err;
+  }
+};
+
+export const addProjectMemberApi = async (projectId, developerEmail, role = 'Developer', requesterEmail = null) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects/${projectId}/members`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ developerEmail, role, userEmail: requesterEmail })
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to add project member:', err);
+    throw err;
+  }
+};
+
+export const removeProjectMemberApi = async (projectId, memberId, requesterEmail = null) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/org/projects/${projectId}/members/${memberId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ userEmail: requesterEmail })
+    });
+    if (!res.ok) {
+      const errRes = await res.json();
+      throw new Error(errRes.error || `HTTP error! status: ${res.status}`);
+    }
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to remove project member:', err);
     throw err;
   }
 };
