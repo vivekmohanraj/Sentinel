@@ -378,6 +378,16 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
           return;
         }
 
+        try {
+          if (data?.token) {
+            localStorage.setItem('sentinel_token', data.token);
+            localStorage.setItem('better-auth.popup_token', data.token);
+          }
+          if (data?.user?.email || formData.email) {
+            localStorage.setItem('sentinel_user_email', data?.user?.email || formData.email);
+          }
+        } catch (e) {}
+
         setIsLoading(false);
         setAuthSuccess('Account created successfully! Redirecting to command center...');
         setTimeout(() => {
@@ -397,6 +407,16 @@ const AuthModal = ({ isOpen, onClose, initialSignUp = false, onSuccess }) => {
           setErrors({ general: error.message || 'Invalid credentials. Please verify your email/username and password.' });
           return;
         }
+
+        try {
+          if (data?.token) {
+            localStorage.setItem('sentinel_token', data.token);
+            localStorage.setItem('better-auth.popup_token', data.token);
+          }
+          if (data?.user?.email || formData.loginIdentifier) {
+            localStorage.setItem('sentinel_user_email', data?.user?.email || formData.loginIdentifier);
+          }
+        } catch (e) {}
 
         setIsLoading(false);
         setAuthSuccess('Authenticated successfully! Redirecting to dashboard...');

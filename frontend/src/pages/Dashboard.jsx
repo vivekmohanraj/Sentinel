@@ -422,9 +422,11 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
   useEffect(() => {
     let isMounted = true;
     const loadRepos = async () => {
-      setIsLoadingRepos(true);
       try {
         const activeEmail = session?.user?.email || profileData?.email || (typeof window !== 'undefined' ? localStorage.getItem('sentinel_user_email') : '') || '';
+        if (isSessionLoading && !activeEmail) return;
+
+        setIsLoadingRepos(true);
         const list = await fetchRepositories(selectedProject, activeEmail);
         if (isMounted && list) {
           setDbRepos(list || []);
@@ -441,6 +443,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
             refreshAllDashboardData(matched.name);
           } else {
             setSelectedRepo('');
+            setSelectedProject('');
             setDashboardData(null);
             setHotspotsList([]);
             setRiskPredictions([]);
@@ -455,7 +458,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadRepos();
     return () => { isMounted = false; };
-  }, [activeTab, selectedProject, session?.user?.email, profileData.email]);
+  }, [activeTab, selectedProject, isSessionLoading, session?.user?.email, profileData.email]);
 
   // Fetch Organizations from PostgreSQL on mount & activeTab changes
   useEffect(() => {
@@ -485,9 +488,14 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     const loadProjects = async () => {
       try {
         const activeEmail = session?.user?.email || profileData?.email || (typeof window !== 'undefined' ? localStorage.getItem('sentinel_user_email') : '') || '';
+        if (isSessionLoading && !activeEmail) return;
+
         const list = await fetchProjects(activeEmail);
         if (isMounted && list) {
           setProjectsList(list || []);
+          if (!list || list.length === 0) {
+            setSelectedProject('');
+          }
         }
       } catch (err) {
         console.error('Failed to load projects:', err);
@@ -495,7 +503,7 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     };
     loadProjects();
     return () => { isMounted = false; };
-  }, [activeTab, session?.user?.email, profileData.email]);
+  }, [activeTab, isSessionLoading, session?.user?.email, profileData.email]);
 
   const handleOrgChange = (newOrgId) => {
     setSelectedOrg(newOrgId);
