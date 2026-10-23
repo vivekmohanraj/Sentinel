@@ -23,7 +23,12 @@ export const auth = betterAuth({
     ].filter(Boolean),
     emailAndPassword: { enabled: true },
     socialProviders: {
-        google: { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET },
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            prompt: "select_account",
+            accessType: "offline",
+        },
         github: { clientId: process.env.GITHUB_CLIENT_ID, clientSecret: process.env.GITHUB_CLIENT_SECRET },
     },
     user: { modelName: "tbl_user" },
