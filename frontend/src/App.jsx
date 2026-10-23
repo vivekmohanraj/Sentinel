@@ -29,16 +29,15 @@ function AppContent() {
 
     const params = new URLSearchParams(location.search);
     const isDashboardRoute = location.pathname !== '/';
-    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('sentinel_token') || localStorage.getItem('better-auth.popup_token'));
 
-    // If on landing page with active session or ?view=dashboard (with session or token), route to /dashboard
-    if ((session?.user || hasToken) && (location.pathname === '/' || params.get('view') === 'dashboard')) {
+    // If on landing page with explicit view=dashboard param and verified session, route to /dashboard
+    if (!isPending && session?.user && params.get('view') === 'dashboard') {
       navigate('/dashboard', { replace: true });
       return;
     }
 
-    // Only redirect away from protected dashboard route if session is confirmed absent AND no stored auth token exists
-    if (!isPending && !session?.user && !hasToken && isDashboardRoute) {
+    // Strictly redirect away from all protected dashboard routes if user is not authenticated
+    if (!isPending && !session?.user && isDashboardRoute) {
       navigate('/', { replace: true });
     }
   }, [session, isPending, location.search, location.pathname, navigate]);

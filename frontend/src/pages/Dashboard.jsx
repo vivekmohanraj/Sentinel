@@ -127,9 +127,20 @@ const ROUTE_TABS = {
 };
 
 const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
-  const { data: session } = useSession();
+  const { data: session, isPending: isSessionLoading } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Authentication Guard: Disallow unauthenticated dummy access
+  useEffect(() => {
+    if (!isSessionLoading && !session?.user) {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
+      window.location.href = '/';
+    }
+  }, [session, isSessionLoading]);
 
   // Resolve active tab from URL pathname or props
   const getTabFromLocation = () => {
@@ -292,15 +303,13 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
 
   const handleSignOut = async () => {
     try {
+      localStorage.clear();
+      sessionStorage.clear();
       await authClient.signOut();
     } catch (err) {
       console.warn('Sign out notice:', err?.message);
     }
-    if (onNavigateToLanding) {
-      onNavigateToLanding();
-    } else {
-      navigate('/');
-    }
+    window.location.href = '/';
   };
 
   // Fetch real profile data from database on mount & session change
@@ -988,7 +997,14 @@ const Dashboard = ({ onNavigateToLanding, defaultTab }) => {
     }
   };
 
-
+  if (isSessionLoading || !session?.user) {
+    return (
+      <div className="min-h-screen bg-[#0a0d0b] flex flex-col items-center justify-center gap-4 text-[#dfe4de] font-mono">
+        <Loader2 className="w-8 h-8 text-[#b7f15b] animate-spin" />
+        <p className="text-xs uppercase tracking-widest text-[#8d937e]">Verifying Sentinel Session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0d0b] text-[#dfe4de] font-sans antialiased flex flex-col md:flex-row selection:bg-[#b7f15b]/30 selection:text-[#b7f15b]">

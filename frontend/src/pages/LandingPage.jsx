@@ -173,9 +173,14 @@ const LandingPage = ({ onNavigateToDashboard }) => {
               </button>
               <button
                 onClick={async () => {
-                  await authClient.signOut();
+                  try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    await authClient.signOut();
+                  } catch (e) {}
+                  window.location.href = '/';
                 }}
-                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-surface-container-high border border-white/10 hover:bg-white/10 text-on-surface/80 hover:text-on-surface transition-all"
+                className="h-[40px] px-4 font-label-caps text-label-caps uppercase font-bold rounded-full bg-surface-container-high border border-white/10 hover:bg-white/10 text-on-surface/80 hover:text-on-surface transition-all cursor-pointer"
               >
                 Sign Out
               </button>
