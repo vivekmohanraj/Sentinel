@@ -30,14 +30,19 @@ export const getProfile = async (req, res, next) => {
       // Non-fatal if session evaluation is bypassed
     }
 
+    if (!email && !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required. No active session or user identifier provided.'
+      });
+    }
+
     let user = null;
 
     if (email) {
       user = await getUserByEmail(email);
     } else if (userId) {
       user = await getUserById(userId);
-    } else {
-      user = await getLatestUser();
     }
 
     // Automatically upsert real user account in PostgreSQL if not found
@@ -71,7 +76,10 @@ export const getProfile = async (req, res, next) => {
     }
 
     if (!user) {
-      user = await getLatestUser();
+      return res.status(404).json({
+        success: false,
+        error: 'User profile not found.'
+      });
     }
 
     return res.status(200).json({
