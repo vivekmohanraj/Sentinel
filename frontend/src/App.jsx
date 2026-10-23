@@ -5,12 +5,13 @@ import Dashboard from './pages/Dashboard.jsx';
 import { useSession } from './lib/auth-client.js';
 
 function AppContent() {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If running inside an OAuth popup window, signal parent and close
+  // Handle OAuth popup window completion and protected route redirection
   useEffect(() => {
+    // If running inside an OAuth popup window, signal parent and close
     if (window.opener && window.opener !== window) {
       try {
         window.opener.postMessage({ type: 'SENTINEL_AUTH_SUCCESS' }, window.location.origin);
@@ -22,10 +23,19 @@ function AppContent() {
     }
 
     const params = new URLSearchParams(location.search);
-    if (params.get('view') === 'dashboard' || (session?.user && location.pathname === '/')) {
+    const isDashboardRoute = location.pathname !== '/';
+
+    // If on landing page with active session or ?view=dashboard (with session), route to /dashboard
+    if (session?.user && (location.pathname === '/' || params.get('view') === 'dashboard')) {
       navigate('/dashboard', { replace: true });
+      return;
     }
-  }, [session, location.search, location.pathname, navigate]);
+
+    // If trying to access a protected dashboard route without an active session
+    if (!isPending && !session?.user && isDashboardRoute) {
+      navigate('/', { replace: true });
+    }
+  }, [session, isPending, location.search, location.pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-on-background">
